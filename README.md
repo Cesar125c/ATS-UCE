@@ -1,76 +1,35 @@
 # UCE TalentPath — ATS-UCE
 
-An Applicant Tracking System (ATS) designed to streamline the application, evaluation, and selection process for university professors at the **Universidad Central del Ecuador (UCE)**.
+**Applicant Tracking System** for the professor recruitment process at the **Universidad Central del Ecuador**.
+
+The system digitizes and automates the workflow from CV submission → AI scoring → multi-authority review (HR, Dean, Rector, Finance) → final hiring decision.
+
+> ⚠️ **Sprint 1** — The backend architecture, domain model, database schema, and health endpoint are operational. All use cases, external adapters, and the frontend UI are stubs scheduled for future sprints.
 
 ---
 
-## Tech Stack
+## Architecture
 
-### Frontend
-| Technology  | Purpose            |
-|-------------|--------------------|
-| React 18    | UI framework       |
-| TypeScript  | Type safety        |
-| Vite        | Dev server/build   |
-| Tailwind CSS| Styling            |
-
-### Backend
-| Technology          | Purpose                          |
-|---------------------|----------------------------------|
-| Python 3.12+        | Runtime                          |
-| FastAPI             | REST API framework               |
-| SQLAlchemy 2.0      | ORM (async mode)                 |
-| PostgreSQL 16       | Database                         |
-| Alembic             | Schema migrations                |
-| Pydantic v2         | DTOs / validation                |
-| Pydantic-settings   | Configuration via env vars       |
-| Ruff                | Linter / formatter               |
-| pytest              | Testing                          |
-| asyncpg             | PostgreSQL async driver          |
-
-### Infrastructure & DevOps
-| Tool              | Purpose                        |
-|-------------------|--------------------------------|
-| Docker Compose    | Local dev environment (DB+API) |
-| Clerk             | Auth / JWT (Sprint 2)          |
-| Backblaze B2      | CV file storage (Sprint 2)     |
-| OpenAI            | AI score generation (Sprint 2) |
-| Resend            | Transactional emails (Sprint 2)|
-
----
-
-## Architecture — Clean Architecture + DDD
-
-The backend follows **Clean Architecture** with **Domain-Driven Design (DDD)**. The dependency rule is strict: **outer layers depend on inner layers, never the other way around.**
+Clean Architecture with Domain-Driven Design. The dependency rule is strict: **outer layers depend on inner layers, never the reverse**.
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                     api / FastAPI                         │  ← HTTP, auth, routing
-├──────────────────────────────────────────────────────────┤
-│                  application / Use Cases                  │  ← Orchestration, DTOs
-├──────────────────────────────────────────────────────────┤
-│                     domain / Entities                     │  ← Business logic (pure Python)
-├──────────────────────────────────────────────────────────┤
-│               infrastructure / Adapters                   │  ← DB, S3, OpenAI, Email
-└──────────────────────────────────────────────────────────┘
+api/ (FastAPI)          ← HTTP, routing, auth
+    │
+application/ (Use Cases) ← Orchestration, DTOs (Pydantic)
+    │
+domain/ (Entities)      ← Business rules, pure Python, zero external deps
+    │
+infrastructure/ (Adapters) ← DB, S3, OpenAI, email
 ```
 
-### Layer Rules
+### Layer contracts
 
-| Layer | Imports from | Zero external deps? | Contains |
-|-------|-------------|---------------------|----------|
-| `domain/` | stdlib only (`uuid`, `datetime`, `dataclasses`, `enum`) | ✅ Yes | Entities, Value Objects, Repository ABCs, Domain Services |
-| `application/` | `domain/` + `pydantic` | ❌ No | Use Cases, DTOs |
-| `api/` | `application/` + `fastapi` | ❌ No | Routes, Dependencies |
-| `infrastructure/` | `domain/` + SQLAlchemy, boto3, openai, etc. | ❌ No | ORM Models, Repositories, External Adapters |
-
-### Domain Invariants (Hard Rules in Code)
-
-1. **Strict linear flow**: Status advances in a fixed order (`RECEIVED → PROCESSING_AI → HR_STAGE → DEAN_STAGE → RECTOR_STAGE → FINANCE_STAGE → HIRED`). No skipping stages.
-2. **Short-circuit rejection**: From any non-terminal state, an application can be immediately moved to `REJECTED`.
-3. **Terminal finality**: Once `HIRED` or `REJECTED`, the application cannot be advanced further.
-4. **Score gate**: A `RECEIVED` application must receive an `AIScore` before moving to `HR_STAGE`. If the score < 60, it goes directly to `REJECTED`.
-5. **Observations on rejection**: When an authority rejects, `observations` must be non-empty.
+| Layer | Depends on | External deps | What lives here |
+|-------|-----------|---------------|-----------------|
+| `domain/` | stdlib only (`uuid`, `datetime`, `dataclasses`, `enum`, `abc`) | **None** | Entities, Value Objects, Repository ABCs, Domain Services |
+| `application/` | `domain/` + `pydantic` | Pydantic | Use cases, DTOs |
+| `api/` | `application/` + `fastapi` | FastAPI | Routes, middleware, DI wiring |
+| `infrastructure/` | `domain/` | SQLAlchemy, boto3, openai, etc. | ORM models, repositories, external adapters |
 
 ---
 
@@ -78,214 +37,173 @@ The backend follows **Clean Architecture** with **Domain-Driven Design (DDD)**. 
 
 ```
 uce-talentpath-monorepo/
-├── .github/workflows/          ← CI pipelines
-├── frontend/                   ← Vite + React 18 + TypeScript
-└── backend/
-    ├── app/
-    │   ├── api/                ← FastAPI routes + auth middleware
-    │   │   └── v1/
-    │   │       ├── health.py           GET  /api/v1/health
-    │   │       ├── applications.py     CRUD /api/v1/applications
-    │   │       ├── applicants.py       GET  /api/v1/applicants/me/status
-    │   │       ├── evaluations.py      POST /api/v1/applications/{id}/evaluations
-    │   │       └── dashboard.py        GET  /api/v1/dashboard/stats
-    │   ├── application/         ← Use Cases + DTOs (Pydantic)
-    │   │   ├── use_cases/
-    │   │   └── dtos/
-    │   ├── domain/              ← Business logic (ZERO external imports)
-    │   │   ├── entities/        ← Applicant, Application, Evaluation, etc.
-    │   │   ├── value_objects/   ← FlowStatus, AIScore, EvaluationDecision
-    │   │   ├── services/        ← WorkflowApprovalService
-    │   │   └── repositories/    ← ABC contracts (interfaces)
-    │   └── infrastructure/      ← SQLAlchemy, external APIs, file storage
-    │       ├── database/models/ ← ORM models (5 tables)
-    │       ├── database/mappers/← ORM ↔ Domain bidirectional mappers
-    │       ├── repositories/    ← SQLAlchemy implementations
-    │       └── adapters/        ← Backblaze, OpenAI, Resend, Clerk stubs
-    ├── tests/
-    │   └── unit/domain/         ← 34 tests for domain logic
-    ├── migrations/              ← Alembic async migrations
-    ├── main.py                  ← FastAPI app factory
-    ├── config.py                ← pydantic-settings
-    ├── docker-compose.yml       ← PostgreSQL 16 + API
-    └── pyproject.toml           ← Dependencies & tooling config
+├── frontend/                         # Vite + React 19 + TypeScript
+│   ├── src/
+│   │   ├── main.tsx                  # Entry point
+│   │   ├── App.tsx                   # Root component (scaffold)
+│   │   └── assets/                   # Static assets
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── Dockerfile
+│
+├── backend/                          # Python 3.12 + FastAPI
+│   ├── app/
+│   │   ├── api/                      # FastAPI routes
+│   │   │   └── v1/                   # Health (live), applications/applicants/
+│   │   │                              # evaluations/dashboard (stubs)
+│   │   ├── application/              # Use cases, DTOs
+│   │   ├── domain/                   # Entities, value objects, services, ABCs
+│   │   └── infrastructure/           # SQLAlchemy, mappers, repos, adapters
+│   ├── migrations/                   # Alembic (async)
+│   ├── tests/                        # 34 domain unit tests
+│   ├── main.py                       # FastAPI factory entry point
+│   ├── config.py                     # pydantic-settings
+│   ├── pyproject.toml
+│   └── docker-compose.yml            # Backend-only: PostgreSQL 16 + API
+│
+├── nginx/
+│   └── nginx.conf                    # Reverse proxy (frontend + backend)
+│
+└── docker-compose.yml               # Full stack: DB + API + frontend + nginx
 ```
 
 ---
 
-## Prerequisites
+## Technologies
 
-| Tool   | Version | Why |
-|--------|---------|-----|
+### Backend
+
+| Technology | Version | Role |
+|-----------|---------|------|
 | Python | >= 3.12 | Runtime |
-| Docker | Latest  | PostgreSQL + API containers |
-| Node   | >= 18   | Frontend dev |
+| FastAPI | >= 0.115 | REST API framework |
+| SQLAlchemy | >= 2.0 (async) | ORM |
+| PostgreSQL | 16 | Database |
+| Alembic | >= 1.13 | Migrations |
+| Pydantic v2 | >= 2.9 | DTOs, settings |
+| asyncpg | >= 0.29 | Async PG driver |
+| Ruff | >= 0.6 | Linter / formatter |
+| pytest | >= 8.0 | Testing |
+
+### Frontend
+
+| Technology | Version | Role |
+|-----------|---------|------|
+| React | 19.2 | UI framework |
+| TypeScript | 6.0 | Type safety |
+| Vite | 8.0 | Dev server / build |
+| Tailwind CSS | 4.2 | Utility-first styling |
+
+### Infrastructure
+
+| Tool | Purpose |
+|------|---------|
+| Docker Compose | Multi-service local orchestration (DB, API, frontend, nginx) |
+| Nginx | Reverse proxy routing `/api/` → backend, `/` → frontend |
+| Clerk | JWT-based authentication (Sprint 2) |
+| Backblaze B2 | CV file storage (Sprint 2) |
+| OpenAI | AI CV scoring (Sprint 2) |
+| Resend | Transactional email (Sprint 2) |
 
 ---
 
-## Local Development Setup
+## Implemented Features (Sprint 1)
 
-### 1. Clone and prepare env vars
+### Domain Model (34 unit tests)
+- **FlowStatus**: 8-state enum with strict linear progression (`RECEIVED → PROCESSING_AI → HR_STAGE → DEAN_STAGE → RECTOR_STAGE → FINANCE_STAGE → HIRED`), terminal-state guards, and role-to-stage mapping
+- **AIScore**: Frozen value object with 5 evaluation axes (0–100 each), automatic preselection threshold (≥60), and grade classification (EXCELLENT / GOOD / ACCEPTABLE / INSUFFICIENT)
+- **5 domain invariants enforced in code**: strict linear flow, short-circuit rejection, terminal finality, score gate, mandatory observations on rejection
+- **Evaluation**: Immutable decision record with invariant: observations required when rejecting
+- **Application (Aggregate Root)**: Manages state transitions via `assign_ai_score()`, `advance_flow()`, and `reject()`
+- **WorkflowApprovalService**: Pure domain service for authority decision orchestration and role validation
+
+### Persistence Layer
+- 5 SQLAlchemy ORM models (`applicants`, `vacancies`, `applications`, `evaluations`, `status_history`)
+- Bidirectional mappers (ORM ↔ Domain) with automatic `AIScore` reconstruction from flat columns
+- 3 repository implementations with async queries, pagination, and aggregate statistics (`get_stats()` using `func.count`/`func.avg`/`case`)
+- Shared SQLAlchemy Enum types defined once to prevent PostgreSQL type conflicts
+- Async-compatible Alembic migration environment
+
+### API
+- **Health endpoint**: `GET /api/v1/health` — returns `{"status":"ok","version":"0.1.0","database":"connected"}` after executing `SELECT 1`
+- 7 additional endpoint stubs with role-based access control wiring:
+
+| Method | Path | Roles | Planned |
+|--------|------|-------|---------|
+| POST | `/api/v1/applications/` | `applicant` | Sprint 2 |
+| GET | `/api/v1/applications/` | `hr_staff` | Sprint 3 |
+| GET | `/api/v1/applications/pending-count` | `dean`, `rector`, `finance_director` | Sprint 3 |
+| GET | `/api/v1/applications/{id}` | `hr_staff`, `dean`, `rector`, `finance_director` | Sprint 3 |
+| GET | `/api/v1/applicants/me/status` | `applicant` | Sprint 3 |
+| POST | `/api/v1/applications/{id}/evaluations` | `hr_staff`, `dean`, `rector`, `finance_director` | Sprint 3 |
+| GET | `/api/v1/dashboard/stats` | `hr_staff` | Sprint 3 |
+
+- File validation on POST: PDF only, max 10 MB
+
+### Authentication Foundations
+- `HTTPBearer` security scheme configured
+- `get_current_user()` FastAPI dependency with dev mock fallback (`role: hr_staff`)
+- `require_role()` factory for declarative role-based access control
+- `ClerkAuthAdapter` stub for Sprint 2 JWT verification
+
+### Database Schema (Alembic-ready)
+
+5 tables with relationships:
+
+```
+applicants 1───* applications *───1 vacancies
+                      │
+                      ├───* evaluations (cascade delete)
+                      └───* status_history (cascade delete)
+```
+
+### Infrastructure
+- Docker Compose with 4 services: `backend`, `frontend`, `database` (PostgreSQL 16), `nginx`
+- Backend-only Docker Compose for isolated backend development
+- Production-ready Dockerfile (Python 3.12-slim, `pip install -e .`)
+- Nginx reverse proxy: `/api/` → backend, `/` → frontend, WebSocket support for Vite HMR
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python >= 3.12
+- Docker & Docker Compose
+- Node.js >= 18 (for frontend development)
+
+### Quick start (Docker)
 
 ```bash
+# 1. Environment variables
 cp backend/.env.example backend/.env
-# Edit backend/.env with your keys
-```
 
-### 2. Option A — Docker (recommended, starts both DB + API)
-
-```bash
-cd backend
+# 2. Full stack
 docker compose up --build -d
-curl http://localhost:8000/api/v1/health
+
+# 3. Verify
+curl http://localhost/api/v1/health
 ```
 
-### 2. Option B — Manual (DB in Docker, API on host)
+### Backend-only development
 
 ```bash
-# Start only Postgres
-docker run -d --name ats_db \
-  -e POSTGRES_USER=ats_uce \
-  -e POSTGRES_PASSWORD=ats_uce_secret \
-  -e POSTGRES_DB=ats_uce_dev \
-  -p 5432:5432 \
-  postgres:16-alpine
-
-# Create virtualenv and install
 cd backend
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
+docker compose up --build -d          # Starts PostgreSQL + API
 
-# Run the server
+# Or manually:
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
 uvicorn main:app --reload --port 8000
 ```
 
-### 3. Verify
+### Frontend-only development
 
 ```bash
-curl http://localhost:8000/api/v1/health
-# → {"status":"ok","version":"0.1.0","database":"connected"}
-
-# Open Swagger UI
-open http://localhost:8000/docs
-```
-
----
-
-## Application Workflow (Status Flow)
-
-This is the lifecycle every application goes through. Frontend should render this as a **stepper** for applicants.
-
-```
-                       ┌──────────┐
-                       │ RECEIVED │
-                       └────┬─────┘
-                            │ CV uploaded
-                            ▼
-                    ┌───────────────┐
-                    │ PROCESSING_AI │  ← AI scores the CV
-                    └───────┬───────┘
-                            │
-                     ┌──────┴──────┐
-                     ▼             ▼
-               ┌─────────┐   ┌──────────┐
-               │ HR_STAGE│   │ REJECTED │  ← if AI score < 60
-               └────┬────┘   └──────────┘
-                    │ HR approves
-                    ▼
-               ┌───────────┐
-               │ DEAN_STAGE│
-               └─────┬─────┘
-                     │ Dean approves
-                     ▼
-               ┌─────────────┐
-               │ RECTOR_STAGE│
-               └──────┬──────┘
-                      │ Rector approves
-                      ▼
-               ┌───────────────┐
-               │ FINANCE_STAGE │
-               └───────┬───────┘
-                       │ Finance director approves
-                       ▼
-                  ┌────────┐
-                  │ HIRED  │
-                  └────────┘
-```
-
-Each authority stage (`HR_STAGE`, `DEAN_STAGE`, `RECTOR_STAGE`, `FINANCE_STAGE`) requires a specific role and an `Evaluation` with `APPROVED` or `REJECTED`.
-
----
-
-## API Endpoints
-
-### Health
-
-| Method | Path | Auth | Role | Status |
-|--------|------|------|------|--------|
-| GET | `/api/v1/health` | ❌ | — | ✅ Done |
-
-### Applications
-
-| Method | Path | Auth | Role | Status |
-|--------|------|------|------|--------|
-| POST | `/api/v1/applications/` | ✅ | `applicant` | 🚧 Sprint 2 |
-| GET | `/api/v1/applications/` | ✅ | `hr_staff` | 🚧 Sprint 3 |
-| GET | `/api/v1/applications/pending-count` | ✅ | `dean`, `rector`, `finance_director` | 🚧 Sprint 3 |
-| GET | `/api/v1/applications/{id}` | ✅ | `hr_staff`, `dean`, `rector`, `finance_director` | 🚧 Sprint 3 |
-
-### Applicants
-
-| Method | Path | Auth | Role | Status |
-|--------|------|------|------|--------|
-| GET | `/api/v1/applicants/me/status` | ✅ | `applicant` | 🚧 Sprint 3 |
-
-### Evaluations
-
-| Method | Path | Auth | Role | Status |
-|--------|------|------|------|--------|
-| POST | `/api/v1/applications/{id}/evaluations` | ✅ | `hr_staff`, `dean`, `rector`, `finance_director` | 🚧 Sprint 3 |
-
-### Dashboard
-
-| Method | Path | Auth | Role | Status |
-|--------|------|------|------|--------|
-| GET | `/api/v1/dashboard/stats` | ✅ | `hr_staff` | 🚧 Sprint 3 |
-
-> **Note:** In development mode (`APP_ENV=development` + no `CLERK_SECRET_KEY` set), the API returns a mock user with `role: hr_staff` allowing you to test all endpoints via Swagger.
-
----
-
-## Environment Variables (for DevOps)
-
-All configuration is in `backend/.env`. Required vars:
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | ✅ | — | `postgresql+asyncpg://user:pass@host:5432/db` |
-| `CLERK_SECRET_KEY` | ✅ | — | Clerk API secret |
-| `APP_ENV` | ❌ | `development` | `development` or `production` |
-| `OPENAI_API_KEY` | ❌ | — | For AI scoring (Sprint 2) |
-| `B2_APPLICATION_KEY_ID` | ❌ | — | Backblaze B2 (Sprint 2) |
-| `RESEND_API_KEY` | ❌ | — | Email (Sprint 2) |
-
----
-
-## Database Migrations (Alembic)
-
-```bash
-cd backend
-source .venv/bin/activate
-
-# Create a new migration
-alembic revision --autogenerate -m "description"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback
-alembic downgrade -1
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
@@ -296,35 +214,41 @@ alembic downgrade -1
 cd backend
 source .venv/bin/activate
 
-# Run all tests
-python -m pytest
+# 34 domain unit tests (no database required)
+pytest tests/unit/ -v
 
-# Run domain tests (faster, no DB needed)
-python -m pytest tests/unit/ -v
-
-# Run with coverage
-python -m pytest --cov=app --cov-report=term-missing
-```
-
-The `tests/unit/domain/` tests cover entity invariants, status transitions, score validation, and value object immutability — all without a database.
-
----
-
-## Linting
-
-```bash
-cd backend
+# Linting
 ruff check app/ tests/
-ruff check app/ tests/ --fix   # Auto-fix
 ```
 
 ---
 
-## Sprint Roadmap
+## Project Status
 
-| Sprint | Focus |
-|--------|-------|
-| Sprint 1 | ✅ Architecture, domain model, DB schema, health endpoint |
-| Sprint 2 | 🚧 Application submission (CV upload + AI scoring) |
-| Sprint 3 | 🚧 Multi-stage workflow (HR → Dean → Rector → Finance) |
-| Sprint 4 | 🚧 Dashboard, reports, notifications |
+| Component | Status |
+|-----------|--------|
+| Domain model | ✅ Complete (34 tests) |
+| Database schema | ✅ Models + migrations ready |
+| Health endpoint | ✅ Live |
+| API stubs | ⏸️ 7 endpoints wired, return 501 |
+| Use cases | ⏸️ 5 stubs |
+| External adapters | ⏸️ 4 stubs (Backblaze, Clerk, OpenAI, Resend) |
+| Frontend UI | 🏗️ Scaffold only |
+| CI/CD | ❌ Not configured |
+
+---
+
+## Software Engineering Evidence
+
+| Practice | Evidence |
+|----------|----------|
+| **Clean Architecture** | 4-layer separation with strict dependency inversion; domain has zero external imports |
+| **DDD** | Aggregate root (`Application`), value objects (`AIScore`, `FlowStatus`), domain services, repository ABCs |
+| **Test coverage** | 34 unit tests covering all entity invariants, state transitions, and validation rules |
+| **Async by design** | End-to-end `async/await` — SQLAlchemy async engine, async repositories, async tests |
+| **RESTful API** | Resource-oriented endpoints, HTTP verbs, standard status codes, OpenAPI schema |
+| **RBAC foundations** | Role-based access control via composable FastAPI dependencies |
+| **Infrastructure as code** | Docker Compose, multistage Dockerfiles, Nginx config |
+| **Migrations** | Async-compatible Alembic with explicit model registration |
+| **DTO/entity separation** | Pydantic DTOs in `application/`, domain models in `domain/`, ORM models in `infrastructure/` |
+| **Python 3.12 typing** | `list[X]`, `X \| None`, `tuple[X, Y]` throughout |
