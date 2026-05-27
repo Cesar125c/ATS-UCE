@@ -33,8 +33,13 @@ class Settings(BaseSettings):
     resend_from_email: str = "talentpath@uce.edu.ec"
 
     # CORS
-    allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
-
+    #allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    allowed_origins: list[str] = [
+        "http://localhost:5173",   # Vite web dev
+        "http://localhost:3000",   # alternativa web
+        "file://",                 # Electron desktop (dev)
+        "capacitor://localhost",   # si frontend usa Capacitor para mobile web
+    ]
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
 
