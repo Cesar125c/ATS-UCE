@@ -4,10 +4,11 @@ import {
   SignUpButton,
   UserButton,
 } from '@clerk/react'
+import { Button } from '../ui'
 
 export default function Header() {
   return (
-    <header className="bg-slate-900 text-white shadow-lg">
+    <header className="bg-blue-950 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
         
         {/* Logo */}
@@ -24,15 +25,19 @@ export default function Header() {
           
           <Show when="signed-out">
             <SignInButton mode="modal">
-              <button className="bg-cyan-500 hover:bg-cyan-600 px-5 py-2 rounded-xl font-semibold transition">
+              <Button variant="secondary" size="sm">
                 Sign In
-              </button>
+              </Button>
             </SignInButton>
 
             <SignUpButton mode="modal">
-              <button className="border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white px-5 py-2 rounded-xl font-semibold transition">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+              >
                 Sign Up
-              </button>
+              </Button>
             </SignUpButton>
           </Show>
 

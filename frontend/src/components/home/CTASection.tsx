@@ -1,3 +1,5 @@
+import { Button } from '../ui'
+
 export default function CTASection() {
   return (
     <section className="bg-slate-900 text-white py-24">
@@ -10,9 +12,11 @@ export default function CTASection() {
           Modernize teacher hiring workflows with ATS-UCE.
         </p>
 
-        <button className="mt-8 bg-cyan-500 hover:bg-cyan-600 px-8 py-4 rounded-2xl font-semibold transition">
-          Access the System
-        </button>
+        <div className="mt-8">
+          <Button variant="secondary" size="lg">
+            Access the System
+          </Button>
+        </div>
       </div>
     </section>
   )

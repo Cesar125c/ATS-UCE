@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form'
+import { Input, Button, Card } from '../ui'
 
 type RegisterFormData = {
   firstName: string
@@ -12,7 +13,7 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>()
 
   const onSubmit = (data: RegisterFormData) => {
@@ -20,7 +21,7 @@ export default function RegisterForm() {
   }
 
   return (
-    <div className="bg-white rounded-3xl p-10 shadow-2xl w-full max-w-xl">
+    <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10">
       <div className="mb-8">
         <h3 className="text-3xl font-bold text-slate-800">
           Create Account
@@ -36,127 +37,75 @@ export default function RegisterForm() {
         className="space-y-5"
       >
         {/* First Name */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            First Name
-          </label>
-
-          <input
-            type="text"
-            {...register('firstName', {
-              required: 'First name is required',
-            })}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            placeholder="John"
-          />
-
-          {errors.firstName && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.firstName.message}
-            </p>
-          )}
-        </div>
+        <Input
+          type="text"
+          label="First Name"
+          placeholder="John"
+          error={errors.firstName?.message}
+          {...register('firstName', {
+            required: 'First name is required',
+          })}
+        />
 
         {/* Last Name */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Last Name
-          </label>
-
-          <input
-            type="text"
-            {...register('lastName', {
-              required: 'Last name is required',
-            })}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            placeholder="Doe"
-          />
-
-          {errors.lastName && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.lastName.message}
-            </p>
-          )}
-        </div>
+        <Input
+          type="text"
+          label="Last Name"
+          placeholder="Doe"
+          error={errors.lastName?.message}
+          {...register('lastName', {
+            required: 'Last name is required',
+          })}
+        />
 
         {/* Email */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Institutional Email
-          </label>
-
-          <input
-            type="email"
-            {...register('email', {
-              required: 'Email is required',
-            })}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            placeholder="john.doe@uce.edu.ec"
-          />
-
-          {errors.email && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+        <Input
+          type="email"
+          label="Institutional Email"
+          placeholder="john.doe@uce.edu.ec"
+          error={errors.email?.message}
+          {...register('email', {
+            required: 'Email is required',
+          })}
+        />
 
         {/* Password */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Password
-          </label>
-
-          <input
-            type="password"
-            {...register('password', {
-              required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Minimum 8 characters',
-              },
-            })}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            placeholder="********"
-          />
-
-          {errors.password && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+        <Input
+          type="password"
+          label="Password"
+          placeholder="********"
+          error={errors.password?.message}
+          {...register('password', {
+            required: 'Password is required',
+            minLength: {
+              value: 8,
+              message: 'Minimum 8 characters',
+            },
+          })}
+        />
 
         {/* Confirm Password */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Confirm Password
-          </label>
-
-          <input
-            type="password"
-            {...register('confirmPassword', {
-              required: 'Please confirm your password',
-            })}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            placeholder="********"
-          />
-
-          {errors.confirmPassword && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.confirmPassword.message}
-            </p>
-          )}
-        </div>
+        <Input
+          type="password"
+          label="Confirm Password"
+          placeholder="********"
+          error={errors.confirmPassword?.message}
+          {...register('confirmPassword', {
+            required: 'Please confirm your password',
+          })}
+        />
 
         {/* Submit */}
-        <button
+        <Button
           type="submit"
-          className="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-3 rounded-xl font-semibold transition"
+          variant="secondary"
+          size="lg"
+          fullWidth
+          isLoading={isSubmitting}
         >
           Create Account
-        </button>
+        </Button>
       </form>
-    </div>
+    </Card>
   )
 }

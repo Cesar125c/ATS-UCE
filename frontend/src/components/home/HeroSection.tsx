@@ -1,3 +1,4 @@
+import { Button, Badge } from '../ui'
 import RegisterForm from './RegisterForm'
 
 export default function HeroSection() {
@@ -6,9 +7,9 @@ export default function HeroSection() {
       
       {/* Left Content */}
       <div>
-        <span className="bg-cyan-100 text-cyan-700 px-4 py-2 rounded-full text-sm font-semibold">
+        <Badge variant="cyan">
           Universidad Central del Ecuador
-        </span>
+        </Badge>
 
         <h2 className="text-5xl font-extrabold mt-6 leading-tight text-slate-900">
           Teacher Recruitment and Contract Management System
@@ -21,13 +22,13 @@ export default function HeroSection() {
         </p>
 
         <div className="flex gap-4 mt-8">
-          <button className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-semibold hover:bg-slate-800 transition">
+          <Button variant="primary" size="md">
             Explore Platform
-          </button>
+          </Button>
 
-          <button className="border border-slate-300 bg-white px-6 py-3 rounded-2xl font-semibold hover:bg-slate-100 transition">
+          <Button variant="outline" size="md">
             Documentation
-          </button>
+          </Button>
         </div>
       </div>
 
