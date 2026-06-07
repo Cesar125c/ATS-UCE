@@ -1,4 +1,5 @@
 """ORM model for the applicants table."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime

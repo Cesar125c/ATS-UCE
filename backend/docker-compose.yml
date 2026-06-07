@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ats_uce}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ats_uce} -d ${POSTGRES_DB:-ats_uce_dev}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +23,7 @@ services:
     container_name: ats_uce_api
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-ats_uce}:${POSTGRES_PASSWORD:-ats_uce_secret}@db:5432/${POSTGRES_DB:-ats_uce_dev}
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-sk_test_placeholder}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
       CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:-}
       CLERK_JWKS_URL: ${CLERK_JWKS_URL:-}
       APP_ENV: ${APP_ENV:-development}

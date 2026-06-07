@@ -1,14 +1,22 @@
 """Application endpoints — submit, list, and inspect job applications."""
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
-from app.api.dependencies import get_application_repository, require_role
+from app.api.dependencies import (
+    get_applicant_repository,
+    get_application_repository,
+    get_submit_application_usecase,
+    require_role,
+)
 from app.application.dtos.application_dtos import (
     ApplicationListResponse,
     ApplicationResponse,
     PendingCountResponse,
 )
+from app.application.use_cases.submit_application import SubmitApplicationUseCase
+from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 
 router = APIRouter()
@@ -60,10 +68,11 @@ async def get_application(
 async def submit_application(
     vacancy_id: UUID,
     cv_file: UploadFile,
-    _user: dict = Depends(require_role(["applicant"])),
-    repo: SQLAApplicationRepository = Depends(get_application_repository),
+    current_user: dict = Depends(require_role(["applicant"])),
+    use_case: SubmitApplicationUseCase = Depends(get_submit_application_usecase),
+    applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
 ) -> ApplicationResponse:
-    """Submit a new application with a CV PDF (Sprint 2).
+    """Submit a new application with a CV PDF.
 
     Accepts multipart/form-data: vacancy_id (UUID) + cv_file (UploadFile).
     """
@@ -74,4 +83,9 @@ async def submit_application(
     if len(contents) > _MAX_CV_SIZE_BYTES:
         raise HTTPException(status_code=422, detail="File must be a PDF under 10 MB")
 
-    raise HTTPException(status_code=501, detail="Not implemented — Sprint 2")
+    applicant = await applicant_repo.find_by_clerk_user_id(current_user["user_id"])
+    if applicant is None:
+        raise HTTPException(status_code=404, detail="Applicant profile not found")
+
+    application = await use_case.execute(applicant.id, vacancy_id, contents)
+    return ApplicationResponse.model_validate(application)

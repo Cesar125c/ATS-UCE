@@ -1,4 +1,5 @@
 """Unit tests for FlowStatus value object."""
+
 import pytest
 
 from app.domain.value_objects.flow_status import FlowStatus

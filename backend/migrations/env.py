@@ -1,4 +1,5 @@
 """Alembic env.py — async-compatible migration environment for SQLAlchemy 2.0."""
+
 import asyncio
 import os
 import sys
@@ -19,14 +20,23 @@ if config.config_file_name:
     fileConfig(config.config_file_name)
 
 # Import Base first
-from app.infrastructure.database.session import Base  # noqa: E402
-
 # Import ALL 5 ORM models explicitly so Alembic detects them in metadata
-from app.infrastructure.database.models.applicant_model import ApplicantModel  # noqa: E402, F401
-from app.infrastructure.database.models.application_model import ApplicationModel  # noqa: E402, F401
-from app.infrastructure.database.models.evaluation_model import EvaluationModel  # noqa: E402, F401
-from app.infrastructure.database.models.status_history_model import StatusHistoryModel  # noqa: E402, F401
-from app.infrastructure.database.models.vacancy_model import VacancyModel  # noqa: E402, F401
+from app.infrastructure.database.models.applicant_model import (  # noqa: E402
+    ApplicantModel,  # noqa: F401
+)
+from app.infrastructure.database.models.application_model import (  # noqa: E402
+    ApplicationModel,  # noqa: F401
+)
+from app.infrastructure.database.models.evaluation_model import (  # noqa: E402
+    EvaluationModel,  # noqa: F401
+)
+from app.infrastructure.database.models.status_history_model import (  # noqa: E402
+    StatusHistoryModel,  # noqa: F401
+)
+from app.infrastructure.database.models.vacancy_model import (  # noqa: E402
+    VacancyModel,  # noqa: F401
+)
+from app.infrastructure.database.session import Base  # noqa: E402
 
 target_metadata = Base.metadata
 

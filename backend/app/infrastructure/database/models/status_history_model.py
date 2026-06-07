@@ -1,4 +1,5 @@
 """ORM model for the status_history table."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -19,9 +20,7 @@ class StatusHistoryModel(Base):
     __tablename__ = "status_history"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    application_id: Mapped[UUID] = mapped_column(
-        ForeignKey("applications.id"), index=True
-    )
+    application_id: Mapped[UUID] = mapped_column(ForeignKey("applications.id"), index=True)
     status: Mapped[str] = mapped_column(flow_status_enum)
     transitioned_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

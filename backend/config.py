@@ -1,4 +1,5 @@
-"""Centralized application configuration using pydantic-settings. Fails fast if required vars are missing."""
+"""Centralized app config via pydantic-settings. Fails fast on missing required vars."""
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,6 +32,9 @@ class Settings(BaseSettings):
     # Resend email
     resend_api_key: str = ""
     resend_from_email: str = "talentpath@uce.edu.ec"
+
+    # Logging
+    log_level: str = "INFO"
 
     # CORS
     allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]

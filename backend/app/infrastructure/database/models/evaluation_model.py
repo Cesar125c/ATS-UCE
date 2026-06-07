@@ -1,4 +1,5 @@
 """ORM model for the evaluations table."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -19,9 +20,7 @@ class EvaluationModel(Base):
     __tablename__ = "evaluations"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    application_id: Mapped[UUID] = mapped_column(
-        ForeignKey("applications.id"), index=True
-    )
+    application_id: Mapped[UUID] = mapped_column(ForeignKey("applications.id"), index=True)
     reviewer_clerk_id: Mapped[str] = mapped_column(String(255))
     reviewer_role: Mapped[str] = mapped_column(String(50))
     decision: Mapped[str] = mapped_column(evaluation_decision_enum)

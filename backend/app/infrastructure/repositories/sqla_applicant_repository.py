@@ -1,4 +1,5 @@
 """SQLAlchemy 2.0 async implementation of IApplicantRepository."""
+
 from uuid import UUID
 
 from sqlalchemy import select
@@ -10,14 +11,11 @@ from app.infrastructure.database.models.applicant_model import ApplicantModel
 
 
 class SQLAApplicantRepository(IApplicantRepository):
-
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def find_by_id(self, id: UUID) -> Applicant | None:
-        result = await self._session.execute(
-            select(ApplicantModel).where(ApplicantModel.id == id)
-        )
+        result = await self._session.execute(select(ApplicantModel).where(ApplicantModel.id == id))
         model = result.scalars().first()
         return self._to_domain(model) if model else None
 

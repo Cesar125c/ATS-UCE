@@ -1,4 +1,5 @@
 """Defines the valid lifecycle states of an Application and their transitions."""
+
 from enum import StrEnum
 
 

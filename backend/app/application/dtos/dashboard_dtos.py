@@ -1,4 +1,5 @@
 """DTOs for the HR Dashboard statistics endpoint."""
+
 from pydantic import BaseModel
 
 

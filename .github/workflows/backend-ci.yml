@@ -1,0 +1,62 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [DEV, main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+
+defaults:
+  run:
+    working-directory: backend
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ats_uce
+          POSTGRES_PASSWORD: ats_uce_secret
+          POSTGRES_DB: ats_uce_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Create virtualenv and install deps
+        run: uv sync
+
+      - name: Check formatting (ruff format --check)
+        run: uv run ruff format --check .
+
+      - name: Lint (ruff check)
+        run: uv run ruff check .
+
+      - name: Run tests
+        run: uv run pytest
+        env:
+          DATABASE_URL: postgresql+asyncpg://ats_uce:ats_uce_secret@localhost:5432/ats_uce_dev
+          APP_ENV: test
