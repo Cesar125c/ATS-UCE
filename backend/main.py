@@ -50,14 +50,14 @@ def create_app() -> FastAPI:
     @app.exception_handler(ValueError)
     async def value_error_handler(_request: Request, exc: ValueError) -> JSONResponse:
         logger.warning("Validation error: %s", exc)
-        return JSONResponse(status_code=422, detail={"message": str(exc)})
+        return JSONResponse(status_code=422, content={"message": str(exc)})
 
     @app.exception_handler(Exception)
     async def general_exception_handler(
         _request: Request, exc: Exception
     ) -> JSONResponse:
         logger.exception("Unhandled exception: %s", exc)
-        return JSONResponse(status_code=500, detail={"message": "Internal server error"})
+        return JSONResponse(status_code=500, content={"message": "Internal server error"})
 
     app.include_router(router)
     return app
