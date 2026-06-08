@@ -1,14 +1,7 @@
 """Master v1 router. Aggregates all sub-routers with their prefixes and tags."""
 from fastapi import APIRouter
 
-from app.api.v1 import (
-    applicants,
-    applications,
-    dashboard,
-    evaluations,
-    health,
-    users,
-)
+from app.api.v1 import applicants, applications, dashboard, evaluations, health, users
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(health.router, prefix="", tags=["Health"])
