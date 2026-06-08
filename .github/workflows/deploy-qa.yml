@@ -1,0 +1,26 @@
+name: Deploy QA to AWS EC2
+
+on:
+  push:
+    branches:
+      - qa
+
+jobs:
+  deploy:
+    name: Deploy QA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy in EC2 QA
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.QA_HOST }}
+          username: ${{ secrets.QA_USER }}
+          key: ${{ secrets.QA_SSH_KEY }}
+          script: |
+            cd ~/ATS-UCE
+            git checkout qa
+            git pull origin qa
+            docker compose down
+            docker compose up -d --build
+            docker compose ps
