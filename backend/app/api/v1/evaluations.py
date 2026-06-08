@@ -19,7 +19,7 @@ async def create_evaluation(
     application_id: UUID,
     body: EvaluationRequest,
     current_user: dict = Depends(
-        require_role(["hr_staff", "dean", "rector", "finance_director"])
+        require_role(["hr_staff", "authority"])
     ),
     repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> EvaluationResponse:
