@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.router import router
+from app.infrastructure.database import models as _models
 from app.infrastructure.database.session import async_engine
 from config import get_settings
 

@@ -20,3 +20,4 @@ class SetRoleResponse(BaseModel):
     success: bool
     clerk_user_id: str
     role: str
+    applicant_id: str | None = None
