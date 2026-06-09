@@ -7,10 +7,14 @@ from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Ensure the backend root is on the path so app modules resolve correctly
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+# Load .env so DATABASE_URL is available without passing it inline
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # Set the database URL from the environment variable
 config = context.config
