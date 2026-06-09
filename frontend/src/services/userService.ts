@@ -12,6 +12,8 @@ export async function createUserWithRole(
   const response = await signUp.create({
     emailAddress: data.email,
     password: data.password,
+    firstName: data.firstName,
+    lastName: data.lastName,
   })
 
   const clerkUserId = response.id
