@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useUser } from "@clerk/react";
 import Home from "./pages/Home";
-import Administrator from "./pages/Administrator";
+import Authorities from "./pages/Authorities";
 import Applicant from "./pages/Applicant";
 import HumanResources from "./pages/HumanResources";
 
@@ -45,8 +45,8 @@ function App() {
     return <HumanResources />;
   }
 
-  if (currentPath === "/administrator" || currentPath === "/authorities") {
-    return <Administrator />;
+  if (currentPath === "/authorities") {
+    return <Authorities />;
   }
 
   return <Home />;
