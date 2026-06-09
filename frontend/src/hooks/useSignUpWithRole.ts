@@ -10,7 +10,7 @@ export function useSignUpWithRole() {
   const signUpUser = async (data: {
     email: string
     password: string
-    role: 'applicant' | 'hr_staff' | 'authority'
+    role: 'applicant' | 'human_resources' | 'authorities'
   }) => {
     try {
       setError(null)

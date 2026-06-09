@@ -12,9 +12,9 @@ const getRoleRedirect = (role?: string) => {
   switch (role) {
     case "applicant":
       return "/applicant";
-    case "hr_staff":
+    case "human_resources":
       return "/human-resources";
-    case "authority":
+    case "authorities":
       return "/administrator";
     default:
       return undefined;
