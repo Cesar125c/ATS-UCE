@@ -1,5 +1,9 @@
+function generateId(): string {
+  return 'dev_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+}
+
 export async function createUserWithRole(
-  signUp: any,
+  _signUp: any,
   data: {
     email: string
     password: string
@@ -8,17 +12,8 @@ export async function createUserWithRole(
     lastName: string
   }
 ) {
-  // 1. Crear usuario en Clerk
-  const response = await signUp.create({
-    emailAddress: data.email,
-    password: data.password,
-    firstName: data.firstName,
-    lastName: data.lastName,
-  })
+  const clerkUserId = generateId()
 
-  const clerkUserId = response.id
-
-  // 2. Registrar usuario en el backend (crea registro en DB)
   const registerResponse = await fetch('/api/v1/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

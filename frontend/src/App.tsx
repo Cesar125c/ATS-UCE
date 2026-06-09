@@ -15,7 +15,7 @@ const getRoleRedirect = (role?: string) => {
     case "human_resources":
       return "/human-resources";
     case "authorities":
-      return "/administrator";
+      return "/authorities";
     default:
       return undefined;
   }
@@ -45,7 +45,7 @@ function App() {
     return <HumanResources />;
   }
 
-  if (currentPath === "/administrator") {
+  if (currentPath === "/administrator" || currentPath === "/authorities") {
     return <Administrator />;
   }
 
