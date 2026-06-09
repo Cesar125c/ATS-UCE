@@ -29,6 +29,8 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         role: data.role,
+        firstName: data.firstName,
+        lastName: data.lastName,
       });
 
       const rolePath =
@@ -36,7 +38,7 @@ export default function RegisterForm() {
           ? "/applicant"
           : data.role === "human_resources"
             ? "/human-resources"
-            : "/administrator";
+            : "/authorities";
 
       window.location.assign(rolePath);
     } catch (err) {
