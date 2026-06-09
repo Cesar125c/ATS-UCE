@@ -37,7 +37,12 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # CORS
-    allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    allowed_origins: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "file://",
+        "capacitor://localhost",
+    ]
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
