@@ -11,7 +11,7 @@ class ClerkAuthAdapter:
     def __init__(self, settings) -> None:
         self.settings = settings
         self._client = None
-        if settings.app_env != "development" and settings.clerk_secret_key:
+        if settings.clerk_secret_key:
             try:
                 from clerk_backend_api import Clerk
 
