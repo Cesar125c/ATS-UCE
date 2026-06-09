@@ -29,9 +29,8 @@ async def get_current_user(
     from config import get_settings
 
     settings = get_settings()
-    if settings.app_env == "development" and not settings.clerk_secret_key:
-        # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
-        return {"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}
+    if settings.app_env == "development":
+        return {"user_id": "dev_user_001", "role": "dev_role", "email": "dev@uce.edu.ec"}
     # Sprint 2: implement real Clerk JWT verification here
     raise HTTPException(status_code=501, detail="Clerk JWT verification — Sprint 2")
 

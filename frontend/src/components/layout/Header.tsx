@@ -4,18 +4,11 @@ import {
   SignUpButton,
   UserButton,
 } from '@clerk/react'
-<<<<<<< HEAD
 import { Button } from '../ui'
 
 export default function Header() {
   return (
     <header className="bg-blue-950 text-white shadow-lg">
-=======
-
-export default function Header() {
-  return (
-    <header className="bg-slate-900 text-white shadow-lg">
->>>>>>> 26642c6e8ba0b7939a0cdf07e40ff879e1be1b5b
       <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
         
         {/* Logo */}
@@ -32,7 +25,6 @@ export default function Header() {
           
           <Show when="signed-out">
             <SignInButton mode="modal">
-<<<<<<< HEAD
               <Button variant="secondary" size="sm">
                 Sign In
               </Button>
@@ -46,17 +38,6 @@ export default function Header() {
               >
                 Sign Up
               </Button>
-=======
-              <button className="bg-cyan-500 hover:bg-cyan-600 px-5 py-2 rounded-xl font-semibold transition">
-                Sign In
-              </button>
-            </SignInButton>
-
-            <SignUpButton mode="modal">
-              <button className="border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white px-5 py-2 rounded-xl font-semibold transition">
-                Sign Up
-              </button>
->>>>>>> 26642c6e8ba0b7939a0cdf07e40ff879e1be1b5b
             </SignUpButton>
           </Show>
 

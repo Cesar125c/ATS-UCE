@@ -11,13 +11,13 @@ class ClerkAuthAdapter:
     def __init__(self, settings) -> None:
         self.settings = settings
         self._client = None
-        if settings.clerk_secret_key:
+        if settings.app_env != "development" and settings.clerk_secret_key:
             try:
                 from clerk_backend_api import Clerk
 
                 self._client = Clerk(bearer_auth=settings.clerk_secret_key)
             except ImportError:
-                logger.warning("clerk_backend_api not installed; using dev mock")
+                logger.warning("clerk_backend_api not installed")
 
     async def verify_token(self, token: str) -> dict:
         if self._client is None:
@@ -28,9 +28,7 @@ class ClerkAuthAdapter:
         if self._client is None:
             logger.info("DEV: Would set role '%s' for Clerk user '%s'", role, clerk_user_id)
             return
-        from clerk_backend_api.api.users import update_user
-
-        update_user(
+        self._client.users.update(
             user_id=clerk_user_id,
             public_metadata={"role": role},
         )
