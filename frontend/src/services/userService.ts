@@ -1,9 +1,5 @@
-function generateId(): string {
-  return 'dev_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12)
-}
-
 export async function createUserWithRole(
-  _signUp: any,
+  signUp: any,
   data: {
     email: string
     password: string
@@ -12,7 +8,24 @@ export async function createUserWithRole(
     lastName: string
   }
 ) {
-  const clerkUserId = generateId()
+  const signUpAttempt = await signUp.create({
+    emailAddress: data.email,
+    password: data.password,
+    firstName: data.firstName,
+    lastName: data.lastName,
+  })
+
+  let clerkUserId = signUpAttempt.createdUserId
+  if (!clerkUserId && signUpAttempt.status === "missing_requirements") {
+    await signUpAttempt.verifications.emailAddress.verifyEmailCode({
+      code: "424242",
+    })
+    clerkUserId = signUpAttempt.createdUserId
+  }
+
+  clerkUserId =
+    clerkUserId ||
+    'dev_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12)
 
   const registerResponse = await fetch('/api/v1/auth/register', {
     method: 'POST',

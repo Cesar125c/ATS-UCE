@@ -1,5 +1,9 @@
 """FastAPI dependency injection wiring. Maps interfaces to concrete implementations."""
 
+import base64
+import json
+import logging
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +17,22 @@ from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplic
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
+logger = logging.getLogger("ats_uce")
 security = HTTPBearer()
+
+
+def _decode_jwt_payload(token: str) -> dict:
+    """Decode (without verifying) a JWT payload to extract claims for dev mode."""
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            return {}
+        payload = parts[1]
+        payload += "=" * (4 - len(payload) % 4)
+        return json.loads(base64.urlsafe_b64decode(payload))
+    except Exception:
+        logger.debug("Failed to decode JWT payload", exc_info=True)
+        return {}
 
 
 async def get_current_user(
@@ -21,17 +40,20 @@ async def get_current_user(
 ) -> dict:
     """
     Verifies the Clerk JWT and returns the user payload.
-    In development (app_env == 'development'), returns a mock user if CLERK keys are not set.
-    In production, validates the token against Clerk's JWKS endpoint.
+    In development (app_env == 'development'), decodes the JWT to extract the real
+    Clerk user_id (without signature verification) so that DB lookups match.
+    Falls back to a mock user when no real JWT is present.
 
     Returns: {"user_id": str, "role": str, "email": str}
     """
     from config import get_settings
 
     settings = get_settings()
-    if settings.app_env == "development" and not settings.clerk_secret_key:
-        # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
-        return {"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}
+    if settings.app_env == "development":
+        claims = _decode_jwt_payload(credentials.credentials)
+        user_id = claims.get("sub", "dev_user_001")
+        email = claims.get("email", "dev@uce.edu.ec")
+        return {"user_id": user_id, "role": "applicant", "email": email}
     # Sprint 2: implement real Clerk JWT verification here
     raise HTTPException(status_code=501, detail="Clerk JWT verification — Sprint 2")
 

@@ -50,7 +50,10 @@ async def register(
     # Write role to Clerk publicMetadata
     settings = get_settings()
     adapter = ClerkAuthAdapter(settings)
-    await adapter.set_user_role(body.clerk_user_id, body.role)
+    try:
+        await adapter.set_user_role(body.clerk_user_id, body.role)
+    except Exception as e:
+        logger.warning("Failed to set Clerk publicMetadata role: %s", e)
 
     # Save user to database
     user = UserModel(
