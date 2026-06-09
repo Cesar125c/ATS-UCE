@@ -1,40 +1,22 @@
-FROM python:3.12-slim AS development
+FROM python:3.12-slim
 
 WORKDIR /app
 
+# Install system dependencies needed for asyncpg and other native extensions
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy dependency spec first for layer caching
 COPY pyproject.toml ./
 
+# Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -e .
 
+# Copy the rest of the source
 COPY . .
-
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-FROM python:3.12-slim AS production
-
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY pyproject.toml ./
-
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -e ".[dev]"
-
-COPY . .
-
-RUN useradd --no-create-home --shell /bin/false ats_uce
-USER ats_uce
 
 EXPOSE 8000
 

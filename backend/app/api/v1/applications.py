@@ -35,7 +35,7 @@ async def list_applications(
 
 @router.get("/pending-count", response_model=PendingCountResponse)
 async def get_pending_count(
-    _user: dict = Depends(require_role(["authority"])),
+    _user: dict = Depends(require_role(["dean", "rector", "finance_director"])),
     repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> PendingCountResponse:
     """Return the count of applications awaiting a decision (Sprint 3).
@@ -49,7 +49,7 @@ async def get_pending_count(
 @router.get("/{id}", response_model=ApplicationResponse)
 async def get_application(
     id: UUID,
-    _user: dict = Depends(require_role(["hr_staff", "authority"])),
+    _user: dict = Depends(require_role(["hr_staff", "dean", "rector", "finance_director"])),
     repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> ApplicationResponse:
     """Return a single application by UUID (Sprint 3)."""
