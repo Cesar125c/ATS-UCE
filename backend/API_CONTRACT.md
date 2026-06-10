@@ -24,7 +24,7 @@ Todos los endpoints van bajo el prefijo `/api/v1`.
 
 ---
 
-## TODO implementados (Sprint 1)
+## Endpoints implementados
 
 ### 1. Health Check
 
@@ -36,17 +36,18 @@ GET /api/v1/health
 **Response 200:**
 ```json
 {
-  "status": "healthy",
+  "status": "ok",
+  "version": "0.1.0",
   "database": "connected"
 }
 ```
 
 ---
 
-### 2. POST /auth/register — Registro de usuario
+### 2. POST /users/set-role — Registro de usuario
 
 ```
-POST /api/v1/auth/register
+POST /api/v1/users/set-role
 ```
 
 **Auth:** No requiere (se llama justo después del signup en Clerk)  
@@ -55,24 +56,24 @@ POST /api/v1/auth/register
 **Request:**
 ```json
 {
-  "clerk_user_id": "user_2s2QkF7ZK4p",
-  "first_name": "Juan",
-  "last_name": "Pérez",
+  "clerkUserId": "user_2s2QkF7ZK4p",
+  "role": "applicant",
   "email": "juan@uce.edu.ec",
-  "role": "applicant"
+  "firstName": "Juan",
+  "lastName": "Pérez"
 }
 ```
 
 **Roles válidos:**
-| Rol                | Descripción                     | Email requerido         |
-|--------------------|---------------------------------|-------------------------|
-| `applicant`        | Postulante                      | cualquiera              |
-| `human_resources`  | Personal de RRHH                | `@uce.edu.ec`           |
-| `authorities`      | Decano/Rector/Director          | `@uce.edu.ec`           |
+| Rol                | Descripción                     |
+|--------------------|---------------------------------|
+| `applicant`        | Postulante                      |
+| `human_resources`  | Personal de RRHH                |
+| `authorities`      | Decano/Rector/Director          |
 
-> ❌ Roles inválidos (devuelven 422): `hr_staff`, `dean`, `rector`, `administrator`, `finance_director`
+> ❌ Roles inválidos (devuelven 400): cualquier string fuera de los 3 anteriores
 
-**Response 201:**
+**Response 200:**
 ```json
 {
   "success": true,
@@ -85,14 +86,13 @@ POST /api/v1/auth/register
 **Errores:**
 | Código | Motivo                       |
 |--------|------------------------------|
-| 409    | `clerk_user_id` o email duplicado |
-| 422    | Rol inválido o email no institucional |
-| 500    | Clerk API key no configurada en prod |
+| 400    | Rol inválido                 |
+| 409    | `clerkUserId` o email duplicado |
 
 **Notas:**
 - Si `role == "applicant"` se crea automáticamente un registro en la tabla `applicants` (vinculado por `user_id`)
 - El endpoint también escribe el rol en `publicMetadata` de Clerk via `ClerkAuthAdapter.set_user_role()`
-- En desarrollo sin `CLERK_SECRET_KEY` el adapter es un no-op (logea)
+- Sin `CLERK_SECRET_KEY` el adapter es un no-op (logea)
 
 ---
 
@@ -102,7 +102,7 @@ POST /api/v1/auth/register
 GET /api/v1/users/me
 ```
 
-**Auth:** Bearer Token (Clerk JWT) — en dev devuelve mock  
+**Auth:** Bearer Token (Clerk JWT)  
 **Response 200:**
 ```json
 {
@@ -123,55 +123,20 @@ GET /api/v1/users/me
 
 **Notas:**
 - Busca al usuario por `clerk_id` en la tabla `users`
-- En dev retorna un mock si no hay `CLERK_SECRET_KEY`
+- Requiere `CLERK_SECRET_KEY` en el entorno
 
 ---
 
-### 4. Health Check (implícito) y stubs
+### 4. Stubs (Sprint 3)
 
-#### GET /applications/
-```
-GET /api/v1/applications/
-```
-**Auth:** `hr_staff` | **Status:** 501 — Sprint 3  
-Listado paginado de postulaciones.
-
-#### GET /applications/pending-count
-```
-GET /api/v1/applications/pending-count
-```
-**Auth:** `dean`, `rector`, `finance_director` | **Status:** 501 — Sprint 3
-
-#### GET /applications/{id}
-```
-GET /api/v1/applications/{id}
-```
-**Auth:** `hr_staff`, `dean`, `rector`, `finance_director` | **Status:** 501 — Sprint 3
-
-#### POST /applications/
-```
-POST /api/v1/applications/
-```
-**Auth:** `applicant` | **Status:** 501 — Sprint 3  
-Subir postulación con CV (multipart/form-data).
-
-#### GET /applicants/me/status
-```
-GET /api/v1/applicants/me/status
-```
-**Auth:** `applicant` | **Status:** 501 — Sprint 3
-
-#### POST /applications/{application_id}/evaluations
-```
-POST /api/v1/applications/{application_id}/evaluations
-```
-**Auth:** `hr_staff`, `dean`, `rector`, `finance_director` | **Status:** 501 — Sprint 3
-
-#### GET /dashboard/stats
-```
-GET /api/v1/dashboard/stats
-```
-**Auth:** `hr_staff` | **Status:** 501 — Sprint 3
+| Endpoint | Auth | Estado |
+|----------|------|--------|
+| `GET /api/v1/applications/` | `human_resources` | 501 |
+| `GET /api/v1/applications/{id}` | `human_resources`, `authorities` | 501 |
+| `POST /api/v1/applications/` | `applicant` | 501 |
+| `GET /api/v1/applicants/me/status` | `applicant` | 501 |
+| `POST /api/v1/applications/{application_id}/evaluations` | `human_resources`, `authorities` | 501 |
+| `GET /api/v1/dashboard/stats` | `human_resources` | 501 |
 
 ---
 
@@ -188,14 +153,11 @@ erDiagram
         text role
         boolean is_active
         timestamp created_at
-        timestamp updated_at
     }
     applicants {
         uuid id PK
         uuid user_id FK
-        text status
         timestamp created_at
-        timestamp updated_at
     }
     users ||--o| applicants : "user_id"
 ```
@@ -208,35 +170,23 @@ erDiagram
 
 ## Roles vs. Endpoints (matriz de acceso)
 
-| Rol                | /register | /users/me | /applications | /applicants | /evaluations | /dashboard |
-|--------------------|-----------|-----------|---------------|-------------|--------------|------------|
-| `applicant`        | ✅        | ✅        | solo propio   | me (501)    | ❌           | ❌         |
-| `human_resources`  | ✅        | ✅        | CRUD          | ❌          | evaluar      | stats      |
-| `authorities`      | ✅        | ✅        | ver           | ❌          | evaluar      | ❌         |
+| Rol                | /users/set-role | /users/me | /applications | /applicants | /evaluations | /dashboard |
+|--------------------|-----------------|-----------|---------------|-------------|--------------|------------|
+| `applicant`        | ✅              | ✅        | solo propio   | me (501)    | ❌           | ❌         |
+| `human_resources`  | ✅              | ✅        | CRUD          | ❌          | evaluar      | stats      |
+| `authorities`      | ✅              | ✅        | ver           | ❌          | evaluar      | ❌         |
 
-Todos los endpoints marcados como 501 serán implementados en Sprints 2-3.
-
----
-
-## Auth Flow (dev)
-
-En desarrollo, sin `CLERK_SECRET_KEY` en `.env`:
-
-1. `get_current_user()` retorna un mock: `{"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}`
-2. El registro llama a `ClerkAuthAdapter` que es no-op
-3. El frontend genera un `clerk_user_id` local con `crypto.randomUUID()` para el POST `/register`
-
-> ⚠️ En QA/Prod se requiere Clerk real. El JWT se valida contra el JWKS endpoint de Clerk.
+Todos los endpoints marcados como 501 serán implementados en Sprint 3.
 
 ---
 
 ## Dev quickstart
 
 ```bash
-docker compose up -d              # PostgreSQL
-source .venv/bin/activate         # Python env
-alembic upgrade head              # Migraciones
-uvicorn app.main:app --reload     # Servidor :8000
+docker compose up -d
+# API en http://localhost:8000
+# Docs: http://localhost:8000/docs
+# ReDoc: http://localhost:8000/redoc
 ```
 
 OpenAPI docs: http://localhost:8000/docs  
