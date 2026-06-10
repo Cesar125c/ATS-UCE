@@ -1,10 +1,9 @@
 """FastAPI dependency injection wiring. Maps interfaces to concrete implementations."""
 
-import base64
-import json
 import logging
+from collections.abc import Mapping
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,41 +20,78 @@ logger = logging.getLogger("ats_uce")
 security = HTTPBearer()
 
 
-def _decode_jwt_payload(token: str) -> dict:
-    """Decode (without verifying) a JWT payload to extract claims for dev mode."""
-    try:
-        parts = token.split(".")
-        if len(parts) != 3:
-            return {}
-        payload = parts[1]
-        payload += "=" * (4 - len(payload) % 4)
-        return json.loads(base64.urlsafe_b64decode(payload))
-    except Exception:
-        logger.debug("Failed to decode JWT payload", exc_info=True)
-        return {}
+class _Requestish:
+    """Minimal duck-typed object that satisfies Clerk's ``Requestish`` protocol."""
+
+    def __init__(self, headers: Mapping[str, str]) -> None:
+        self._headers = headers
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self._headers
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
-    """
-    Verifies the Clerk JWT and returns the user payload.
-    In development (app_env == 'development'), decodes the JWT to extract the real
-    Clerk user_id (without signature verification) so that DB lookups match.
-    Falls back to a mock user when no real JWT is present.
+    """Verify the Clerk JWT and return the authenticated user payload.
 
-    Returns: {"user_id": str, "role": str, "email": str}
+    Validates the token **with signature verification** via the Clerk SDK
+    (``clerk_backend_api.Clerk.authenticate_request_async``) in **all**
+    environments — development, QA and production.  The SDK fetches the JWKS
+    from Clerk's Backend API on first call and caches it in-memory.
+
+    Expected keys in the returned dict:
+        ``user_id`` (str) — Clerk user ID (``sub`` claim, e.g. ``user_xxx``)
+        ``role``    (str) — fallback ``applicant``; the authoritative role is
+                            read from the database in ``GET /users/me``
+        ``email``   (str) — user's email address
+
+    Raises
+        HTTPException 401 — invalid, expired or missing token
+        HTTPException 500 — ``CLERK_SECRET_KEY`` not configured
     """
     from config import get_settings
 
     settings = get_settings()
-    if settings.app_env == "development":
-        claims = _decode_jwt_payload(credentials.credentials)
-        user_id = claims.get("sub", "dev_user_001")
-        email = claims.get("email", "dev@uce.edu.ec")
-        return {"user_id": user_id, "role": "applicant", "email": email}
-    # Sprint 2: implement real Clerk JWT verification here
-    raise HTTPException(status_code=501, detail="Clerk JWT verification — Sprint 2")
+
+    if not settings.clerk_secret_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Clerk secret key is not configured",
+        )
+
+    try:
+        from clerk_backend_api import Clerk
+        from clerk_backend_api.security.types import AuthenticateRequestOptions
+
+        client = Clerk(bearer_auth=settings.clerk_secret_key)
+        req = _Requestish(
+            {"Authorization": f"Bearer {credentials.credentials}"}
+        )
+        opts = AuthenticateRequestOptions()
+        result = await client.authenticate_request_async(req, opts)
+
+        if not result.is_authenticated:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=result.message or "Authentication failed",
+            )
+
+        claims = result.payload or {}
+        return {
+            "user_id": claims.get("sub", "unknown"),
+            "role": claims.get("role", "applicant"),
+            "email": claims.get("email", ""),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Clerk JWT verification failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
 
 
 def require_role(allowed_roles: list[str]):

@@ -26,8 +26,9 @@ const getRoleRedirect = (role?: string) => {
 async function fetchRoleFromBackend(getToken: any): Promise<Role | null> {
   try {
     const token = await getToken();
+    if (!token) return null;
     const res = await fetch("/api/v1/users/me", {
-      headers: { Authorization: `Bearer ${token || "dev"}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
     const data = await res.json();

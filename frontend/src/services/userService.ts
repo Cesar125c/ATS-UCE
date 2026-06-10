@@ -17,15 +17,18 @@ export async function createUserWithRole(
 
   let clerkUserId = signUpAttempt.createdUserId
   if (!clerkUserId && signUpAttempt.status === "missing_requirements") {
-    await signUpAttempt.verifications.emailAddress.verifyEmailCode({
+    await signUpAttempt.prepareEmailAddressVerification()
+    const verified = await signUpAttempt.attemptEmailAddressVerification({
       code: "424242",
     })
-    clerkUserId = signUpAttempt.createdUserId
+    clerkUserId = verified.createdUserId
   }
 
-  clerkUserId =
-    clerkUserId ||
-    'dev_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+  if (!clerkUserId) {
+    throw new Error(
+      "No se pudo crear el usuario en Clerk. Verifica VITE_CLERK_PUBLISHABLE_KEY."
+    )
+  }
 
   const registerResponse = await fetch('/api/v1/auth/register', {
     method: 'POST',
