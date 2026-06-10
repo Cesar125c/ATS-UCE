@@ -6,31 +6,25 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Uuid
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database.session import Base
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.application_model import ApplicationModel
-    from app.infrastructure.database.models.user_model import UserModel
 
 
 class ApplicantModel(Base):
     __tablename__ = "applicants"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
-    )
+    clerk_user_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    full_name: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(255), unique=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
-    )
-
-    user: Mapped[UserModel] = relationship(
-        "UserModel",
-        back_populates="applicant",
     )
 
     applications: Mapped[list[ApplicationModel]] = relationship(

@@ -26,8 +26,6 @@ export default function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       await signUpUser({
-        firstName: data.firstName,
-        lastName: data.lastName,
         email: data.email,
         password: data.password,
         role: data.role,

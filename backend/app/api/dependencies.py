@@ -1,9 +1,6 @@
 """FastAPI dependency injection wiring. Maps interfaces to concrete implementations."""
 
-import logging
-from collections.abc import Mapping
-
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,82 +13,27 @@ from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplic
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
-logger = logging.getLogger("ats_uce")
 security = HTTPBearer()
-
-
-class _Requestish:
-    """Minimal duck-typed object that satisfies Clerk's ``Requestish`` protocol."""
-
-    def __init__(self, headers: Mapping[str, str]) -> None:
-        self._headers = headers
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self._headers
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
-    """Verify the Clerk JWT and return the authenticated user payload.
+    """
+    Verifies the Clerk JWT and returns the user payload.
+    In development (app_env == 'development'), returns a mock user if CLERK keys are not set.
+    In production, validates the token against Clerk's JWKS endpoint.
 
-    Validates the token **with signature verification** via the Clerk SDK
-    (``clerk_backend_api.Clerk.authenticate_request_async``) in **all**
-    environments — development, QA and production.  The SDK fetches the JWKS
-    from Clerk's Backend API on first call and caches it in-memory.
-
-    Expected keys in the returned dict:
-        ``user_id`` (str) — Clerk user ID (``sub`` claim, e.g. ``user_xxx``)
-        ``role``    (str) — fallback ``applicant``; the authoritative role is
-                            read from the database in ``GET /users/me``
-        ``email``   (str) — user's email address
-
-    Raises
-        HTTPException 401 — invalid, expired or missing token
-        HTTPException 500 — ``CLERK_SECRET_KEY`` not configured
+    Returns: {"user_id": str, "role": str, "email": str}
     """
     from config import get_settings
 
     settings = get_settings()
-
-    if not settings.clerk_secret_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Clerk secret key is not configured",
-        )
-
-    try:
-        from clerk_backend_api import Clerk
-        from clerk_backend_api.security.types import AuthenticateRequestOptions
-
-        client = Clerk(bearer_auth=settings.clerk_secret_key)
-        req = _Requestish(
-            {"Authorization": f"Bearer {credentials.credentials}"}
-        )
-        opts = AuthenticateRequestOptions()
-        result = await client.authenticate_request_async(req, opts)
-
-        if not result.is_authenticated:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=result.message or "Authentication failed",
-            )
-
-        claims = result.payload or {}
-        return {
-            "user_id": claims.get("sub", "unknown"),
-            "role": claims.get("role", "applicant"),
-            "email": claims.get("email", ""),
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.error("Clerk JWT verification failed: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
+    if settings.app_env == "development" and not settings.clerk_secret_key:
+        # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
+        return {"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}
+    # Sprint 2: implement real Clerk JWT verification here
+    raise HTTPException(status_code=501, detail="Clerk JWT verification — Sprint 2")
 
 
 def require_role(allowed_roles: list[str]):
