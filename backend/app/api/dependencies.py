@@ -19,21 +19,13 @@ security = HTTPBearer()
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
-    """
-    Verifies the Clerk JWT and returns the user payload.
-    In development (app_env == 'development'), returns a mock user if CLERK keys are not set.
-    In production, validates the token against Clerk's JWKS endpoint.
-
-    Returns: {"user_id": str, "role": str, "email": str}
-    """
     from config import get_settings
 
     settings = get_settings()
-    if settings.app_env == "development" and not settings.clerk_secret_key:
-        # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
-        return {"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}
-    # Sprint 2: implement real Clerk JWT verification here
-    raise HTTPException(status_code=501, detail="Clerk JWT verification — Sprint 2")
+    from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
+
+    adapter = ClerkAuthAdapter(settings)
+    return await adapter.verify_token(credentials.credentials)
 
 
 def require_role(allowed_roles: list[str]):

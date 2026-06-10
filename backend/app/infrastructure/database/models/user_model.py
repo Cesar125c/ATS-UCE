@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database.session import Base
-
-if TYPE_CHECKING:
-    from app.infrastructure.database.models.applicant_model import ApplicantModel
 
 
 class UserModel(Base):
@@ -29,11 +25,4 @@ class UserModel(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         nullable=False,
-    )
-
-    applicant: Mapped[ApplicantModel | None] = relationship(
-        "ApplicantModel",
-        back_populates="user",
-        uselist=False,
-        cascade="all, delete-orphan",
     )

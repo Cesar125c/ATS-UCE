@@ -31,12 +31,8 @@ services:
     container_name: ats-uce-backend
     ports:
       - "${BACKEND_PORT:-8000}:8000"
-    environment:
-      APP_ENV: ${APP_ENV:-production}
-      DATABASE_URL: postgresql+asyncpg://${DB_USER:-ats_uce}:${DB_PASSWORD:-ats_uce_secret}@postgres:5432/${DB_NAME:-ats_uce_dev}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-["http://localhost:5173"]}
     env_file:
-      - ./backend/.env
+      - ./.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,7 +48,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     env_file:
-      - ./frontend/.env
+      - ./.env
     depends_on:
       - api
 
