@@ -32,7 +32,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           const email = user.emailAddresses?.[0]?.emailAddress
 
           // Microsoft + @uce.edu.ec -> Show role selection
-          if (provider === 'microsoft' && email?.endsWith('@uce.edu.ec')) {
+          if (provider === 'oauth_microsoft' && email?.endsWith('@uce.edu.ec')) {
             setShowRoleSelection(true)
             setIsProcessing(false)
             return
@@ -73,7 +73,8 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
       setIsAssigningRole(true)
       
       // Call backend to assign role
-      await assignUserRole(user, selectedRole)
+      const email = user?.emailAddresses?.[0]?.emailAddress || '';
+      await assignUserRole(user.id, selectedRole, email)
 
       // Small delay to ensure backend updates Clerk
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -116,6 +117,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           {/* Clerk SignIn */}
           <div className="p-6">
             <SignIn
+              mode="embedded"
               appearance={{
                 elements: {
                   rootBox: 'w-full',
