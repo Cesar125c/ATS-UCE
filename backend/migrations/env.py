@@ -33,6 +33,9 @@ from app.infrastructure.database.models.evaluation_model import (  # noqa: E402
 from app.infrastructure.database.models.status_history_model import (  # noqa: E402
     StatusHistoryModel,  # noqa: F401
 )
+from app.infrastructure.database.models.user_model import (  # noqa: E402
+    UserModel,  # noqa: F401
+)
 from app.infrastructure.database.models.vacancy_model import (  # noqa: E402
     VacancyModel,  # noqa: F401
 )
