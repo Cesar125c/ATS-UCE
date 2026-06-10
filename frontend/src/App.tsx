@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { useAuth, useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 import Home from "./pages/Home";
-import Authorities from "./pages/Authorities";
+import SignUp from "./pages/SignUp";
+import Administrator from "./pages/Administrator";
 import Applicant from "./pages/Applicant";
 import HumanResources from "./pages/HumanResources";
-
-type Role = "applicant" | "human_resources" | "authorities";
 
 const normalizePath = (pathname: string) =>
   pathname.toLowerCase().replace(/\/$/, "");
@@ -17,55 +16,57 @@ const getRoleRedirect = (role?: string) => {
     case "human_resources":
       return "/human-resources";
     case "authorities":
-      return "/authorities";
+      return "/administrator";
     default:
       return undefined;
   }
 };
 
-async function fetchRoleFromBackend(getToken: any): Promise<Role | null> {
-  try {
-    const token = await getToken();
-    if (!token) return null;
-    const res = await fetch("/api/v1/users/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.role as Role;
-  } catch {
-    return null;
-  }
-}
-
 function App() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { getToken } = useAuth();
-  const { currentPath } = { currentPath: normalizePath(window.location.pathname) };
-  const [backendRole, setBackendRole] = useState<Role | null>(null);
+  const [roleResolved, setRoleResolved] = useState(false);
+  const currentPath = normalizePath(window.location.pathname);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!isLoaded || !isSignedIn || roleResolved) return;
 
-    const role = user?.publicMetadata?.role as Role | undefined;
-    if (role) {
-      const targetPath = getRoleRedirect(role);
-      if (targetPath && window.location.pathname !== targetPath) {
-        window.location.replace(targetPath);
-      }
-      return;
-    }
+    if (currentPath === "") {
+      const clerkRole = user?.publicMetadata?.role as string | undefined;
 
-    fetchRoleFromBackend(getToken).then((fetchedRole) => {
-      if (fetchedRole) {
-        setBackendRole(fetchedRole);
-        const targetPath = getRoleRedirect(fetchedRole);
+      if (clerkRole) {
+        const targetPath = getRoleRedirect(clerkRole);
         if (targetPath && window.location.pathname !== targetPath) {
           window.location.replace(targetPath);
         }
+        setRoleResolved(true);
+        return;
       }
-    });
-  }, [isLoaded, isSignedIn, currentPath, user]);
+
+      (async () => {
+        try {
+          const token = await getToken();
+          const res = await fetch("/api/v1/users/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const targetPath = getRoleRedirect(data.role);
+            if (targetPath && window.location.pathname !== targetPath) {
+              window.location.replace(targetPath);
+            }
+          }
+        } catch {
+          // role not available — stay on home
+        }
+        setRoleResolved(true);
+      })();
+    }
+  }, [isLoaded, isSignedIn, currentPath, user, getToken, roleResolved]);
+
+  if (currentPath === "/sign-up") {
+    return <SignUp />;
+  }
 
   if (currentPath === "/applicant") {
     return <Applicant />;
@@ -75,8 +76,8 @@ function App() {
     return <HumanResources />;
   }
 
-  if (currentPath === "/authorities") {
-    return <Authorities />;
+  if (currentPath === "/administrator") {
+    return <Administrator />;
   }
 
   return <Home />;

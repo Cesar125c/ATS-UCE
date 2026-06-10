@@ -1,56 +1,106 @@
+interface ClerkUser {
+  id: string
+  firstName?: string | null
+  lastName?: string | null
+  emailAddresses?: { emailAddress: string }[]
+  externalAccounts?: { provider: string }[]
+  publicMetadata?: Record<string, unknown>
+}
+
+async function registerUserInBackend(data: {
+  clerkUserId: string
+  firstName: string
+  lastName: string
+  email: string
+  role: string
+}) {
+  const response = await fetch('/api/v1/users/set-role', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+
+  if (response.status === 409) {
+    return null
+  }
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.detail || 'Error al registrar usuario en el backend')
+  }
+
+  return await response.json()
+}
+
 export async function createUserWithRole(
   signUp: any,
   data: {
-    email: string
-    password: string
-    role: 'applicant' | 'human_resources' | 'authorities'
     firstName: string
     lastName: string
+    email: string
+    password: string
+    role: string
   }
 ) {
-  const signUpAttempt = await signUp.create({
+  const response = await signUp.create({
     emailAddress: data.email,
     password: data.password,
+  })
+
+  await signUp.prepareEmailAddressVerification()
+
+  await signUp.attemptEmailAddressVerification({ code: '424242' })
+
+  const clerkUserId = response.id
+
+  const result = await registerUserInBackend({
+    clerkUserId,
     firstName: data.firstName,
     lastName: data.lastName,
+    email: data.email,
+    role: data.role,
   })
 
-  let clerkUserId = signUpAttempt.createdUserId
-  if (!clerkUserId && signUpAttempt.status === "missing_requirements") {
-    await signUpAttempt.prepareEmailAddressVerification()
-    const verified = await signUpAttempt.attemptEmailAddressVerification({
-      code: "424242",
-    })
-    clerkUserId = verified.createdUserId
-  }
-
-  if (!clerkUserId) {
-    throw new Error(
-      "No se pudo crear el usuario en Clerk. Verifica VITE_CLERK_PUBLISHABLE_KEY."
-    )
-  }
-
-  const registerResponse = await fetch('/api/v1/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      clerk_user_id: clerkUserId,
-      first_name: data.firstName,
-      last_name: data.lastName,
-      email: data.email,
-      role: data.role,
-    }),
-  })
-
-  if (!registerResponse.ok) {
-    const errorBody = await registerResponse.json().catch(() => null)
-    const detail = errorBody?.detail
-    const message = Array.isArray(detail)
-      ? detail.map((d: any) => d.msg).join('; ')
-      : detail || 'Error al registrar el usuario'
-    throw new Error(message)
-  }
-
-  const registerData = await registerResponse.json()
-  return { clerkUserId, ...registerData }
+  return { clerkUserId, ...result }
 }
+
+export async function assignUserRole(clerkUser: ClerkUser, role: string) {
+  const result = await registerUserInBackend({
+    clerkUserId: clerkUser.id,
+    firstName: clerkUser.firstName || '',
+    lastName: clerkUser.lastName || '',
+    email: clerkUser.emailAddresses?.[0]?.emailAddress || '',
+    role,
+  })
+
+  if (result === null) {
+    return { clerkUserId: clerkUser.id, role }
+  }
+
+  return { clerkUserId: clerkUser.id, ...result }
+}
+
+export async function handleOAuthUser(user: ClerkUser) {
+  const provider = user?.externalAccounts?.[0]?.provider
+
+  let role = 'applicant'
+
+  if (provider === 'google' || provider === 'linkedin' || provider === 'microsoft') {
+    role = 'applicant'
+  }
+
+  const result = await registerUserInBackend({
+    clerkUserId: user.id,
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
+    email: user.emailAddresses?.[0]?.emailAddress || '',
+    role,
+  })
+
+  if (result === null) {
+    return { clerkUserId: user.id, role }
+  }
+
+  return { clerkUserId: user.id, ...result }
+}
+
