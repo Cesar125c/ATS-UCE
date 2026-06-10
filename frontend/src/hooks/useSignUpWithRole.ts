@@ -8,11 +8,11 @@ export function useSignUpWithRole() {
   const [isLoading, setIsLoading] = useState(false)
 
   const signUpUser = async (data: {
-    firstName: string
-    lastName: string
     email: string
     password: string
     role: 'applicant' | 'human_resources' | 'authorities'
+    firstName: string
+    lastName: string
   }) => {
     try {
       setError(null)
