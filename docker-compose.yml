@@ -1,8 +1,16 @@
+# =============================================================================
+# ATS-UCE Platform — Docker Compose (base)
+# =============================================================================
+# Uso:
+#   docker compose up                        # desarrollo (con override)
+#   FRONTEND_TARGET=production docker compose -f docker-compose.yml up -d  # QA/prod
+# =============================================================================
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: ats-uce-database
-    restart: always
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
@@ -13,7 +21,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ats_uce} -d ${DB_NAME:-ats_uce_dev}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -22,31 +30,29 @@ services:
       context: ./backend
     container_name: ats-uce-backend
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     environment:
+      APP_ENV: ${APP_ENV:-production}
       DATABASE_URL: postgresql+asyncpg://${DB_USER:-ats_uce}:${DB_PASSWORD:-ats_uce_secret}@postgres:5432/${DB_NAME:-ats_uce_dev}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-["http://localhost:5173"]}
     env_file:
       - ./backend/.env
-    volumes:
-      - ./backend/app:/backend/app
-      - ./backend/main.py:/backend/main.py
-      - ./backend/config.py:/backend/config.py
     depends_on:
       postgres:
         condition: service_healthy
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
 
   frontend:
     build:
       context: ./frontend
+      target: ${FRONTEND_TARGET:-development}
+      args:
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-}
     container_name: ats-uce-frontend
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     env_file:
       - ./frontend/.env
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     depends_on:
       - api
 
@@ -54,7 +60,7 @@ services:
     image: nginx:alpine
     container_name: ats-uce-nginx
     ports:
-      - "80:80"
+      - "${NGINX_PORT:-80}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
