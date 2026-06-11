@@ -18,6 +18,16 @@ export default defineConfig({
     },
   },
   plugins: [react(), tailwindcss()],
+
+  server: {
+  host: '0.0.0.0',
+  port: 5173,
+  allowedHosts: [
+    'atsuceqa.programacionwebuce.net',
+    '3.141.90.56',
+    'localhost'
+  ],
+},
   test: {
     projects: [
       {
