@@ -24,7 +24,9 @@ export default defineConfig({
   port: 5173,
   allowedHosts: [
     'atsuceqa.programacionwebuce.net',
+    'atsuceprod.programacionwebuce.net',
     '3.141.90.56',
+    '52.4.88.202',
     'localhost'
   ],
 },
