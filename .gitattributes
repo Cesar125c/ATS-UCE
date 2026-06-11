@@ -1,0 +1,8 @@
+# ─── Force Unix line endings for cross-platform compatibility ─────────────────
+# Windows devs using Git will get LF instead of CRLF for these file types.
+# Without this, entrypoint.sh would fail inside the Linux container.
+
+entrypoint.sh     text eol=lf
+*.sh              text eol=lf
+Dockerfile        text eol=lf
+*.dockerfile      text eol=lf

@@ -1,4 +1,5 @@
 """Aggregate Root of the ATS-UCE domain. Enforces all workflow invariants."""
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -11,7 +12,7 @@ from app.domain.value_objects.flow_status import FlowStatus
 class Application:
     applicant_id: UUID
     vacancy_id: UUID
-    cv_storage_key: str             # Object key in Backblaze B2
+    cv_storage_key: str  # Object key in Backblaze B2
     id: UUID = field(default_factory=uuid4)
     status: FlowStatus = FlowStatus.RECEIVED
     ai_score: AIScore | None = None

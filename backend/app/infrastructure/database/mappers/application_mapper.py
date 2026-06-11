@@ -1,4 +1,5 @@
 """Bidirectional mapper between ApplicationModel (ORM) and Application (Domain Entity)."""
+
 from app.domain.entities.application import Application
 from app.domain.value_objects.ai_score import AIScore
 from app.domain.value_objects.flow_status import FlowStatus
@@ -6,7 +7,6 @@ from app.infrastructure.database.models.application_model import ApplicationMode
 
 
 class ApplicationMapper:
-
     @staticmethod
     def to_domain(model: ApplicationModel) -> Application:
         """Convert an ORM model instance to a domain entity."""

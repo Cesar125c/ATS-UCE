@@ -1,4 +1,5 @@
 """Unit tests for AIScore value object."""
+
 import dataclasses
 
 import pytest

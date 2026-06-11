@@ -1,11 +1,4 @@
-# Variables de entorno (Secretos)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Python / FastAPI
+# ─── Python / Backend ────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
@@ -18,23 +11,38 @@ env/
 .mypy_cache/
 .ruff_cache/
 
-# Node / React (Frontend)
+# ─── Node / Frontend ─────────────────────────────────────────────────────────
 node_modules/
 dist/
 build/
 coverage/
 *-debug.log*
 *-error.log*
+*.tsbuildinfo
+storybook-static/
 
-# Docker y Logs
+# ─── Environment files (secrets) ─────────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
 *.log
 
-# Editores (VS Code / WebStorm)
+# ─── IDEs / Editors ──────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Basura del Sistema Operativo
+# ─── OS ──────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+*.bak

@@ -1,59 +1,66 @@
+# =============================================================================
+# ATS-UCE Platform — Docker Compose (base)
+# =============================================================================
+# Uso:
+#   docker compose up                        # desarrollo (con override)
+#   FRONTEND_TARGET=production docker compose -f docker-compose.yml up -d  # QA/prod
+# =============================================================================
+
 services:
-  backend:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ats-uce-database
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-ats_uce}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ats_uce_secret}
+      POSTGRES_DB: ${DB_NAME:-ats_uce_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ats_uce} -d ${DB_NAME:-ats_uce_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
     build:
       context: ./backend
     container_name: ats-uce-backend
     ports:
-      - "8000:8000"
-    volumes:
-      - ./backend/app:/app/app
+      - "${BACKEND_PORT:-8000}:8000"
     env_file:
-      - ./backend/.env
-    environment:
-      DATABASE_HOST: database
-      DATABASE_PORT: 5432
-      DATABASE_NAME: ats_uce_db
-      DATABASE_USER: ats_user
-      DATABASE_PASSWORD: ats_password
-      DATABASE_URL: postgresql+asyncpg://ats_user:ats_password@database:5432/ats_uce_db
+      - ./.env
     depends_on:
-      - database
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
       context: ./frontend
+      target: ${FRONTEND_TARGET:-development}
+      args:
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-}
     container_name: ats-uce-frontend
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - "${FRONTEND_PORT:-5173}:5173"
+    env_file:
+      - ./.env
     depends_on:
-      - backend
-
-  database:
-    image: postgres:16
-    container_name: ats-uce-database
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: ats_uce_db
-      POSTGRES_USER: ats_user
-      POSTGRES_PASSWORD: ats_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - api
 
   nginx:
     image: nginx:alpine
     container_name: ats-uce-nginx
     ports:
-      - "80:80"
+      - "${NGINX_PORT:-80}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - frontend
-      - backend
+      - api
 
 volumes:
   postgres_data:

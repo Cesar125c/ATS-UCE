@@ -1,4 +1,5 @@
 """ORM model for the applications table — the central aggregate root table."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -23,12 +24,8 @@ class ApplicationModel(Base):
     __tablename__ = "applications"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    applicant_id: Mapped[UUID] = mapped_column(
-        ForeignKey("applicants.id"), index=True
-    )
-    vacancy_id: Mapped[UUID] = mapped_column(
-        ForeignKey("vacancies.id"), index=True
-    )
+    applicant_id: Mapped[UUID] = mapped_column(ForeignKey("applicants.id"), index=True)
+    vacancy_id: Mapped[UUID] = mapped_column(ForeignKey("vacancies.id"), index=True)
     cv_storage_key: Mapped[str] = mapped_column(String(512))
     status: Mapped[str] = mapped_column(
         flow_status_enum,

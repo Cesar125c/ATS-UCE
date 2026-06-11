@@ -1,4 +1,5 @@
 """Health check endpoint — the only fully implemented endpoint in Sprint 1."""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession

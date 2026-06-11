@@ -1,4 +1,5 @@
 """Contract for Application persistence. Lives in Domain so Use Cases stay decoupled from SQL."""
+
 from abc import ABC, abstractmethod
 from uuid import UUID
 
@@ -7,7 +8,6 @@ from app.domain.value_objects.flow_status import FlowStatus
 
 
 class IApplicationRepository(ABC):
-
     @abstractmethod
     async def find_by_id(self, id: UUID) -> Application | None: ...
 

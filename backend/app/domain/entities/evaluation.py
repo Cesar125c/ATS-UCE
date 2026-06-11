@@ -1,4 +1,5 @@
 """Immutable record of an authority's decision on an application. Never updated after creation."""
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4

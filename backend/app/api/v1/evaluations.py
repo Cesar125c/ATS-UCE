@@ -1,4 +1,5 @@
 """Evaluation endpoints — authority decision recording for the multi-stage approval flow."""
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,9 +19,7 @@ router = APIRouter()
 async def create_evaluation(
     application_id: UUID,
     body: EvaluationRequest,
-    current_user: dict = Depends(
-        require_role(["hr_staff", "dean", "rector", "finance_director"])
-    ),
+    current_user: dict = Depends(require_role(["hr_staff", "dean", "rector", "finance_director"])),
     repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> EvaluationResponse:
     """Record an authority decision (APPROVED/REJECTED) on an application (Sprint 3).

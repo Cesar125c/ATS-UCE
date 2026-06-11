@@ -29,6 +29,8 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         role: data.role,
+        firstName: data.firstName,
+        lastName: data.lastName,
       });
 
       const rolePath =

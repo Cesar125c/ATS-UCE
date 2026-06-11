@@ -1,8 +1,13 @@
 """FastAPI dependency injection wiring. Maps interfaces to concrete implementations."""
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
+from app.application.use_cases.submit_application import SubmitApplicationUseCase
+from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
+from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
 from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
@@ -61,3 +66,28 @@ async def get_vacancy_repository(
     session: AsyncSession = Depends(get_db_session),
 ) -> SQLAVacancyRepository:
     return SQLAVacancyRepository(session)
+
+
+async def get_storage_adapter() -> BackblazeStorageAdapter:
+    return BackblazeStorageAdapter()
+
+
+async def get_analysis_adapter() -> OpenAIAnalysisAdapter:
+    return OpenAIAnalysisAdapter()
+
+
+async def get_submit_application_usecase(
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+    applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
+    vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
+    storage: BackblazeStorageAdapter = Depends(get_storage_adapter),
+) -> SubmitApplicationUseCase:
+    return SubmitApplicationUseCase(application_repo, applicant_repo, vacancy_repo, storage)
+
+
+async def get_process_ai_score_usecase(
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+    vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
+    analysis: OpenAIAnalysisAdapter = Depends(get_analysis_adapter),
+) -> ProcessAIScoreUseCase:
+    return ProcessAIScoreUseCase(application_repo, vacancy_repo, analysis)

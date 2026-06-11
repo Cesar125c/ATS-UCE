@@ -1,4 +1,5 @@
 """DTOs for authority decision use cases."""
+
 from datetime import datetime
 
 from pydantic import UUID4, BaseModel, model_validator
