@@ -1,4 +1,5 @@
 """Immutable record of a single state transition. Per-stage timestamps for the stepper UI."""
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4

@@ -1,4 +1,5 @@
 """Pydantic v2 DTOs for Application use cases. These are the API contracts — not domain entities."""
+
 from datetime import datetime
 
 from pydantic import UUID4, BaseModel

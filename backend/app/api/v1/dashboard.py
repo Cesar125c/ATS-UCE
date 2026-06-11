@@ -1,4 +1,5 @@
 """Dashboard endpoints — aggregate statistics for the HR operations panel."""
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_application_repository, require_role

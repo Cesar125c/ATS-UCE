@@ -1,4 +1,5 @@
 """FastAPI application factory and entry point."""
+
 import logging
 from contextlib import asynccontextmanager
 
@@ -7,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.router import router
-from app.infrastructure.database import models as _models
 from app.infrastructure.database.session import async_engine
 from config import get_settings
 
@@ -26,7 +26,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
 
     logging.basicConfig(
-        level=getattr(logging, settings.app_env == "development" and "DEBUG" or "INFO"),
+        level=getattr(logging, settings.log_level),
         format="%(asctime)s  %(name)-16s  %(levelname)-8s  %(message)s",
     )
     logger.info("Environment: %s", settings.app_env)
@@ -54,9 +54,7 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=422, content={"message": str(exc)})
 
     @app.exception_handler(Exception)
-    async def general_exception_handler(
-        _request: Request, exc: Exception
-    ) -> JSONResponse:
+    async def general_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled exception: %s", exc)
         return JSONResponse(status_code=500, content={"message": "Internal server error"})
 

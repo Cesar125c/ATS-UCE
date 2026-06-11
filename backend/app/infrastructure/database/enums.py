@@ -1,4 +1,5 @@
 """Shared SQLAlchemy Enum types. Import in all ORM models — never define SAEnum() inline."""
+
 import sqlalchemy as sa
 
 from app.domain.value_objects.evaluation_decision import EvaluationDecision

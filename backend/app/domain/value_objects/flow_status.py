@@ -1,4 +1,5 @@
 """Defines the valid lifecycle states of an Application and their transitions."""
+
 from enum import StrEnum
 
 
@@ -28,9 +29,9 @@ class FlowStatus(StrEnum):
     def required_role(self) -> str:
         _roles: dict[FlowStatus, str] = {
             FlowStatus.HR_STAGE: "hr_staff",
-            FlowStatus.DEAN_STAGE: "authority",
-            FlowStatus.RECTOR_STAGE: "authority",
-            FlowStatus.FINANCE_STAGE: "authority",
+            FlowStatus.DEAN_STAGE: "dean",
+            FlowStatus.RECTOR_STAGE: "rector",
+            FlowStatus.FINANCE_STAGE: "finance_director",
         }
         return _roles.get(self, "")
 

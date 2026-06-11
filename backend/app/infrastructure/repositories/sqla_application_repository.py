@@ -1,4 +1,5 @@
 """SQLAlchemy 2.0 async implementation of IApplicationRepository."""
+
 from uuid import UUID
 
 from sqlalchemy import case, func, select
@@ -12,7 +13,6 @@ from app.infrastructure.database.models.application_model import ApplicationMode
 
 
 class SQLAApplicationRepository(IApplicationRepository):
-
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

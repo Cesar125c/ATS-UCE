@@ -1,11 +1,11 @@
 """Bidirectional mapper between EvaluationModel (ORM) and Evaluation (Domain Entity)."""
+
 from app.domain.entities.evaluation import Evaluation
 from app.domain.value_objects.evaluation_decision import EvaluationDecision
 from app.infrastructure.database.models.evaluation_model import EvaluationModel
 
 
 class EvaluationMapper:
-
     @staticmethod
     def to_domain(model: EvaluationModel) -> Evaluation:
         """Convert an ORM model instance to a domain entity."""

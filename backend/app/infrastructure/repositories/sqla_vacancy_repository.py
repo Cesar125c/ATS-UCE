@@ -1,4 +1,5 @@
 """SQLAlchemy 2.0 async implementation of IVacancyRepository."""
+
 from uuid import UUID
 
 from sqlalchemy import select
@@ -10,14 +11,11 @@ from app.infrastructure.database.models.vacancy_model import VacancyModel
 
 
 class SQLAVacancyRepository(IVacancyRepository):
-
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def find_by_id(self, id: UUID) -> Vacancy | None:
-        result = await self._session.execute(
-            select(VacancyModel).where(VacancyModel.id == id)
-        )
+        result = await self._session.execute(select(VacancyModel).where(VacancyModel.id == id))
         model = result.scalars().first()
         return self._to_domain(model) if model else None
 

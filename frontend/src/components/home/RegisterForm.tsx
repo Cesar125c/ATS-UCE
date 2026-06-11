@@ -6,7 +6,7 @@ type RegisterFormData = {
   firstName: string;
   lastName: string;
   email: string;
-  role: "applicant" | "hr_staff" | "authority";
+  role: "applicant" | "human_resources" | "authorities";
   password: string;
   confirmPassword: string;
 };
@@ -29,12 +29,14 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         role: data.role,
+        firstName: data.firstName,
+        lastName: data.lastName,
       });
 
       const rolePath =
         data.role === "applicant"
           ? "/applicant"
-          : data.role === "hr_staff"
+          : data.role === "human_resources"
             ? "/human-resources"
             : "/administrator";
 
@@ -95,8 +97,8 @@ export default function RegisterForm() {
           >
             <option value="">Select a role</option>
             <option value="applicant">Applicant</option>
-            <option value="hr_staff">Human Resources</option>
-            <option value="authority">Authorities</option>
+            <option value="human_resources">Human Resources</option>
+            <option value="authorities">Authorities</option>
           </select>
 
           {errors.role && (
@@ -114,8 +116,8 @@ export default function RegisterForm() {
             required: "Email is required",
             validate: (value) => {
               if (
-                (selectedRole === "hr_staff" ||
-                  selectedRole === "authority") &&
+                (selectedRole === "human_resources" ||
+                  selectedRole === "authorities") &&
                 !value.endsWith("@uce.edu.ec")
               ) {
                 return "This role requires an institutional email (@uce.edu.ec)";

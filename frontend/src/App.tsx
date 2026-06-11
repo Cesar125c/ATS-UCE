@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useUser } from "@clerk/react";
 import Home from "./pages/Home";
+import SignUp from "./pages/SignUp";
 import Administrator from "./pages/Administrator";
 import Applicant from "./pages/Applicant";
 import HumanResources from "./pages/HumanResources";
@@ -12,9 +13,9 @@ const getRoleRedirect = (role?: string) => {
   switch (role) {
     case "applicant":
       return "/applicant";
-    case "hr_staff":
+    case "human_resources":
       return "/human-resources";
-    case "authority":
+    case "authorities":
       return "/administrator";
     default:
       return undefined;
@@ -36,6 +37,10 @@ function App() {
       }
     }
   }, [isLoaded, isSignedIn, currentPath, user]);
+
+  if (currentPath === "/sign-up") {
+    return <SignUp />;
+  }
 
   if (currentPath === "/applicant") {
     return <Applicant />;

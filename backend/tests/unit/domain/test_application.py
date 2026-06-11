@@ -1,4 +1,5 @@
 """Unit tests for the Application aggregate root."""
+
 import time
 from uuid import uuid4
 

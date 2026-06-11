@@ -1,4 +1,5 @@
 """Unit tests for FlowStatus value object."""
+
 import pytest
 
 from app.domain.value_objects.flow_status import FlowStatus
@@ -38,7 +39,7 @@ def test_is_terminal_active() -> None:
 
 def test_required_role_mapping() -> None:
     assert FlowStatus.HR_STAGE.required_role() == "hr_staff"
-    assert FlowStatus.DEAN_STAGE.required_role() == "authority"
-    assert FlowStatus.RECTOR_STAGE.required_role() == "authority"
-    assert FlowStatus.FINANCE_STAGE.required_role() == "authority"
+    assert FlowStatus.DEAN_STAGE.required_role() == "dean"
+    assert FlowStatus.RECTOR_STAGE.required_role() == "rector"
+    assert FlowStatus.FINANCE_STAGE.required_role() == "finance_director"
     assert FlowStatus.RECEIVED.required_role() == ""

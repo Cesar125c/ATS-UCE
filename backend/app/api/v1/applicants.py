@@ -1,4 +1,5 @@
 """Applicant-facing endpoints — allows applicants to check their own application status."""
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_application_repository, require_role
