@@ -1,0 +1,47 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# This workflow deploys only the main branch to the production AWS EC2 instance.
+# Production uses different secrets from QA to avoid mixing hosts, users, or SSH keys.
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Production EC2
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy to production EC2 over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            # Enter the repository directory cloned on the production instance.
+            cd "${{ secrets.PROD_PROJECT_PATH }}"
+
+            # Update exactly the main branch from GitHub.
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+
+            # Rebuild and start the AWS stack without using docker-compose.override.yml.
+            docker compose -f docker-compose.yml up -d --build --remove-orphans
+
+            # Apply pending migrations after the API container is running.
+            docker compose -f docker-compose.yml exec -T api python -m alembic upgrade head
+
+            # Show the final container state for deployment review.
+            docker compose -f docker-compose.yml ps
