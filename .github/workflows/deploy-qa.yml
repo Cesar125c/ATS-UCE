@@ -1,0 +1,48 @@
+name: Deploy QA
+
+on:
+  push:
+    branches: [qa]
+  workflow_dispatch:
+
+# This workflow deploys only the qa branch to the QA AWS EC2 instance.
+# Host, user, project path, and SSH key are configured as GitHub Secrets.
+# It runs automatically when a change reaches qa, and can also be run manually.
+
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to QA EC2
+    runs-on: ubuntu-latest
+    environment: qa
+
+    steps:
+      - name: Deploy to QA EC2 over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.QA_HOST }}
+          username: ${{ secrets.QA_USER }}
+          key: ${{ secrets.QA_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            # Enter the repository directory cloned on the QA instance.
+            cd "${{ secrets.QA_PROJECT_PATH }}"
+
+            # Update exactly the qa branch from GitHub.
+            git fetch origin qa
+            git checkout qa
+            git pull --ff-only origin qa
+
+            # Rebuild and start the AWS stack without using docker-compose.override.yml.
+            docker compose -f docker-compose.yml up -d --build --remove-orphans
+
+            # Apply pending migrations after the API container is running.
+            docker compose -f docker-compose.yml exec -T api python -m alembic upgrade head
+
+            # Show the final container state for deployment review.
+            docker compose -f docker-compose.yml ps
