@@ -10,21 +10,22 @@ const ROLE_PATH_MAP: Record<string, string> = {
 export function useRoleRedirect(): void {
   const { isLoaded, isSignedIn, user } = useUser()
   const [reloadTick, setReloadTick] = useState(0)
-  const hasReloaded = useRef(false)
+  const phase = useRef(0)
 
   useEffect(() => {
     if (!isLoaded) return
 
     if (!isSignedIn) {
-      hasReloaded.current = false
+      phase.current = 0
       return
     }
 
     const run = async () => {
       const role = user?.publicMetadata?.role as string | undefined
+      const clerkId = user?.id
 
       if (role) {
-        hasReloaded.current = false
+        phase.current = 0
 
         const targetPath = ROLE_PATH_MAP[role]
         if (targetPath) {
@@ -36,8 +37,9 @@ export function useRoleRedirect(): void {
         return
       }
 
-      if (!hasReloaded.current) {
-        hasReloaded.current = true
+      // Phase 0 → first reload attempt
+      if (phase.current === 0) {
+        phase.current = 1
         try {
           await user?.reload()
         } catch {
@@ -47,7 +49,31 @@ export function useRoleRedirect(): void {
         return
       }
 
-      // Role still missing after reload — warn but don't block the user
+      // Phase 1 → reload didn't help, try syncing from DB to Clerk
+      if (phase.current === 1 && clerkId) {
+        phase.current = 2
+        console.log('sync-role: calling with clerkUserId =', clerkId)
+        try {
+          const res = await fetch('/api/v1/users/sync-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clerkUserId: clerkId }),
+          })
+          const data = await res.json()
+          console.log('sync-role response:', res.status, data)
+        } catch {
+          // sync failed
+        }
+        try {
+          await user?.reload()
+        } catch {
+          // reload failed
+        }
+        setReloadTick((t) => t + 1)
+        return
+      }
+
+      // Phase 2+ → gave up
       console.warn('useRoleRedirect: publicMetadata.role is not set for this user')
     }
 

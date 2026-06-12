@@ -11,7 +11,8 @@ export async function createUserWithRole(
     throw new Error(error.message || 'Error creating account')
   }
 
-  const clerkUserId = signUp.id || signUp.createdUserId
+  const clerkUserId = signUp.createdUserId || signUp.id
+  console.log('Registration clerkUserId:', { signUpId: signUp.id, createdUserId: signUp.createdUserId, used: clerkUserId })
 
   const roleResponse = await fetch('/api/v1/users/set-role', {
     method: 'POST',

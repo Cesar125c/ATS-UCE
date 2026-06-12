@@ -27,6 +27,10 @@ class SetRoleRequest(BaseModel):
     lastName: str = ""
 
 
+class SyncRoleRequest(BaseModel):
+    clerkUserId: str
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_me(
     current_user: dict = Depends(get_current_user),
@@ -100,4 +104,43 @@ async def set_user_role(
         "message": "User registered successfully",
         "user_id": str(user.id),
         "role": request.role,
+    }
+
+
+@router.post("/sync-role")
+async def sync_user_role(
+    request: SyncRoleRequest,
+    session: AsyncSession = Depends(get_db_session),
+):
+    """Sync the user's role from the local database to Clerk publicMetadata.
+
+    Called when the frontend detects that publicMetadata.role is missing
+    after sign-in. Looks up the user in the local DB and writes the role
+    to Clerk, healing the mismatch.
+    """
+    logger.info("sync-role: looking up clerkUserId=%s", request.clerkUserId)
+
+    result = await session.execute(
+        select(UserModel).where(UserModel.clerk_id == request.clerkUserId)
+    )
+    user = result.scalar_one_or_none()
+    if user is None:
+        logger.warning("sync-role: user NOT found for clerkUserId=%s", request.clerkUserId)
+        raise HTTPException(status_code=404, detail="User not found in local database.")
+
+    logger.info("sync-role: found user id=%s role=%s clerk_id=%s", user.id, user.role, user.clerk_id)
+
+    settings = get_settings()
+    adapter = ClerkAuthAdapter(settings)
+    try:
+        await adapter.set_user_role(request.clerkUserId, user.role)
+    except Exception as e:
+        logger.warning("Failed to sync Clerk publicMetadata role: %s", e)
+        raise HTTPException(status_code=502, detail="Failed to sync role with Clerk.")
+
+    logger.info("Role synced for user %s: %s", user.id, user.role)
+
+    return {
+        "success": True,
+        "role": user.role,
     }
