@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useClerk } from "@clerk/react";
 import { Input, Button, Card } from "../ui";
 import { useSignUpWithRole } from "../../hooks/useSignUpWithRole";
 
@@ -17,11 +19,39 @@ export default function RegisterForm() {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>();
 
   const selectedRole = watch("role");
   const password = watch("password");
+
+  const { isSignedIn, isLoaded, signOut } = useClerk();
+
+  useEffect(() => {
+    reset();
+  }, []);
+
+  if (isLoaded && isSignedIn) {
+    return (
+      <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10 text-center">
+        <h3 className="text-3xl font-bold text-slate-800 mb-4">
+          You are already signed in
+        </h3>
+        <p className="text-slate-500 mb-6">
+          Please sign out before creating a new account.
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          onClick={() => signOut()}
+        >
+          Sign out
+        </Button>
+      </Card>
+    );
+  }
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -38,7 +68,7 @@ export default function RegisterForm() {
           ? "/applicant"
           : data.role === "human_resources"
             ? "/human-resources"
-            : "/administrator";
+            : "/authority";
 
       window.location.assign(rolePath);
     } catch (err) {
