@@ -18,6 +18,18 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy the rest of the source
 COPY . .
 
+# Make entrypoint executable and create non-root user
+RUN chmod +x entrypoint.sh \
+    && adduser --disabled-password --gecos '' appuser
+
+# Switch to non-root user
+USER appuser
+
+# Health check — validates DB connectivity via the existing /api/v1/health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD python3 -c "import httpx; httpx.get('http://localhost:8000/api/v1/health').raise_for_status()"
+
 EXPOSE 8000
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
