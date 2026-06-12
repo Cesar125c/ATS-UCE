@@ -13,8 +13,8 @@ RUN adduser -D appuser && chown -R appuser /app
 
 USER appuser
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5173/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "const h=require('http'); h.get('http://localhost:5173/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 EXPOSE 5173
 
@@ -36,8 +36,8 @@ RUN npm install -g serve \
 
 USER appuser
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5173/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "const h=require('http'); h.get('http://localhost:5173/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 EXPOSE 5173
 
