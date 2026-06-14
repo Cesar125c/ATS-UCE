@@ -1,4 +1,11 @@
-.venv
 __pycache__
 *.pyc
 .env
+.git
+.gitignore
+.venv
+uv.lock
+Dockerfile
+.dockerignore
+tests/
+docs/

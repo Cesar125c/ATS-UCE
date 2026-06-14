@@ -24,6 +24,13 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
       try {
         setIsProcessing(true)
 
+        // If user already has a role, they're already registered — just redirect
+        const existingRole = user.publicMetadata?.role as string | undefined
+        if (existingRole) {
+          redirectByRole(existingRole)
+          return
+        }
+
         // Check if user has an OAuth provider
         const hasOAuthProvider = user.externalAccounts && user.externalAccounts.length > 0
 
@@ -39,10 +46,12 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           }
 
           // Other providers -> Auto-assign role
-          await handleOAuthUser(user)
+          const result = await handleOAuthUser(user)
+          redirectByRole(result.role)
+          return
         }
 
-        // Redirect to appropriate page
+        // Fallback redirect (email/password sign-in with role already set)
         const role = user.publicMetadata?.role as string | undefined
         redirectByRole(role)
       } catch (error) {
@@ -60,7 +69,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
     } else if (role === 'human_resources') {
       window.location.assign('/human-resources')
     } else if (role === 'authorities') {
-      window.location.assign('/administrator')
+      window.location.assign('/authority')
     } else {
       window.location.assign('/')
     }
@@ -118,6 +127,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           <div className="p-6">
             <SignIn
               mode="embedded"
+              afterSignInUrl="/"
               appearance={{
                 elements: {
                   rootBox: 'w-full',
