@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -8,6 +8,9 @@ from sqlalchemy.pool import NullPool
 
 from app.domain.entities.application import Application
 from app.domain.value_objects.ai_score import AIScore
+from app.infrastructure.database.models.applicant_model import ApplicantModel
+from app.infrastructure.database.models.user_model import UserModel
+from app.infrastructure.database.models.vacancy_model import VacancyModel
 from app.infrastructure.database.session import Base
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from config import get_settings
@@ -47,20 +50,56 @@ async def app_repo(session: AsyncSession) -> SQLAApplicationRepository:
 
 
 @pytest_asyncio.fixture
-async def saved_application(app_repo: SQLAApplicationRepository) -> Application:
+async def application_refs(session: AsyncSession) -> tuple[UUID, UUID]:
+    user_id = uuid4()
+    applicant_id = uuid4()
+    vacancy_id = uuid4()
+
+    user = UserModel(
+        id=user_id,
+        clerk_id=f"clerk-{user_id}",
+        email=f"{user_id}@example.com",
+        first_name="Test",
+        last_name="Applicant",
+        role="applicant",
+    )
+    applicant = ApplicantModel(id=applicant_id, user_id=user_id)
+    vacancy = VacancyModel(
+        id=vacancy_id,
+        title="Test Vacancy",
+        faculty="Engineering",
+        department="Software",
+        description="Test vacancy description",
+        requirements="Test requirements",
+    )
+
+    session.add_all([user, applicant, vacancy])
+    await session.flush()
+
+    return applicant_id, vacancy_id
+
+
+@pytest_asyncio.fixture
+async def saved_application(
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+) -> Application:
+    applicant_id, vacancy_id = application_refs
     app = Application(
-        applicant_id=uuid4(),
-        vacancy_id=uuid4(),
+        applicant_id=applicant_id,
+        vacancy_id=vacancy_id,
         cv_storage_key="cvs/test-app.pdf",
     )
     return await app_repo.save(app)
 
 
 @pytest_asyncio.fixture
-async def application_with_score(app_repo: SQLAApplicationRepository) -> Application:
+async def application_with_score(
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+) -> Application:
+    applicant_id, vacancy_id = application_refs
     app = Application(
-        applicant_id=uuid4(),
-        vacancy_id=uuid4(),
+        applicant_id=applicant_id,
+        vacancy_id=vacancy_id,
         cv_storage_key="cvs/test-score.pdf",
     )
     ai_score = AIScore(
