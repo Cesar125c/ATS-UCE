@@ -79,7 +79,7 @@ export default function RegisterForm() {
   return (
     <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10">
       <div className="mb-8">
-        <h3 className="text-3xl font-bold text-slate-800">Create Account</h3>
+        <h3 className="text-3xl font-bold text-slate-800">Creates Account</h3>
 
         <p className="text-slate-500 mt-2">
           Register to access ATS-UCE recruitment platform
