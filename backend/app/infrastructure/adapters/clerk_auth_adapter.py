@@ -2,9 +2,6 @@
 
 import json
 import logging
-from urllib.parse import quote
-
-import httpx
 
 logger = logging.getLogger("ats_uce")
 
