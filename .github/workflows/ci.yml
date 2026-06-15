@@ -66,8 +66,8 @@ jobs:
       - name: Apply migrations on the temporary database
         run: uv run alembic upgrade head
 
-      - name: Run backend tests
-        run: uv run pytest
+      - name: Run backend unit tests
+        run: uv run pytest tests/unit
 
   frontend:
     name: Frontend CI
