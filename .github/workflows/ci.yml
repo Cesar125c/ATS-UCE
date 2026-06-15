@@ -9,6 +9,9 @@ on:
 # This workflow validates the project before changes move between branches.
 # It does not deploy anything; it only checks backend, frontend, lint, build, and tests.
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   backend:
     name: Backend CI
