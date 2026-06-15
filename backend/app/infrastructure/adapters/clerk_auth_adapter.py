@@ -29,7 +29,7 @@ class ClerkAuthAdapter:
                 client_id="",
                 token=token,
             )
-            claims = json.loads(session.claims.raw if hasattr(session.claims, 'raw') else '{}')
+            claims = json.loads(session.claims.raw if hasattr(session.claims, "raw") else "{}")
             return {
                 "user_id": session.user_id or claims.get("sub", ""),
                 "email": claims.get("email", ""),

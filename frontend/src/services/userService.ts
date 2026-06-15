@@ -1,7 +1,36 @@
+type SignUpClient = {
+  id?: string | null
+  createdUserId?: string | null
+  create: (params: {
+    emailAddress: string
+    password: string
+  }) => Promise<{ error?: { message?: string } | null }>
+}
+
+type UserRoleData = {
+  email: string
+  password: string
+  role: string
+  firstName: string
+  lastName: string
+}
+
+type OAuthUser = {
+  id?: string
+  firstName?: string | null
+  lastName?: string | null
+  externalAccounts?: ReadonlyArray<{ provider?: string | null }> | null
+  emailAddresses?: ReadonlyArray<{ emailAddress?: string | null }> | null
+}
+
 export async function createUserWithRole(
-  signUp: any,
-  data: { email: string; password: string; role: string; firstName: string; lastName: string }
+  signUp: SignUpClient | null | undefined,
+  data: UserRoleData
 ) {
+  if (!signUp) {
+    throw new Error('Sign up service is not available')
+  }
+
   const { error } = await signUp.create({
     emailAddress: data.email,
     password: data.password,
@@ -30,8 +59,13 @@ export async function createUserWithRole(
     throw new Error('Error al asignar el rol del usuario')
   }
 
-  const roleData = await roleResponse.json()
-  return { clerkUserId, ...roleData }
+  const roleData: unknown = await roleResponse.json()
+
+  if (typeof roleData === 'object' && roleData !== null) {
+    return { clerkUserId, ...roleData }
+  }
+
+  return { clerkUserId }
 }
 
 export async function assignUserRole(clerkUserId: string, role: string, email: string) {
@@ -54,7 +88,7 @@ export async function assignUserRole(clerkUserId: string, role: string, email: s
   return await roleResponse.json();
 }
 
-export async function handleOAuthUser(user: any) {
+export async function handleOAuthUser(user: OAuthUser) {
   const provider = user?.externalAccounts?.[0]?.provider;
 
   let role = "applicant";
@@ -62,7 +96,7 @@ export async function handleOAuthUser(user: any) {
   if (provider === "google" || provider === "linkedin") {
     role = "applicant";
   }
-  else if (provider === "oauth_microsoft") {
+  else if (provider === "microsoft") {
     const email = user?.emailAddresses?.[0]?.emailAddress;
 
     if (email?.endsWith("@uce.edu.ec")) {

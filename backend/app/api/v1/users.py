@@ -128,7 +128,9 @@ async def sync_user_role(
         logger.warning("sync-role: user NOT found for clerkUserId=%s", request.clerkUserId)
         raise HTTPException(status_code=404, detail="User not found in local database.")
 
-    logger.info("sync-role: found user id=%s role=%s clerk_id=%s", user.id, user.role, user.clerk_id)
+    logger.info(
+        "sync-role: found user id=%s role=%s clerk_id=%s", user.id, user.role, user.clerk_id
+    )
 
     settings = get_settings()
     adapter = ClerkAuthAdapter(settings)
