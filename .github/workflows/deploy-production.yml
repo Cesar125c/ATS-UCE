@@ -37,7 +37,7 @@ jobs:
             git checkout main
             git pull --ff-only origin main
 
-            # Rebuild and start the AWS stack without using docker-compose.override.yml.
+            # Rebuild and start the AWS stack.
             docker compose -f docker-compose.yml up -d --build --remove-orphans
 
             # Apply pending migrations after the API container is running.
