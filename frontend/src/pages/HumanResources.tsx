@@ -1,17 +1,15 @@
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from "recharts";
-import { ChevronRight, AlertCircle, TrendingUp } from "lucide-react";
+import { AlertCircle, TrendingUp } from "lucide-react";
 
-const chartData = [
+const data = [
   { name: "Jan", value: 400 },
   { name: "Feb", value: 520 },
   { name: "Mar", value: 480 },
@@ -285,22 +283,13 @@ export default function HumanResources() {
                 Applications Trend
               </h3>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#94a3b8"
-                    style={{ fontSize: "12px" }}
-                  />
-                  <YAxis stroke="#94a3b8" style={{ fontSize: "12px" }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                    }}
-                  />
-                  <Bar dataKey="value" fill="#bfdbfe" />
-                </BarChart>
+                <LineChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="value" />
+                </LineChart>
               </ResponsiveContainer>
             </div>
 
