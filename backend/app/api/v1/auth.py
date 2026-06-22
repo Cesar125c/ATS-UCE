@@ -41,9 +41,7 @@ async def register(
         raise HTTPException(status_code=409, detail="User already registered.")
 
     # Check duplicate email
-    existing_email = await session.execute(
-        select(UserModel).where(UserModel.email == body.email)
-    )
+    existing_email = await session.execute(select(UserModel).where(UserModel.email == body.email))
     if existing_email.scalar_one_or_none() is not None:
         raise HTTPException(status_code=409, detail="Email already registered.")
 
