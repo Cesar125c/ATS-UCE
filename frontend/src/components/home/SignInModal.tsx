@@ -10,6 +10,18 @@ interface SignInModalProps {
   onClose: () => void
 }
 
+function redirectByRole(role?: string) {
+  if (role === 'applicant') {
+    window.location.assign('/applicant')
+  } else if (role === 'human_resources') {
+    window.location.assign('/human-resources')
+  } else if (role === 'authorities') {
+    window.location.assign('/authority')
+  } else {
+    window.location.assign('/')
+  }
+}
+
 export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const { user, isLoaded } = useUser()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -62,18 +74,6 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
     processOAuthUser()
   }, [isLoaded, user, isProcessing])
-
-  const redirectByRole = (role?: string) => {
-    if (role === 'applicant') {
-      window.location.assign('/applicant')
-    } else if (role === 'human_resources') {
-      window.location.assign('/human-resources')
-    } else if (role === 'authorities') {
-      window.location.assign('/authority')
-    } else {
-      window.location.assign('/')
-    }
-  }
 
   const handleRoleSelect = async (selectedRole: RoleOption) => {
     if (!user) return

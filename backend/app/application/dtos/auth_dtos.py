@@ -18,9 +18,7 @@ class RegisterRequest(BaseModel):
     @classmethod
     def role_must_be_valid(cls, v: str) -> str:
         if v not in VALID_ROLES:
-            raise ValueError(
-                f"Invalid role '{v}'. Must be one of: {sorted(VALID_ROLES)}"
-            )
+            raise ValueError(f"Invalid role '{v}'. Must be one of: {sorted(VALID_ROLES)}")
         return v
 
     @model_validator(mode="after")
