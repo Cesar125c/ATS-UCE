@@ -1,7 +1,13 @@
+import type { SignUpFutureResource, UserResource } from '@clerk/shared/types'
+
 export async function createUserWithRole(
-  signUp: any,
+  signUp: SignUpFutureResource | undefined,
   data: { email: string; password: string; role: string; firstName: string; lastName: string }
 ) {
+  if (!signUp) {
+    throw new Error('Clerk sign-up is not ready')
+  }
+
   const { error } = await signUp.create({
     emailAddress: data.email,
     password: data.password,
@@ -12,7 +18,11 @@ export async function createUserWithRole(
   }
 
   const clerkUserId = signUp.createdUserId || signUp.id
-  console.log('Registration clerkUserId:', { signUpId: signUp.id, createdUserId: signUp.createdUserId, used: clerkUserId })
+  console.log('Registration clerkUserId:', {
+    signUpId: signUp.id,
+    createdUserId: signUp.createdUserId,
+    used: clerkUserId,
+  })
 
   const roleResponse = await fetch('/api/v1/users/set-role', {
     method: 'POST',
@@ -54,7 +64,7 @@ export async function assignUserRole(clerkUserId: string, role: string, email: s
   return await roleResponse.json();
 }
 
-export async function handleOAuthUser(user: any) {
+export async function handleOAuthUser(user: UserResource) {
   const provider = user?.externalAccounts?.[0]?.provider;
 
   let role = "applicant";
@@ -62,7 +72,7 @@ export async function handleOAuthUser(user: any) {
   if (provider === "google" || provider === "linkedin") {
     role = "applicant";
   }
-  else if (provider === "oauth_microsoft") {
+  else if (provider === "microsoft") {
     const email = user?.emailAddresses?.[0]?.emailAddress;
 
     if (email?.endsWith("@uce.edu.ec")) {
