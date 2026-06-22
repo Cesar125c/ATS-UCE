@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useClerk } from "@clerk/react";
+import { useAuth, useClerk } from "@clerk/react";
 import { Input, Button, Card } from "../ui";
 import { useSignUpWithRole } from "../../hooks/useSignUpWithRole";
 
@@ -26,7 +26,8 @@ export default function RegisterForm() {
   const selectedRole = watch("role");
   const password = watch("password");
 
-  const { isSignedIn, isLoaded, signOut } = useClerk();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { signOut } = useClerk();
 
   useEffect(() => {
     reset();

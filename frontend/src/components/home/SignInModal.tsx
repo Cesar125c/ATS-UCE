@@ -39,7 +39,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           const email = user.emailAddresses?.[0]?.emailAddress
 
           // Microsoft + @uce.edu.ec -> Show role selection
-          if (provider === 'oauth_microsoft' && email?.endsWith('@uce.edu.ec')) {
+          if (provider === 'microsoft' && email?.endsWith('@uce.edu.ec')) {
             setShowRoleSelection(true)
             setIsProcessing(false)
             return
@@ -126,8 +126,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           {/* Clerk SignIn */}
           <div className="p-6">
             <SignIn
-              mode="embedded"
-              afterSignInUrl="/"
+              fallbackRedirectUrl="/"
               appearance={{
                 elements: {
                   rootBox: 'w-full',
