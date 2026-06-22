@@ -39,7 +39,7 @@ jobs:
             git pull --ff-only origin qa
 
             # Rebuild and start the AWS stack without using docker-compose.override.yml.
-            docker compose -f docker-compose.yml up -d --build --remove-orphans
+            FRONTEND_TARGET=production docker compose -f docker-compose.yml up -d --build --remove-orphans
 
             # Apply pending migrations after the API container is running.
             docker compose -f docker-compose.yml exec -T api python -m alembic upgrade head
