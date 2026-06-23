@@ -7,7 +7,6 @@ on:
 
 # This workflow deploys only the main branch to the production AWS EC2 instance.
 # Production uses different secrets from QA to avoid mixing hosts, users, or SSH keys.
-
 concurrency:
   group: deploy-production
   cancel-in-progress: true
@@ -17,7 +16,7 @@ jobs:
     name: Deploy to Production EC2
     runs-on: ubuntu-latest
     environment: production
-
+    
     steps:
       - name: Deploy to production EC2 over SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -28,20 +27,24 @@ jobs:
           script_stop: true
           script: |
             set -e
-
+            
             # Enter the repository directory cloned on the production instance.
             cd "${{ secrets.PROD_PROJECT_PATH }}"
-
+            
             # Update exactly the main branch from GitHub.
             git fetch origin main
             git checkout main
             git pull --ff-only origin main
-
+            
             # Rebuild and start the AWS stack without using docker-compose.override.yml.
             docker compose -f docker-compose.yml up -d --build --remove-orphans
-
+            
+            # FIX: Esperar 10 segundos a que PostgreSQL asiente sus índices internos en AWS
+            echo "Esperando a que la base de datos esté lista..."
+            sleep 10
+            
             # Apply pending migrations after the API container is running.
             docker compose -f docker-compose.yml exec -T api python -m alembic upgrade head
-
+            
             # Show the final container state for deployment review.
             docker compose -f docker-compose.yml ps
