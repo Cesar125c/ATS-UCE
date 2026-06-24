@@ -32,8 +32,13 @@ async def get_current_user(
     if settings.app_env == "development" and not settings.clerk_secret_key:
         # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
         return {"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}
-    # Sprint 2: implement real Clerk JWT verification here
-    raise HTTPException(status_code=501, detail="Clerk JWT verification — Sprint 2")
+
+    adapter = ClerkAuthAdapter(settings)
+    try:
+        return await adapter.verify_token(credentials.credentials)
+    except Exception as e:
+        logger.error("Clerk token verification failed: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
 def require_role(allowed_roles: list[str]):
