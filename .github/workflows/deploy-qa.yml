@@ -73,12 +73,15 @@ jobs:
       - name: Notify Email on success
         if: success()
         run: |
+          # Convierte "correo1, correo2" en un array JSON ["correo1","correo2"] quitando espacios intermedios
+          TO_ARRAY=$(echo "${{ secrets.NOTIFY_TO_EMAIL }}" | sed 's/ //g' | sed 's/,/\",\"/g' | sed 's/^/[\"/' | sed 's/$/\"]/')
+          
           curl -X POST https://api.resend.com/emails \
             -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
               "from": "${{ secrets.RESEND_FROM_EMAIL }}",
-              "to": "${{ secrets.NOTIFY_TO_EMAIL }}",
+              "to": '"$TO_ARRAY"',
               "subject": "✅ Deploy QA Exitoso - ATS-UCE",
               "html": "<h3>El despliegue en QA se completó con éxito</h3><p><strong>Desplegado por:</strong> ${{ github.actor }}</p><p><strong>Commit:</strong> ${{ github.event.head_commit.message }}</p><p><a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">Ver detalles en GitHub</a></p>"
             }'
@@ -86,12 +89,15 @@ jobs:
       - name: Notify Email on failure
         if: failure()
         run: |
+          # Convierte "correo1, correo2" en un array JSON ["correo1","correo2"] quitando espacios intermedios
+          TO_ARRAY=$(echo "${{ secrets.NOTIFY_TO_EMAIL }}" | sed 's/ //g' | sed 's/,/\",\"/g' | sed 's/^/[\"/' | sed 's/$/\"]/')
+          
           curl -X POST https://api.resend.com/emails \
             -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
               "from": "${{ secrets.RESEND_FROM_EMAIL }}",
-              "to": "${{ secrets.NOTIFY_TO_EMAIL }}",
+              "to": '"$TO_ARRAY"',
               "subject": "❌ Deploy QA FALLIDO - ATS-UCE",
               "html": "<h3>El despliegue en QA ha fallado</h3><p><strong>Disparado por:</strong> ${{ github.actor }}</p><p><strong>Commit:</strong> ${{ github.event.head_commit.message }}</p><p style=\"color:red;\"><strong>Revisa los logs inmediatamente para encontrar el error.</strong></p><p><a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">Ver Logs del Fallo</a></p>"
             }'
