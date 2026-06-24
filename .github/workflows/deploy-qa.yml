@@ -70,42 +70,28 @@ jobs:
             
             echo "✅ Deploy QA completado exitosamente"
 
-      - name: Notify Slack on success
+      - name: Notify Email on success
         if: success()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "✅ *Deploy QA exitoso*",
-              "attachments": [{
-                "color": "good",
-                "fields": [
-                  {"title": "Desplegado por", "value": "${{ github.actor }}", "short": true},
-                  {"title": "Rama", "value": "qa", "short": true},
-                  {"title": "Commit", "value": "${{ github.event.head_commit.message }}", "short": false},
-                  {"title": "Ver acción", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}
-                ]
-              }]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "from": "${{ secrets.RESEND_FROM_EMAIL }}",
+              "to": "${{ secrets.NOTIFY_TO_EMAIL }}",
+              "subject": "✅ Deploy QA Exitoso - ATS-UCE",
+              "html": "<h3>El despliegue en QA se completó con éxito</h3><p><strong>Desplegado por:</strong> ${{ github.actor }}</p><p><strong>Commit:</strong> ${{ github.event.head_commit.message }}</p><p><a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">Ver detalles en GitHub</a></p>"
+            }'
 
-      - name: Notify Slack on failure
+      - name: Notify Email on failure
         if: failure()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "❌ *Deploy QA FALLIDO*",
-              "attachments": [{
-                "color": "danger",
-                "fields": [
-                  {"title": "Disparado por", "value": "${{ github.actor }}", "short": true},
-                  {"title": "Rama", "value": "qa", "short": true},
-                  {"title": "Commit", "value": "${{ github.event.head_commit.message }}", "short": false},
-                  {"title": "Ver logs", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}
-                ]
-              }]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "from": "${{ secrets.RESEND_FROM_EMAIL }}",
+              "to": "${{ secrets.NOTIFY_TO_EMAIL }}",
+              "subject": "❌ Deploy QA FALLIDO - ATS-UCE",
+              "html": "<h3>El despliegue en QA ha fallado</h3><p><strong>Disparado por:</strong> ${{ github.actor }}</p><p><strong>Commit:</strong> ${{ github.event.head_commit.message }}</p><p style=\"color:red;\"><strong>Revisa los logs inmediatamente para encontrar el error.</strong></p><p><a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">Ver Logs del Fallo</a></p>"
+            }'
