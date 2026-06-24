@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { useClerk } from "@clerk/react";
+import { useForm, useWatch } from "react-hook-form";
+import { useAuth, useClerk } from "@clerk/react";
 import { Input, Button, Card } from "../ui";
 import { useSignUpWithRole } from "../../hooks/useSignUpWithRole";
 
@@ -18,19 +18,20 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>();
 
-  const selectedRole = watch("role");
-  const password = watch("password");
+  const selectedRole = useWatch({ control, name: "role" });
+  const password = useWatch({ control, name: "password" });
 
-  const { isSignedIn, isLoaded, signOut } = useClerk();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { signOut } = useClerk();
 
   useEffect(() => {
     reset();
-  }, []);
+  }, [reset]);
 
   if (isLoaded && isSignedIn) {
     return (
@@ -71,7 +72,7 @@ export default function RegisterForm() {
             : "/authority";
 
       window.location.assign(rolePath);
-    } catch (err) {
+    } catch {
       // El error ya está siendo manejado por el hook
     }
   };

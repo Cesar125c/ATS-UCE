@@ -10,6 +10,18 @@ interface SignInModalProps {
   onClose: () => void
 }
 
+function redirectByRole(role?: string) {
+  if (role === 'applicant') {
+    window.location.assign('/applicant')
+  } else if (role === 'human_resources') {
+    window.location.assign('/human-resources')
+  } else if (role === 'authorities') {
+    window.location.assign('/authority')
+  } else {
+    window.location.assign('/')
+  }
+}
+
 export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const { user, isLoaded } = useUser()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -39,7 +51,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           const email = user.emailAddresses?.[0]?.emailAddress
 
           // Microsoft + @uce.edu.ec -> Show role selection
-          if (provider === 'oauth_microsoft' && email?.endsWith('@uce.edu.ec')) {
+          if (provider === 'microsoft' && email?.endsWith('@uce.edu.ec')) {
             setShowRoleSelection(true)
             setIsProcessing(false)
             return
@@ -62,18 +74,6 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
     processOAuthUser()
   }, [isLoaded, user, isProcessing])
-
-  const redirectByRole = (role?: string) => {
-    if (role === 'applicant') {
-      window.location.assign('/applicant')
-    } else if (role === 'human_resources') {
-      window.location.assign('/human-resources')
-    } else if (role === 'authorities') {
-      window.location.assign('/authority')
-    } else {
-      window.location.assign('/')
-    }
-  }
 
   const handleRoleSelect = async (selectedRole: RoleOption) => {
     if (!user) return
@@ -126,8 +126,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
           {/* Clerk SignIn */}
           <div className="p-6">
             <SignIn
-              mode="embedded"
-              afterSignInUrl="/"
+              fallbackRedirectUrl="/"
               appearance={{
                 elements: {
                   rootBox: 'w-full',
