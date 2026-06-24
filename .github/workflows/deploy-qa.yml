@@ -44,11 +44,23 @@ jobs:
             
             # Health check: verificar que la API responde antes de dar el deploy por exitoso.
             echo "Verificando que la API responde..."
+            DEPLOY_SUCCESS=false
+            
             for i in {1..5}; do
-              curl -sf http://localhost:8000/api/v1/health && break
+              echo "Intento $i de 5..."
+              if curl -sf http://localhost:8000/api/v1/health; then
+                echo "✅ La API está respondiendo correctamente."
+                DEPLOY_SUCCESS=true
+                break
+              fi
               echo "Intento $i fallido, esperando 5s..."
               sleep 5
-            done || (echo "❌ La API no responde tras 5 intentos" && exit 1)
+            done
+
+            if [ "$DEPLOY_SUCCESS" = false ]; then
+              echo "❌ La API no responde tras 5 intentos"
+              exit 1
+            fi
             
             # Limpiar imágenes sin usar para liberar espacio en disco.
             docker image prune -f
@@ -62,7 +74,6 @@ jobs:
         if: success()
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
             {
               "text": "✅ *Deploy QA exitoso*",
@@ -72,15 +83,17 @@ jobs:
                   {"title": "Desplegado por", "value": "${{ github.actor }}", "short": true},
                   {"title": "Rama", "value": "qa", "short": true},
                   {"title": "Commit", "value": "${{ github.event.head_commit.message }}", "short": false},
-                  {"title": "Ver acción", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}                ]
+                  {"title": "Ver acción", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false}
+                ]
               }]
             }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on failure
         if: failure()
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
             {
               "text": "❌ *Deploy QA FALLIDO*",
@@ -94,3 +107,5 @@ jobs:
                 ]
               }]
             }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
