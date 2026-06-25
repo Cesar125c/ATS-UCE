@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useAuth, useClerk } from "@clerk/react";
 import { Input, Button, Card } from "../ui";
 import { useSignUpWithRole } from "../../hooks/useSignUpWithRole";
@@ -18,20 +18,20 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>();
 
-  const selectedRole = watch("role");
-  const password = watch("password");
+  const selectedRole = useWatch({ control, name: "role" });
+  const password = useWatch({ control, name: "password" });
 
   const { isSignedIn, isLoaded } = useAuth();
   const { signOut } = useClerk();
 
   useEffect(() => {
     reset();
-  }, []);
+  }, [reset]);
 
   if (isLoaded && isSignedIn) {
     return (
@@ -80,7 +80,7 @@ export default function RegisterForm() {
   return (
     <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10">
       <div className="mb-8">
-        <h3 className="text-3xl font-bold text-slate-800">Create Account</h3>
+        <h3 className="text-3xl font-bold text-slate-800">Creación de cuenta</h3>
 
         <p className="text-slate-500 mt-2">
           Register to access ATS-UCE recruitment platform
