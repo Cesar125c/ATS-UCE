@@ -7,7 +7,6 @@ on:
 
 # This workflow deploys only the main branch to the production AWS EC2 instance.
 # Production uses different secrets from QA to avoid mixing hosts, users, or SSH keys.
-
 concurrency:
   group: deploy-production
   cancel-in-progress: true
@@ -17,6 +16,7 @@ jobs:
     name: Deploy to Production EC2
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 15
 
     steps:
       - name: Deploy to production EC2 over SSH
@@ -38,10 +38,71 @@ jobs:
             git pull --ff-only origin main
 
             # Rebuild and start the AWS stack without using docker-compose.override.yml.
-            FRONTEND_TARGET=production docker compose -f docker-compose.yml up -d --build --remove-orphans
+            docker compose -f docker-compose.yml up -d --build --remove-orphans
+
+            # FIX: Esperar 10 segundos a que PostgreSQL asiente sus índices internos en AWS
+            echo "Esperando a que la base de datos esté lista..."
+            sleep 10
 
             # Apply pending migrations after the API container is running.
             docker compose -f docker-compose.yml exec -T api python -m alembic upgrade head
 
+            # Health check: verificar que la API responde antes de dar el deploy por exitoso.
+            echo "Verificando que la API responde..."
+            DEPLOY_SUCCESS=false
+
+            for i in {1..5}; do
+              echo "Intento $i de 5..."
+              if curl -sf http://localhost:8000/api/v1/health; then
+                echo "✅ La API está respondiendo correctamente."
+                DEPLOY_SUCCESS=true
+                break
+              fi
+              echo "Intento $i fallido, esperando 5s..."
+              sleep 5
+            done
+
+            if [ "$DEPLOY_SUCCESS" = false ]; then
+              echo "❌ La API no responde tras 5 intentos"
+              exit 1
+            fi
+
+            # Limpiar imágenes sin usar para liberar espacio en disco.
+            docker image prune -f
+
             # Show the final container state for deployment review.
             docker compose -f docker-compose.yml ps
+
+            echo "✅ Deploy Production completado exitosamente"
+
+      - name: Notify Email on success
+        if: success()
+        run: |
+          # Convierte "correo1, correo2" en un array JSON ["correo1","correo2"] quitando espacios intermedios
+          TO_ARRAY=$(echo "${{ secrets.NOTIFY_TO_EMAIL }}" | sed 's/ //g' | sed 's/,/\",\"/g' | sed 's/^/[\"/' | sed 's/$/\"]/')
+
+          curl -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "from": "${{ secrets.RESEND_FROM_EMAIL }}",
+              "to": '"$TO_ARRAY"',
+              "subject": "✅ Deploy Production Exitoso - ATS-UCE",
+              "html": "<h3>El despliegue en Producción se completó con éxito</h3><p><strong>Desplegado por:</strong> ${{ github.actor }}</p><p><strong>Commit:</strong> ${{ github.event.head_commit.message }}</p><p><a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">Ver detalles en GitHub</a></p>"
+            }'
+
+      - name: Notify Email on failure
+        if: failure()
+        run: |
+          # Convierte "correo1, correo2" en un array JSON ["correo1","correo2"] quitando espacios intermedios
+          TO_ARRAY=$(echo "${{ secrets.NOTIFY_TO_EMAIL }}" | sed 's/ //g' | sed 's/,/\",\"/g' | sed 's/^/[\"/' | sed 's/$/\"]/')
+
+          curl -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "from": "${{ secrets.RESEND_FROM_EMAIL }}",
+              "to": '"$TO_ARRAY"',
+              "subject": "❌ Deploy Production FALLIDO - ATS-UCE",
+              "html": "<h3>El despliegue en Producción ha fallado</h3><p><strong>Disparado por:</strong> ${{ github.actor }}</p><p><strong>Commit:</strong> ${{ github.event.head_commit.message }}</p><p style=\"color:red;\"><strong>Revisa los logs inmediatamente para encontrar el error.</strong></p><p><a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">Ver Logs del Fallo</a></p>"
+            }'
