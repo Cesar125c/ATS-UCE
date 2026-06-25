@@ -3,7 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from app.api.dependencies import get_current_user, require_role
+from app.api.dependencies import get_current_user, require_role, get_submit_application_usecase, get_applicant_repository
 from app.application.dtos.application_dtos import ApplicationResponse
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
