@@ -1,34 +1,11 @@
-type SignUpClient = {
-  id?: string | null
-  createdUserId?: string | null
-  create: (params: {
-    emailAddress: string
-    password: string
-  }) => Promise<{ error?: { message?: string } | null }>
-}
-
-type UserRoleData = {
-  email: string
-  password: string
-  role: string
-  firstName: string
-  lastName: string
-}
-
-type OAuthUser = {
-  id?: string
-  firstName?: string | null
-  lastName?: string | null
-  externalAccounts?: ReadonlyArray<{ provider?: string | null }> | null
-  emailAddresses?: ReadonlyArray<{ emailAddress?: string | null }> | null
-}
+import type { SignUpFutureResource, UserResource } from '@clerk/shared/types'
 
 export async function createUserWithRole(
-  signUp: SignUpClient | null | undefined,
-  data: UserRoleData
+  signUp: SignUpFutureResource | undefined,
+  data: { email: string; password: string; role: string; firstName: string; lastName: string }
 ) {
   if (!signUp) {
-    throw new Error('Sign up service is not available')
+    throw new Error('Clerk sign-up is not ready')
   }
 
   const { error } = await signUp.create({
@@ -41,7 +18,11 @@ export async function createUserWithRole(
   }
 
   const clerkUserId = signUp.createdUserId || signUp.id
-  console.log('Registration clerkUserId:', { signUpId: signUp.id, createdUserId: signUp.createdUserId, used: clerkUserId })
+  console.log('Registration clerkUserId:', {
+    signUpId: signUp.id,
+    createdUserId: signUp.createdUserId,
+    used: clerkUserId,
+  })
 
   const roleResponse = await fetch('/api/v1/users/set-role', {
     method: 'POST',
@@ -59,13 +40,8 @@ export async function createUserWithRole(
     throw new Error('Error al asignar el rol del usuario')
   }
 
-  const roleData: unknown = await roleResponse.json()
-
-  if (typeof roleData === 'object' && roleData !== null) {
-    return { clerkUserId, ...roleData }
-  }
-
-  return { clerkUserId }
+  const roleData = await roleResponse.json()
+  return { clerkUserId, ...roleData }
 }
 
 export async function assignUserRole(clerkUserId: string, role: string, email: string) {
@@ -88,7 +64,7 @@ export async function assignUserRole(clerkUserId: string, role: string, email: s
   return await roleResponse.json();
 }
 
-export async function handleOAuthUser(user: OAuthUser) {
+export async function handleOAuthUser(user: UserResource) {
   const provider = user?.externalAccounts?.[0]?.provider;
 
   let role = "applicant";
