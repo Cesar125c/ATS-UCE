@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -9,10 +9,13 @@ from app.infrastructure.repositories.sqla_application_repository import SQLAAppl
 
 
 @pytest.mark.integration
-async def test_save_persists_new_application(app_repo: SQLAApplicationRepository) -> None:
+async def test_save_persists_new_application(
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+) -> None:
+    applicant_id, vacancy_id = application_refs
     app = Application(
-        applicant_id=uuid4(),
-        vacancy_id=uuid4(),
+        applicant_id=applicant_id,
+        vacancy_id=vacancy_id,
         cv_storage_key="cvs/new-app.pdf",
     )
     saved = await app_repo.save(app)
