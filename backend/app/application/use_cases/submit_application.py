@@ -8,6 +8,7 @@ from app.infrastructure.repositories.sqla_application_repository import SQLAAppl
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
+
 class SubmitApplicationUseCase:
     def __init__(
         self,
@@ -31,46 +32,31 @@ class SubmitApplicationUseCase:
         vacancy = await self.vacancy_repo.find_by_id(vacancy_id)
         if vacancy is None or not vacancy.is_active:
             raise ValueError("Vacancy not found or not active")
-        
-        # Generate storage key
-        application_id = UUID(int=0)  # Placeholder; will be replaced after creation
-        storage_key = f"cvs/{applicant_id}/{application_id}.pdf"
-        
-        # Upload PDF to B2
-        await self.storage_adapter.upload_file(
-            key=storage_key,
-            content=cv_content,
-            content_type="application/pdf",
-        )
-        
-        # Create application record
+
+        # Persist application first to obtain the real UUID
         application = Application(
             applicant_id=applicant_id,
             vacancy_id=vacancy_id,
-            cv_storage_key=storage_key,
+            cv_storage_key="",  # placeholder — updated after upload
             status=FlowStatus.RECEIVED,
         )
-        
-        # Persist application and status history
-        application = await self.application_repo.create(application)
-        
-        # Update storage key with actual application_id
-        storage_key = f"cvs/{applicant_id}/{application.id}.pdf"
-        application.cv_storage_key = storage_key
-        await self.application_repo.update(application)
-        
-        # Upload PDF with correct key
+        application = await self.application_repo.save(application)
+
+        # Build the B2 key using the real application.id, then upload exactly once
+        b2_key = f"cvs/{applicant_id}/{application.id}.pdf"
         await self.storage_adapter.upload_file(
-            key=storage_key,
+            key=b2_key,
             content=cv_content,
             content_type="application/pdf",
         )
-        
-        # Create status history
+        application.cv_storage_key = b2_key
+        await self.application_repo.save(application)
+
+        # Record initial status history
         status_history = StatusHistory(
             application_id=application.id,
             status=FlowStatus.RECEIVED,
         )
         await self.application_repo.create_status_history(status_history)
-        
+
         return application
