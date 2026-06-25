@@ -130,8 +130,12 @@ class ProcessAIScoreUseCase:
             raise ValueError(f"Vacancy {vacancy_id} not found")
         
         # Note: application parameter is not needed here since we're not using it
-        # The analyze_cv method should return an AIScore object directly
-        ai_score = await self._analysis_adapter.analyze_cv(text, vacancy)
+        # The analyze_cv method expects (cv_text, vacancy_title, vacancy_faculty)
+        ai_score = await self._analysis_adapter.analyze_cv(
+            cv_text=text,
+            vacancy_title=vacancy.title,
+            vacancy_faculty=vacancy.faculty
+        )
         return ai_score
 
     async def _update_application_status(self, application: Application, ai_score: AIScore) -> None:
