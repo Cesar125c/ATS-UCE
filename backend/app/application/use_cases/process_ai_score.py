@@ -16,7 +16,7 @@ from app.domain.repositories.i_application_repository import IApplicationReposit
 from app.domain.repositories.i_vacancy_repository import IVacancyRepository
 from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter, StorageError
-from app.infrastructure.adapters.email_service import EmailService
+from app.infrastructure.adapters.resend_email_adapter import ResendEmailAdapter as EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +46,9 @@ class ProcessAIScoreUseCase:
         
         # 3. Extract text from PDF
         text = await self._extract_text_from_pdf(pdf_bytes)
-        if text is None:
+        if text is None or not text.strip():
             await self._reject_application(application, "CV_NOT_READABLE")
-            return  # Unreadable PDF handled in _extract_text_from_pdf
+            return  # Unreadable PDF handled
         
         # 4. Analyze text with OpenAI
         ai_score = await self._analyze_text_with_openai(text, application.vacancy_id)
@@ -129,19 +129,10 @@ class ProcessAIScoreUseCase:
         if not vacancy:
             raise ValueError(f"Vacancy {vacancy_id} not found")
         
-        ai_score = await self._analysis_adapter.analyze_cv_with_fallback(
-            text, vacancy, application, self._application_repo
-        )
-        
-        return AIScore(
-            total=score_data["total"],
-            academic_training=score_data["academic_training"],
-            experience=score_data["experience"],
-            publications=score_data["publications"],
-            profile_match=score_data["profile_match"],
-            languages_competencies=score_data["languages_competencies"],
-            evaluation_summary=score_data["evaluation_summary"][:200],
-        )
+        # Note: application parameter is not needed here since we're not using it
+        # The analyze_cv method should return an AIScore object directly
+        ai_score = await self._analysis_adapter.analyze_cv(text, vacancy)
+        return ai_score
 
     async def _update_application_status(self, application: Application, ai_score: AIScore) -> None:
         """Update application status based on AI score."""
