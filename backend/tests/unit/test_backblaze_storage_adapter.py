@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 from botocore.exceptions import ClientError
 
-from backend.app.infrastructure.adapters.backblaze_storage_adapter import (
+from app.infrastructure.adapters.backblaze_storage_adapter import (
     BackblazeStorageAdapter,
     StorageUploadError,
     StoragePresignError,

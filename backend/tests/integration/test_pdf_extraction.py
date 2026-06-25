@@ -2,8 +2,9 @@ import pytest
 from uuid import UUID
 
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
-from app.domain.entities.application import Application, FlowStatus
-from app.infrastructure.adapters.storage_adapter import BackblazeStorageAdapter
+from app.domain.entities.application import Application
+from app.domain.value_objects.flow_status import FlowStatus
+from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 
 @pytest.mark.asyncio
 async def test_pdf_extraction_end_to_end(settings):

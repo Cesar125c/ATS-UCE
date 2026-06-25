@@ -1,7 +1,7 @@
 import pytest
 from uuid import uuid4
 
-from backend.app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
+from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 
 @pytest.mark.asyncio
 async def test_integration_roundtrip(settings):

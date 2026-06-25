@@ -2,7 +2,7 @@ import pytest
 from uuid import UUID
 from fastapi.testclient import TestClient
 
-from app.main import app
+from main import app
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 
 @pytest.mark.asyncio
