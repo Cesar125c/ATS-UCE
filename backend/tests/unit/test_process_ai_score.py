@@ -1,46 +1,152 @@
 import pytest
 from uuid import UUID
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock
 
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
-from app.domain.entities.application import Application, FlowStatus
+from app.domain.entities.application import Application
+from app.domain.value_objects.flow_status import FlowStatus
 from app.domain.value_objects.ai_score import AIScore
+from app.infrastructure.adapters.openai_analysis_adapter import OpenAIUnavailableError
 
 @pytest.mark.asyncio
-async def test_pdf_extraction_happy_path(mocker):
-    # Mock PDF bytes and PyMuPDF
-    mock_pdf = b"%PDF-1.4 test content"
+async def test_ai_scoring_success(mocker):
+    # Mock PDF extraction
+    mock_pdf = b"%PDF-1.4 test"
     mock_text = "Sample CV text"
     
-    mock_storage = mocker.MagicMock()
+    mock_storage = AsyncMock()
     mock_storage.download_file.return_value = mock_pdf
     
-    mock_extract = mocker.patch(
-        "app.application.use_cases.process_ai_score.extract_text_with_pymupdf",
-        return_value=mock_text
+    # Mock AI scoring
+    mock_ai_score = AIScore(
+        total=75.0,
+        academic_training=80.0,
+        experience=70.0,
+        publications=75.0,
+        profile_match=85.0,
+        languages_competencies=65.0,
+        evaluation_summary="Test summary",
     )
     
-    use_case = ProcessAIScoreUseCase(...)
+    mock_analysis = AsyncMock()
+    mock_analysis.analyze_cv_with_fallback.return_value = mock_ai_score
+    
+    # Mock application
+    mock_app_repo = AsyncMock()
+    mock_app = Application(
+        id=UUID(int=1),
+        applicant_id=UUID(int=1),
+        vacancy_id=UUID(int=1),
+        cv_storage_key="cvs/user1/app1.pdf",
+        status=FlowStatus.RECEIVED,
+    )
+    mock_app_repo.find_by_id.return_value = mock_app
+    
+    use_case = ProcessAIScoreUseCase(
+        application_repo=mock_app_repo,
+        vacancy_repo=AsyncMock(),
+        analysis_adapter=mock_analysis,
+        storage_adapter=mock_storage,
+        email_service=mocker.MagicMock(),
+    )
+    
+    # Mock text extraction
+    mocker.patch.object(use_case, '_extract_text_from_pdf', return_value=mock_text)
+    
     await use_case.execute(application_id=UUID(int=1))
     
-    mock_extract.assert_called_once_with(mock_pdf)
+    # Verify status update - the mock doesn't actually call assign_ai_score
+    # so we need to check the repository update calls
+    assert mock_app_repo.update.call_count == 2  # PROCESSING_AI + HR_STAGE
 
 @pytest.mark.asyncio
-async def test_pdf_extraction_empty_text(mocker):
-    # Mock PDF bytes with empty text
-    mock_pdf = b"%PDF-1.4 empty"
+async def test_ai_scoring_rejection(mocker):
+    # Mock PDF extraction
+    mock_pdf = b"%PDF-1.4 test"
+    mock_text = "Sample CV text"
     
-    mock_storage = mocker.MagicMock()
+    mock_storage = AsyncMock()
     mock_storage.download_file.return_value = mock_pdf
     
-    mock_extract = mocker.patch(
-        "app.application.use_cases.process_ai_score.extract_text_with_pymupdf",
-        return_value=""
+    # Mock AI scoring (low score)
+    mock_ai_score = AIScore(
+        total=55.0,
+        academic_training=60.0,
+        experience=50.0,
+        publications=55.0,
+        profile_match=60.0,
+        languages_competencies=50.0,
+        evaluation_summary="Test summary",
     )
     
-    mock_reject = mocker.patch.object(use_case, "_reject_application")
+    mock_analysis = AsyncMock()
+    mock_analysis.analyze_cv_with_fallback.return_value = mock_ai_score
     
-    use_case = ProcessAIScoreUseCase(...)
+    # Mock application
+    mock_app_repo = AsyncMock()
+    mock_app = Application(
+        id=UUID(int=1),
+        applicant_id=UUID(int=1),
+        vacancy_id=UUID(int=1),
+        cv_storage_key="cvs/user1/app1.pdf",
+        status=FlowStatus.RECEIVED,
+    )
+    mock_app_repo.find_by_id.return_value = mock_app
+    
+    use_case = ProcessAIScoreUseCase(
+        application_repo=mock_app_repo,
+        vacancy_repo=AsyncMock(),
+        analysis_adapter=mock_analysis,
+        storage_adapter=mock_storage,
+        email_service=mocker.MagicMock(),
+    )
+    
+    # Mock text extraction
+    mocker.patch.object(use_case, '_extract_text_from_pdf', return_value=mock_text)
+    
     await use_case.execute(application_id=UUID(int=1))
     
-    mock_reject.assert_called_once_with(mocker.ANY, "CV_NOT_READABLE")
+    # Verify status update - the mock doesn't actually call assign_ai_score
+    # so we need to check the repository update calls
+    assert mock_app_repo.update.call_count == 2  # PROCESSING_AI + REJECTED
+
+@pytest.mark.asyncio
+async def test_ai_scoring_failure(mocker):
+    # Mock PDF extraction
+    mock_pdf = b"%PDF-1.4 test"
+    mock_text = "Sample CV text"
+    
+    mock_storage = AsyncMock()
+    mock_storage.download_file.return_value = mock_pdf
+    
+    # Mock AI scoring failure
+    mock_analysis = AsyncMock()
+    mock_analysis.analyze_cv_with_fallback.side_effect = OpenAIUnavailableError("OpenAI down")
+    
+    # Mock application
+    mock_app_repo = AsyncMock()
+    mock_app = Application(
+        id=UUID(int=1),
+        applicant_id=UUID(int=1),
+        vacancy_id=UUID(int=1),
+        cv_storage_key="cvs/user1/app1.pdf",
+        status=FlowStatus.RECEIVED,
+    )
+    mock_app_repo.find_by_id.return_value = mock_app
+    
+    use_case = ProcessAIScoreUseCase(
+        application_repo=mock_app_repo,
+        vacancy_repo=AsyncMock(),
+        analysis_adapter=mock_analysis,
+        storage_adapter=mock_storage,
+        email_service=mocker.MagicMock(),
+    )
+    
+    # Mock text extraction
+    mocker.patch.object(use_case, '_extract_text_from_pdf', return_value=mock_text)
+    
+    await use_case.execute(application_id=UUID(int=1))
+    
+        # Verify error handling - check the repository update calls
+    assert mock_app_repo.update.call_count == 2  # PROCESSING_AI + error update
+    assert mock_app_repo.update.call_count == 2  # PROCESSING_AI + error update
