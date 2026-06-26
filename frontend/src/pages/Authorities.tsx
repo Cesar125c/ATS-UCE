@@ -2,6 +2,8 @@ import MainLayout from "../components/layout/MainLayout";
 
 import AuthorityHeader from "../components/authority/AuthorityHeader";
 import PendingCandidates from "../components/authority/PendingCandidates";
+import CandidateProfile from "../components/authority/CandidateProfile";
+import AIAnalysisSummary from "../components/authority/AIAnalysisSummary";
 
 export default function Authorities() {
   return (
@@ -18,6 +20,10 @@ export default function Authorities() {
         </div>
 
         <div className="col-span-8">
+
+          <CandidateProfile />
+
+          <AIAnalysisSummary />
 
         </div>
 
