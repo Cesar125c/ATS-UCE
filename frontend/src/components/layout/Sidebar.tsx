@@ -6,7 +6,7 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useClerk } from "@clerk/react";
 
 const menuItems = [
@@ -33,12 +33,10 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
-  const navigate = useNavigate();
   const { signOut } = useClerk();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    await signOut({ redirectUrl: "/" });
   };
 
   return (

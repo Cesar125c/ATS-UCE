@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { useAuth, useClerk } from "@clerk/react";
 import { Input, Button, Card } from "../ui";
@@ -15,7 +14,6 @@ type RegisterFormData = {
 };
 
 export default function RegisterForm() {
-  const navigate = useNavigate();
   const { signUpUser, error, isLoading } = useSignUpWithRole();
   const {
     register,
@@ -32,8 +30,7 @@ export default function RegisterForm() {
   const { signOut } = useClerk();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    await signOut({ redirectUrl: "/" });
   };
 
   useEffect(() => {

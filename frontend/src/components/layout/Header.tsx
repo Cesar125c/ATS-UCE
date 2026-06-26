@@ -1,17 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Show, UserButton, useClerk } from "@clerk/react";
 import { Button } from "../ui";
 import SignInModal from "../home/SignInModal";
 
 export default function Header() {
-  const navigate = useNavigate();
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const { signOut } = useClerk();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    await signOut({ redirectUrl: "/" });
   };
 
   return (
