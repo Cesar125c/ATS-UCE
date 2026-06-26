@@ -5,8 +5,11 @@ import {
 } from "lucide-react";
 
 import Button from "../ui/Button";
-
-export default function VacancyFilters() {
+interface VacancyFiltersProps {
+  onNew: () => void;
+}
+export default function VacancyFilters({ onNew }: VacancyFiltersProps) {
+  
   return (
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
 
@@ -46,7 +49,8 @@ export default function VacancyFilters() {
 
       {/* Button */}
 
-      <Button
+      <Button 
+        onClick={onNew}
         className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
       >
 
