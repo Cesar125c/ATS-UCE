@@ -1,35 +1,28 @@
-import { useState } from "react";
-import { CheckCircle, XCircle, Clock, FileText } from "lucide-react";
-import MainLayout from "@/components/layout/MainLayout";
+import MainLayout from "../components/layout/MainLayout";
 
+import AuthorityHeader from "../components/authority/AuthorityHeader";
+import PendingCandidates from "../components/authority/PendingCandidates";
 
 export default function Authorities() {
   return (
     <MainLayout>
 
-    <AuthorityHeader />
+      <AuthorityHeader />
 
-    <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-12 gap-6">
 
-        <PendingCandidates />
+        <div className="col-span-4">
 
-        <div className="col-span-8">
-
-            <CandidateProfile />
-
-            <div className="grid grid-cols-3 gap-6">
-
-                <AIAnalysisSummary />
-
-                <ProcessHistory />
-
-            </div>
-
-            <DecisionForm />
+          <PendingCandidates />
 
         </div>
 
-    </div>
+        <div className="col-span-8">
 
-</MainLayout>
+        </div>
+
+      </div>
+
+    </MainLayout>
+  );
 }
