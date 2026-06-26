@@ -1,11 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Show, UserButton, useClerk } from "@clerk/react";
 import { Button } from "../ui";
 import SignInModal from "../home/SignInModal";
 
 export default function Header() {
+  const navigate = useNavigate();
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const { signOut } = useClerk();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="bg-blue-950 text-white shadow-lg">
@@ -40,7 +47,7 @@ export default function Header() {
                   },
                 }}
               />
-              <Button variant="outline" size="sm" onClick={() => signOut()}>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Sign out
               </Button>
             </div>

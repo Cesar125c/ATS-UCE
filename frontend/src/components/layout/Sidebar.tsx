@@ -6,7 +6,8 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useClerk } from "@clerk/react";
 
 const menuItems = [
   {
@@ -32,9 +33,16 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+  const { signOut } = useClerk();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
-
       {/* Logo */}
       <div className="h-16 bg-[#0B5ED7] flex items-center px-5">
         <div className="w-9 h-9 rounded-full bg-cyan-400 flex items-center justify-center text-white font-bold">
@@ -49,7 +57,6 @@ export default function Sidebar() {
 
       {/* Menu */}
       <nav className="flex-1 py-6">
-
         {menuItems.map((item) => {
           const Icon = item.icon;
 
@@ -74,19 +81,19 @@ export default function Sidebar() {
 
       {/* Bottom */}
       <div className="border-t p-4 space-y-2">
-
         <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
           <Settings size={18} />
           Configuration
         </button>
 
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50"
+        >
           <LogOut size={18} />
           Sign Out
         </button>
-
       </div>
-
     </aside>
   );
 }
