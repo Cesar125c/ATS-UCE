@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Show, UserButton } from "@clerk/react";
+import { Show, UserButton, useClerk } from "@clerk/react";
 import { Button } from "../ui";
 import SignInModal from "../home/SignInModal";
 
 export default function Header() {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const { signOut } = useClerk();
 
   return (
     <header className="bg-blue-950 text-white shadow-lg">
@@ -31,13 +32,18 @@ export default function Header() {
           </Show>
 
           <Show when="signed-in">
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: "w-10 h-10",
-                },
-              }}
-            />
+            <div className="flex items-center gap-2">
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-10 h-10",
+                  },
+                }}
+              />
+              <Button variant="outline" size="sm" onClick={() => signOut()}>
+                Sign out
+              </Button>
+            </div>
           </Show>
         </div>
       </div>

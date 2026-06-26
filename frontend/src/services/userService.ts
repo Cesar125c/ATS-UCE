@@ -2,31 +2,59 @@ import type { SignUpFutureResource, UserResource } from '@clerk/shared/types'
 
 export async function createUserWithRole(
   signUp: SignUpFutureResource | undefined,
-  data: { email: string; password: string; role: string; firstName: string; lastName: string }
+  data: {
+    email: string;
+    password: string;
+    role: string;
+    firstName: string;
+    lastName: string;
+  },
 ) {
   if (!signUp) {
-    throw new Error('Clerk sign-up is not ready')
+    throw new Error("Clerk sign-up is not ready");
   }
 
-  const { error } = await signUp.create({
-    emailAddress: data.email,
-    password: data.password,
-  })
-
-  if (error) {
-    throw new Error(error.message || 'Error creating account')
+  // Call Clerk signUp.create and handle different response shapes across SDK versions
+  let createResult: any;
+  try {
+    createResult = await signUp.create({
+      emailAddress: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+    });
+  } catch (e: any) {
+    const msg = e?.message || "Error creating account";
+    throw new Error(msg);
   }
 
-  const clerkUserId = signUp.createdUserId || signUp.id
-  console.log('Registration clerkUserId:', {
+  // Some SDKs return an object with `error` or `errors`, others return `createdUserId`/`status`.
+  if (createResult && (createResult.error || createResult.errors)) {
+    const errObj =
+      createResult.error ||
+      (Array.isArray(createResult.errors)
+        ? createResult.errors[0]
+        : createResult.errors);
+    const msg = (errObj && errObj.message) || "Error creating account";
+    throw new Error(msg);
+  }
+
+  const clerkUserId =
+    createResult?.createdUserId || signUp.createdUserId || signUp.id;
+  console.log("Registration clerkUserId:", {
     signUpId: signUp.id,
-    createdUserId: signUp.createdUserId,
+    createdUserId: createResult?.createdUserId || signUp.createdUserId,
     used: clerkUserId,
-  })
+    createResult,
+  });
 
-  const roleResponse = await fetch('/api/v1/users/set-role', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  if (!clerkUserId) {
+    throw new Error("Unable to determine Clerk user id after signup");
+  }
+
+  const roleResponse = await fetch("/api/v1/users/set-role", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       clerkUserId,
       role: data.role,
@@ -34,14 +62,14 @@ export async function createUserWithRole(
       firstName: data.firstName,
       lastName: data.lastName,
     }),
-  })
+  });
 
   if (!roleResponse.ok) {
-    throw new Error('Error al asignar el rol del usuario')
+    throw new Error("Error al asignar el rol del usuario");
   }
 
-  const roleData = await roleResponse.json()
-  return { clerkUserId, ...roleData }
+  const roleData = await roleResponse.json();
+  return { clerkUserId, ...roleData };
 }
 
 export async function assignUserRole(clerkUserId: string, role: string, email: string) {
