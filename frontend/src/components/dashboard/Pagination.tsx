@@ -2,53 +2,54 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "../ui/Button";
 
 interface PaginationProps {
-  currentPage?: number;
-  totalPages?: number;
-  totalItems?: number;
-  pageSize?: number;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }
 
 export default function Pagination({
-  currentPage = 1,
-  totalPages = 6,
-  totalItems = 24,
-  pageSize = 4,
+  currentPage,
+  totalPages,
+  totalItems,
+  pageSize,
+  onPageChange,
 }: PaginationProps) {
-  const start = (currentPage - 1) * pageSize + 1;
+  const start = Math.min((currentPage - 1) * pageSize + 1, totalItems);
   const end = Math.min(currentPage * pageSize, totalItems);
+
+  if (totalItems === 0) return null;
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-6">
-
       <p className="text-sm text-slate-500">
-        Showing{" "}
+        Mostrando{" "}
         <span className="font-semibold text-slate-800">
           {start}-{end}
         </span>{" "}
-        of{" "}
-        <span className="font-semibold text-slate-800">
-          {totalItems}
-        </span>{" "}
-        candidates
+        de{" "}
+        <span className="font-semibold text-slate-800">{totalItems}</span>{" "}
+        postulantes
       </p>
 
       <div className="flex items-center gap-2">
-
         <Button
           variant="outline"
           disabled={currentPage === 1}
           className="flex items-center gap-2"
+          onClick={() => onPageChange(currentPage - 1)}
         >
           <ChevronLeft size={16} />
-          Previous
+          Anterior
         </Button>
 
         {Array.from({ length: totalPages }).map((_, index) => {
           const page = index + 1;
-
           return (
             <button
               key={page}
+              onClick={() => onPageChange(page)}
               className={`w-10 h-10 rounded-lg transition-all ${
                 page === currentPage
                   ? "bg-red-600 text-white"
@@ -64,13 +65,12 @@ export default function Pagination({
           variant="outline"
           disabled={currentPage === totalPages}
           className="flex items-center gap-2"
+          onClick={() => onPageChange(currentPage + 1)}
         >
-          Next
+          Siguiente
           <ChevronRight size={16} />
         </Button>
-
       </div>
-
     </div>
   );
 }
