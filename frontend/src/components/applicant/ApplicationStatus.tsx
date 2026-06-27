@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { CheckCircle2, Circle, Clock3, Eye, XCircle } from "lucide-react";
+import { CheckCircle2, Circle, Clock3, Eye, XCircle, Loader2 } from "lucide-react";
 import Card from "../ui/Card";
 import { getMyApplicationStatus } from "@/services/applicationService";
 import type { ApplicationResponse, FlowStatus, StatusHistoryDTO } from "@/types/application";
@@ -32,9 +32,9 @@ const STATUS_MESSAGE: Record<string, { title: string; detail: string }> = {
       "Recibimos tu CV correctamente. El análisis mediante IA comenzará en breve.",
   },
   PROCESSING_AI: {
-    title: "Tu postulación está siendo analizada por IA.",
+    title: "Analizando tu CV mediante IA...",
     detail:
-      "El sistema está evaluando tu perfil automáticamente. Este proceso puede tardar unos minutos.",
+      "El sistema está evaluando tu perfil automáticamente. Este proceso puede tardar unos minutos. La página se actualizará automáticamente.",
   },
   HR_STAGE: {
     title: "Tu postulación se encuentra en Revisión RRHH.",
@@ -69,6 +69,7 @@ const STATUS_MESSAGE: Record<string, { title: string; detail: string }> = {
 };
 
 const POLL_INTERVAL_MS = 10000;
+const TERMINAL_STATUSES: FlowStatus[] = ["HIRED", "REJECTED"];
 
 function computeStepStatus(
   flowStep: FlowStatus,
@@ -99,6 +100,7 @@ export default function ApplicationStatus() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const previousStatusRef = useRef<FlowStatus | null>(null);
 
   const fetchStatus = async () => {
     try {
@@ -119,12 +121,12 @@ export default function ApplicationStatus() {
   useEffect(() => {
     if (!applications || applications.length === 0) return;
 
-    const processingApp = applications.find(
-      (a) => a.status === "PROCESSING_AI",
-    );
+    const currentStatus = applications[0].status;
 
-    if (processingApp) {
-      pollRef.current = setInterval(fetchStatus, POLL_INTERVAL_MS);
+    if (currentStatus === "PROCESSING_AI") {
+      if (!pollRef.current) {
+        pollRef.current = setInterval(fetchStatus, POLL_INTERVAL_MS);
+      }
     } else if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
@@ -171,7 +173,8 @@ export default function ApplicationStatus() {
     detail: "",
   };
 
-  const showRejected = currentStatus === "REJECTED";
+  const isTerminal = TERMINAL_STATUSES.includes(currentStatus);
+  const isProcessingAI = currentStatus === "PROCESSING_AI";
 
   return (
     <Card className="p-6 mt-6">
@@ -184,6 +187,13 @@ export default function ApplicationStatus() {
           <p className="text-sm text-slate-500 mt-1">
             Seguimiento en tiempo real del proceso de selección.
           </p>
+
+          {isProcessingAI && (
+            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
+              <Loader2 size={12} className="animate-spin" />
+              Actualizando cada 10 segundos
+            </p>
+          )}
         </div>
 
         <span className="text-xs bg-slate-100 rounded-full px-3 py-1 font-mono">
@@ -197,6 +207,8 @@ export default function ApplicationStatus() {
           const isLastInOrder = index === STEP_ORDER.length - 1;
           const connectorColor =
             stepStatus === "completed" ? "bg-sky-500" : "bg-slate-200";
+          const isCurrentProcessingAI =
+            stepStatus === "current" && step === "PROCESSING_AI";
 
           return (
             <div
@@ -216,7 +228,13 @@ export default function ApplicationStatus() {
                   </div>
                 )}
 
-                {stepStatus === "current" && (
+                {isCurrentProcessingAI && (
+                  <div className="w-10 h-10 rounded-full border-4 border-amber-500 bg-white flex items-center justify-center">
+                    <Loader2 size={18} className="text-amber-500 animate-spin" />
+                  </div>
+                )}
+
+                {stepStatus === "current" && !isCurrentProcessingAI && (
                   <div className="w-10 h-10 rounded-full border-4 border-sky-500 bg-white flex items-center justify-center">
                     <Clock3 size={18} className="text-sky-500" />
                   </div>
@@ -232,7 +250,9 @@ export default function ApplicationStatus() {
               <p className="font-medium text-sm mt-3">{STEP_LABELS[step]}</p>
 
               <p className="text-xs text-slate-500">
-                {getStepDate(step, history)}
+                {isCurrentProcessingAI
+                  ? "En curso..."
+                  : getStepDate(step, history)}
               </p>
             </div>
           );
@@ -241,30 +261,50 @@ export default function ApplicationStatus() {
 
       <div
         className={`rounded-lg p-4 flex gap-3 ${
-          showRejected
+          currentStatus === "REJECTED"
             ? "bg-red-50 border border-red-200"
             : currentStatus === "HIRED"
               ? "bg-emerald-50 border border-emerald-200"
-              : "bg-sky-50 border border-sky-200"
+              : isProcessingAI
+                ? "bg-amber-50 border border-amber-200"
+                : "bg-sky-50 border border-sky-200"
         }`}
       >
-        {showRejected ? (
+        {isProcessingAI ? (
+          <Loader2 className="text-amber-500 mt-1 shrink-0 animate-spin" size={18} />
+        ) : currentStatus === "REJECTED" ? (
           <XCircle className="text-red-500 mt-1 shrink-0" size={18} />
+        ) : currentStatus === "HIRED" ? (
+          <CheckCircle2 className="text-emerald-500 mt-1 shrink-0" size={18} />
         ) : (
-          <Eye
-            className={
-              currentStatus === "HIRED"
-                ? "text-emerald-500 mt-1 shrink-0"
-                : "text-sky-500 mt-1 shrink-0"
-            }
-            size={18}
-          />
+          <Eye className="text-sky-500 mt-1 shrink-0" size={18} />
         )}
 
         <div>
           <h4 className="font-semibold">{message.title}</h4>
 
           <p className="text-sm text-slate-600 mt-1">{message.detail}</p>
+
+          {isTerminal && currentStatus === "HIRED" && (
+            <div className="mt-3 pt-3 border-t border-emerald-200">
+              <p className="text-sm font-medium text-emerald-800">
+                Resultado final: {currentApp.ai_score?.grade ?? "—"}
+              </p>
+              {currentApp.ai_score && (
+                <p className="text-xs text-emerald-700 mt-1">
+                  Puntaje total: {currentApp.ai_score.total}/100
+                </p>
+              )}
+            </div>
+          )}
+
+          {isTerminal && currentStatus === "REJECTED" && (
+            <div className="mt-3 pt-3 border-t border-red-200">
+              <p className="text-sm font-medium text-red-800">
+                Puedes postular a otras vacantes disponibles desde la sección de carga de CV.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </Card>
