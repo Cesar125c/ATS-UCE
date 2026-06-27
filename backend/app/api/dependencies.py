@@ -5,7 +5,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
+from app.application.use_cases.record_authority_decision import RecordAuthorityDecisionUseCase
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
+from app.domain.services.workflow_approval_service import WorkflowApprovalService
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
 from app.infrastructure.database.session import get_db_session
@@ -96,3 +98,10 @@ async def get_process_ai_score_usecase(
     analysis: OpenAIAnalysisAdapter = Depends(get_analysis_adapter),
 ) -> ProcessAIScoreUseCase:
     return ProcessAIScoreUseCase(application_repo, vacancy_repo, analysis)
+
+
+async def get_record_authority_decision_usecase(
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+) -> RecordAuthorityDecisionUseCase:
+    workflow_service = WorkflowApprovalService()
+    return RecordAuthorityDecisionUseCase(application_repo, workflow_service)
