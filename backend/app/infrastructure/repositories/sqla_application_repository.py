@@ -7,10 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.domain.entities.application import Application
+from app.domain.entities.evaluation import Evaluation
 from app.domain.entities.status_history import StatusHistory
 from app.domain.repositories.i_application_repository import IApplicationRepository
 from app.domain.value_objects.flow_status import FlowStatus
 from app.infrastructure.database.mappers.application_mapper import ApplicationMapper
+from app.infrastructure.database.mappers.evaluation_mapper import EvaluationMapper
 from app.infrastructure.database.models.application_model import ApplicationModel
 from app.infrastructure.database.models.status_history_model import StatusHistoryModel
 
@@ -155,5 +157,10 @@ class SQLAApplicationRepository(IApplicationRepository):
             status=entry.status.value,
             transitioned_at=entry.transitioned_at,
         )
+        self._session.add(model)
+        await self._session.flush()
+
+    async def save_evaluation(self, evaluation: Evaluation) -> None:
+        model = EvaluationMapper.to_model(evaluation)
         self._session.add(model)
         await self._session.flush()
