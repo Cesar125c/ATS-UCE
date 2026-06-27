@@ -1,4 +1,5 @@
-import type { SignUpFutureResource, UserResource } from '@clerk/shared/types'
+import type { SignUpFutureResource, UserResource } from "@clerk/shared/types";
+import { apiFetch } from "./api";
 
 export async function createUserWithRole(
   signUp: SignUpFutureResource | undefined,
@@ -14,7 +15,6 @@ export async function createUserWithRole(
     throw new Error("Clerk sign-up is not ready");
   }
 
-  // Call Clerk signUp.create and handle different response shapes across SDK versions
   let createResult: any;
   try {
     createResult = await signUp.create({
@@ -28,7 +28,6 @@ export async function createUserWithRole(
     throw new Error(msg);
   }
 
-  // Some SDKs return an object with `error` or `errors`, others return `createdUserId`/`status`.
   if (createResult && (createResult.error || createResult.errors)) {
     const errObj =
       createResult.error ||
@@ -52,44 +51,38 @@ export async function createUserWithRole(
     throw new Error("Unable to determine Clerk user id after signup");
   }
 
-  const roleResponse = await fetch("/api/v1/users/set-role", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clerkUserId,
-      role: data.role,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-    }),
-  });
-
-  if (!roleResponse.ok) {
+  try {
+    const roleData = await apiFetch<Record<string, unknown>>("/api/v1/users/set-role", {
+      method: "POST",
+      body: JSON.stringify({
+        clerkUserId,
+        role: data.role,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      }),
+    });
+    return { clerkUserId, ...roleData };
+  } catch {
     throw new Error("Error al asignar el rol del usuario");
   }
-
-  const roleData = await roleResponse.json();
-  return { clerkUserId, ...roleData };
 }
 
 export async function assignUserRole(clerkUserId: string, role: string, email: string) {
-  const roleResponse = await fetch("/api/v1/users/set-role", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clerkUserId,
-      role,
-      email,
-      firstName: "",
-      lastName: "",
-    }),
-  });
-
-  if (!roleResponse.ok) {
+  try {
+    return await apiFetch<Record<string, unknown>>("/api/v1/users/set-role", {
+      method: "POST",
+      body: JSON.stringify({
+        clerkUserId,
+        role,
+        email,
+        firstName: "",
+        lastName: "",
+      }),
+    });
+  } catch {
     throw new Error("Error al asignar el rol del usuario");
   }
-
-  return await roleResponse.json();
 }
 
 export async function handleOAuthUser(user: UserResource) {
@@ -99,8 +92,7 @@ export async function handleOAuthUser(user: UserResource) {
 
   if (provider === "google" || provider === "linkedin") {
     role = "applicant";
-  }
-  else if (provider === "microsoft") {
+  } else if (provider === "microsoft") {
     const email = user?.emailAddresses?.[0]?.emailAddress;
 
     if (email?.endsWith("@uce.edu.ec")) {
@@ -112,21 +104,20 @@ export async function handleOAuthUser(user: UserResource) {
 
   const clerkUserId = user?.id;
   const email = user?.emailAddresses?.[0]?.emailAddress || "";
-  const roleResponse = await fetch("/api/v1/users/set-role", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clerkUserId,
-      role,
-      email,
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-    }),
-  });
 
-  if (!roleResponse.ok) {
+  try {
+    await apiFetch("/api/v1/users/set-role", {
+      method: "POST",
+      body: JSON.stringify({
+        clerkUserId,
+        role,
+        email,
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
+      }),
+    });
+    return { clerkUserId, role };
+  } catch {
     throw new Error("Error al asignar el rol del usuario");
   }
-
-  return { clerkUserId, role };
 }

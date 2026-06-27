@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { useUser } from '@clerk/react'
+import { useState, useEffect, useRef } from "react";
+import { useUser } from "@clerk/react";
+import { apiFetch } from "@/services/api";
 
 const ROLE_PATH_MAP: Record<string, string> = {
   applicant: '/applicant',
@@ -54,13 +55,11 @@ export function useRoleRedirect(): void {
         phase.current = 2
         console.log('sync-role: calling with clerkUserId =', clerkId)
         try {
-          const res = await fetch('/api/v1/users/sync-role', {
+          const data = await apiFetch<Record<string, unknown>>('/api/v1/users/sync-role', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clerkUserId: clerkId }),
-          })
-          const data = await res.json()
-          console.log('sync-role response:', res.status, data)
+          });
+          console.log('sync-role response: 200', data)
         } catch {
           // sync failed
         }
