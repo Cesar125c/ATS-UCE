@@ -1,4 +1,5 @@
 import type { ApplicationResponse } from "@/types/application";
+import { apiFetch } from "./api";
 
 const MAX_CV_SIZE_BYTES = 10_485_760; // 10 MB
 
@@ -82,4 +83,8 @@ export async function submitApplication(
   }
 
   return response.json() as Promise<ApplicationResponse>;
+}
+
+export async function getMyApplicationStatus(): Promise<ApplicationResponse[]> {
+  return apiFetch<ApplicationResponse[]>("/api/v1/applicants/me/status");
 }
