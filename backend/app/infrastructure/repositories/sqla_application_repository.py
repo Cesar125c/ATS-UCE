@@ -67,6 +67,33 @@ class SQLAApplicationRepository(IApplicationRepository):
 
         return ([ApplicationMapper.to_domain(m) for m in models], total)
 
+    async def find_models_by_status(
+        self, status: FlowStatus | None, page: int, page_size: int
+    ) -> tuple[list[ApplicationModel], int]:
+        """Returns ORM models with eager-loaded relationships for read-only DTO mapping."""
+        query = select(ApplicationModel).options(
+            selectinload(ApplicationModel.status_history),
+            selectinload(ApplicationModel.vacancy),
+            selectinload(ApplicationModel.applicant),
+        )
+
+        count_query = select(func.count()).select_from(ApplicationModel)
+
+        if status is not None:
+            query = query.where(ApplicationModel.status == status.value)
+            count_query = count_query.where(ApplicationModel.status == status.value)
+
+        query = query.order_by(ApplicationModel.score_total.desc().nullslast())
+        query = query.offset((page - 1) * page_size).limit(page_size)
+
+        items_result = await self._session.execute(query)
+        count_result = await self._session.execute(count_query)
+
+        models = list(items_result.unique().scalars().all())
+        total = count_result.scalar_one()
+
+        return (models, total)
+
     async def count_by_status(self, status: FlowStatus) -> int:
         result = await self._session.execute(
             select(func.count())
