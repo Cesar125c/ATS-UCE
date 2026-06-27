@@ -46,3 +46,4 @@ storybook-static/
 .DS_Store
 Thumbs.db
 *.bak
+.atl/
