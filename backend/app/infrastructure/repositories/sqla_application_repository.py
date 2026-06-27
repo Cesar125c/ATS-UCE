@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.domain.entities.application import Application
 from app.domain.entities.status_history import StatusHistory
@@ -31,6 +32,16 @@ class SQLAApplicationRepository(IApplicationRepository):
         )
         models = result.scalars().all()
         return [ApplicationMapper.to_domain(m) for m in models]
+
+    async def find_models_by_applicant_id(self, applicant_id: UUID) -> list[ApplicationModel]:
+        """Returns ORM models with status_history eagerly loaded — for read-only DTO mapping."""
+        result = await self._session.execute(
+            select(ApplicationModel)
+            .where(ApplicationModel.applicant_id == applicant_id)
+            .options(selectinload(ApplicationModel.status_history))
+            .order_by(ApplicationModel.created_at.desc())
+        )
+        return list(result.unique().scalars().all())
 
     async def find_by_status(
         self, status: FlowStatus, page: int, page_size: int
