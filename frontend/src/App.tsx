@@ -1,4 +1,5 @@
 import { useRoleRedirect } from "./hooks/useRoleRedirect";
+import ApiInitializer from "./components/ApiInitializer";
 import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
 import Authorities from "./pages/Authorities";
@@ -12,23 +13,16 @@ function App() {
   useRoleRedirect();
   const currentPath = normalizePath(window.location.pathname);
 
-  if (currentPath === "/sign-up") {
-    return <SignUp />;
-  }
-
-  if (currentPath === "/applicant") {
-    return <Applicant />;
-  }
-
-  if (currentPath === "/human-resources") {
-    return <HumanResources />;
-  }
-
-  if (currentPath === "/administrator" || currentPath === "/authority") {
-    return <Authorities />;
-  }
-
-  return <Home />;
+  return (
+    <>
+      <ApiInitializer />
+      {currentPath === "/sign-up" && <SignUp />}
+      {currentPath === "/applicant" && <Applicant />}
+      {currentPath === "/human-resources" && <HumanResources />}
+      {(currentPath === "/administrator" || currentPath === "/authority") && <Authorities />}
+      {!["/sign-up", "/applicant", "/human-resources", "/administrator", "/authority"].includes(currentPath) && <Home />}
+    </>
+  );
 }
 
 export default App;
