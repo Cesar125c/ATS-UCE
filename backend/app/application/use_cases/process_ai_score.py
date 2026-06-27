@@ -33,21 +33,26 @@ class ProcessAIScoreUseCase:
         self._email_service = email_service
 
     async def execute(self, application_id: UUID) -> None:
+        # 1. Update status to PROCESSING_AI
         application = await self._update_status_to_processing(application_id)
 
+        # 2. Download PDF from B2
         pdf_bytes = await self._download_pdf(application.cv_storage_key)
         if pdf_bytes is None:
-            return
+            return  # Storage failure already logged
 
+        # 3. Extract text from PDF
         text = await self._extract_text_from_pdf(pdf_bytes, application.id)
         if text is None or not text.strip():
             await self._reject_application(application, "CV_NOT_READABLE")
             return
 
+        # 4. Fetch vacancy for prompt context
         vacancy = await self._vacancy_repo.find_by_id(application.vacancy_id)
         if not vacancy:
             raise ValueError(f"Vacancy {application.vacancy_id} not found")
 
+        # 5. Analyze with OpenAI — retries are inside analyze_cv_with_fallback
         try:
             ai_score = await self._analysis_adapter.analyze_cv_with_fallback(
                 cv_text=text,
@@ -57,6 +62,7 @@ class ProcessAIScoreUseCase:
             application.assign_ai_score(ai_score)
             await self._application_repo.save(application)
         except OpenAIUnavailableError as exc:
+            # After all retries exhausted: persist error_reason, keep status PROCESSING_AI
             application.error_reason = "OPENAI_UNAVAILABLE"
             history_entry = StatusHistory(
                 id=uuid4(),
@@ -67,7 +73,11 @@ class ProcessAIScoreUseCase:
             await self._application_repo.save(application)
             await self._application_repo.create_status_history(history_entry)
             logger.error("OpenAI unavailable for application %s: %s", application.id, exc)
-            return
+            return  # no re-raise
+
+    # ---------------------------------------------------------------------------
+    # Private helpers
+    # ---------------------------------------------------------------------------
 
     async def _update_status_to_processing(self, application_id: UUID) -> Application:
         application = await self._application_repo.find_by_id(application_id)
@@ -105,7 +115,7 @@ class ProcessAIScoreUseCase:
 
     @staticmethod
     def _sync_extract_text(pdf_bytes: bytes) -> str:
-        import fitz
+        import fitz  # PyMuPDF
         text = ""
         with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
             for page in doc:
