@@ -27,7 +27,16 @@ export default defineConfig({
   },
   plugins: [react(), tailwindcss()],
   test: {
+    globals: true,
     projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+        },
+      },
       {
         extends: true,
         plugins: [
