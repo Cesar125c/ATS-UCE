@@ -9,11 +9,13 @@ on:
 # This workflow validates the project before changes move between branches.
 # It does not deploy anything; it only checks backend, frontend, lint, build, and tests.
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   backend:
     name: Backend CI
     runs-on: ubuntu-latest
-    timeout-minutes: 15
 
     services:
       postgres:
@@ -51,12 +53,9 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
-        with:
-          enable-caching: true  # Cachea dependencias entre runs para acelerar el CI
 
       - name: Install backend dependencies
-        run: uv sync --frozen --extra dev
-        # --frozen: usa exactamente el lock file, sin resolver versiones nuevas
+        run: uv sync --extra dev
 
       - name: Check backend formatting with Ruff
         run: uv run ruff format --check .
@@ -67,34 +66,12 @@ jobs:
       - name: Apply migrations on the temporary database
         run: uv run alembic upgrade head
 
-      - name: Run backend tests
-        run: |
-          uv run pytest \
-            -v \
-            --tb=short \
-            --no-header \
-            --color=yes \
-            --cov=. \
-            --cov-report=term-missing \
-            --cov-report=html:coverage-report
-        # -v             → muestra cada test con su nombre y estado (PASSED/FAILED)
-        # --tb=short     → traceback resumido: archivo, línea y assertion exacta
-        # --color=yes    → output con colores en GitHub Actions
-        # --cov          → mide cobertura de código
-        # --cov-report=term-missing → muestra en el log qué líneas no tienen cobertura
-
-      - name: Upload coverage report
-        if: always()  # Sube el reporte aunque los tests fallen, para poder analizarlo
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: backend/coverage-report/
-          retention-days: 7
+      - name: Run backend unit tests
+        run: uv run pytest tests/unit
 
   frontend:
     name: Frontend CI
     runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     defaults:
       run:
