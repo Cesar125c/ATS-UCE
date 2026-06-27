@@ -6,10 +6,12 @@ from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.application import Application
+from app.domain.entities.status_history import StatusHistory
 from app.domain.repositories.i_application_repository import IApplicationRepository
 from app.domain.value_objects.flow_status import FlowStatus
 from app.infrastructure.database.mappers.application_mapper import ApplicationMapper
 from app.infrastructure.database.models.application_model import ApplicationModel
+from app.infrastructure.database.models.status_history_model import StatusHistoryModel
 
 
 class SQLAApplicationRepository(IApplicationRepository):
@@ -107,3 +109,13 @@ class SQLAApplicationRepository(IApplicationRepository):
         await self._session.flush()
         await self._session.refresh(merged)
         return ApplicationMapper.to_domain(merged)
+
+    async def create_status_history(self, entry: StatusHistory) -> None:
+        model = StatusHistoryModel(
+            id=entry.id,
+            application_id=entry.application_id,
+            status=entry.status.value,
+            transitioned_at=entry.transitioned_at,
+        )
+        self._session.add(model)
+        await self._session.flush()

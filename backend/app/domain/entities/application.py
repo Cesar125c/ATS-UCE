@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Optional
 from uuid import UUID, uuid4
 
 from app.domain.value_objects.ai_score import AIScore
@@ -16,6 +17,7 @@ class Application:
     id: UUID = field(default_factory=uuid4)
     status: FlowStatus = FlowStatus.RECEIVED
     ai_score: AIScore | None = None
+    error_reason: Optional[str] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
