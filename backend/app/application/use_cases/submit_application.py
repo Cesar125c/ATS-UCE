@@ -28,18 +28,21 @@ class SubmitApplicationUseCase:
         vacancy_id: UUID,
         cv_content: bytes,
     ) -> Application:
+        # Verify vacancy exists and is active
         vacancy = await self.vacancy_repo.find_by_id(vacancy_id)
         if vacancy is None or not vacancy.is_active:
             raise ValueError("Vacancy not found or not active")
 
+        # Persist application first to obtain the real UUID
         application = Application(
             applicant_id=applicant_id,
             vacancy_id=vacancy_id,
-            cv_storage_key="",
+            cv_storage_key="",  # placeholder — updated after upload
             status=FlowStatus.RECEIVED,
         )
         application = await self.application_repo.save(application)
 
+        # Build the B2 key using the real application.id, then upload exactly once
         b2_key = f"cvs/{applicant_id}/{application.id}.pdf"
         await self.storage_adapter.upload_file(
             key=b2_key,
@@ -49,6 +52,7 @@ class SubmitApplicationUseCase:
         application.cv_storage_key = b2_key
         await self.application_repo.save(application)
 
+        # Record initial status history
         status_history = StatusHistory(
             application_id=application.id,
             status=FlowStatus.RECEIVED,
