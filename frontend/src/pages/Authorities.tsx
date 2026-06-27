@@ -1,26 +1,63 @@
-import { useUser } from '@clerk/react'
+import MainLayout from "../components/layout/MainLayout";
+
+import AuthorityHeader from "../components/authority/AuthorityHeader";
+import PendingCandidates from "../components/authority/PendingCandidates";
+import CandidateProfile from "../components/authority/CandidateProfile";
+import AIAnalysisSummary from "../components/authority/AIAnalysisSummary";
+import ProcessHistory from "../components/authority/ProcessHistory";
+import DecisionForm from "../components/authority/DecisionForm";
+import DecisionActions from "../components/authority/DecisionActions";
 
 export default function Authorities() {
-  const { user } = useUser()
-  const role = user?.publicMetadata?.role as string | undefined
-
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
-      <div className="max-w-3xl w-full rounded-3xl bg-white p-10 shadow-2xl border border-slate-200">
-        <h1 className="text-4xl font-bold text-slate-900 mb-4">
-          Bienvenido, Autoridades
-        </h1>
+    <MainLayout>
 
-        <p className="text-lg text-slate-700 mb-6">
-          Has ingresado a la página correspondiente a tu rol.
-        </p>
+      <AuthorityHeader />
 
-        <div className="rounded-2xl bg-slate-50 p-6 border border-slate-200">
-          <p className="text-slate-600">
-            Rol asignado: <span className="font-semibold">{role ?? 'No asignado'}</span>
-          </p>
+      <div className="grid grid-cols-12 gap-6">
+
+        {/* Left Panel */}
+
+        <div className="col-span-4">
+
+          <PendingCandidates />
+
         </div>
+
+        {/* Right Panel */}
+
+        <div className="col-span-8">
+
+          <CandidateProfile />
+
+          <div className="grid grid-cols-3 gap-6 mb-6">
+
+            <div className="col-span-2">
+
+              <AIAnalysisSummary />
+
+            </div>
+
+            <ProcessHistory />
+
+          </div>
+
+          <div className="grid grid-cols-3 gap-6">
+
+            <div className="col-span-2">
+
+              <DecisionForm />
+
+            </div>
+
+            <DecisionActions />
+
+          </div>
+
+        </div>
+
       </div>
-    </div>
-  )
+
+    </MainLayout>
+  );
 }

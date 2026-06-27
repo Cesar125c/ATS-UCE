@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useAuth, useClerk } from "@clerk/react";
 import { Input, Button, Card } from "../ui";
 import { useSignUpWithRole } from "../../hooks/useSignUpWithRole";
@@ -18,20 +18,24 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>();
 
-  const selectedRole = watch("role");
-  const password = watch("password");
+  const selectedRole = useWatch({ control, name: "role" });
+  const password = useWatch({ control, name: "password" });
 
   const { isSignedIn, isLoaded } = useAuth();
   const { signOut } = useClerk();
 
+  const handleSignOut = async () => {
+    await signOut({ redirectUrl: "/" });
+  };
+
   useEffect(() => {
     reset();
-  }, []);
+  }, [reset]);
 
   if (isLoaded && isSignedIn) {
     return (
@@ -46,7 +50,7 @@ export default function RegisterForm() {
           type="button"
           variant="secondary"
           size="lg"
-          onClick={() => signOut()}
+          onClick={handleSignOut}
         >
           Sign out
         </Button>

@@ -10,23 +10,23 @@ interface SignInModalProps {
   onClose: () => void
 }
 
+function redirectByRole(role?: string) {
+  if (role === 'applicant') {
+    window.location.assign('/applicant')
+  } else if (role === 'human_resources') {
+    window.location.assign('/human-resources')
+  } else if (role === 'authorities') {
+    window.location.assign('/authority')
+  } else {
+    window.location.assign('/')
+  }
+}
+
 export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const { user, isLoaded } = useUser()
   const [isProcessing, setIsProcessing] = useState(false)
   const [showRoleSelection, setShowRoleSelection] = useState(false)
   const [isAssigningRole, setIsAssigningRole] = useState(false)
-
-  const redirectByRole = (role?: string) => {
-    if (role === 'applicant') {
-      window.location.assign('/applicant')
-    } else if (role === 'human_resources') {
-      window.location.assign('/human-resources')
-    } else if (role === 'authorities') {
-      window.location.assign('/authority')
-    } else {
-      window.location.assign('/')
-    }
-  }
 
   // Handle OAuth after user is created
   useEffect(() => {
