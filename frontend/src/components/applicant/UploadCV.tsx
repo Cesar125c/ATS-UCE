@@ -1,22 +1,48 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@clerk/react";
 import { UploadCloud, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { submitApplication, validateCVFile, ApplicationError } from "@/services/applicationService";
+import { getVacancies } from "@/services/vacancyService";
 import type { ApplicationResponse } from "@/types/application";
+import type { Vacancy } from "@/types/vacancy";
 
-interface UploadCVProps {
-  vacancyId: string;
-}
-
-export default function UploadCV({ vacancyId }: UploadCVProps) {
+export default function UploadCV() {
   const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
+  const [selectedVacancyId, setSelectedVacancyId] = useState("");
+  const [vacanciesLoading, setVacanciesLoading] = useState(true);
+  const [vacanciesError, setVacanciesError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ApplicationResponse | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const data = await getVacancies();
+        if (!cancelled) {
+          setVacancies(data);
+          setVacanciesLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setVacanciesError("Error al cargar las vacantes disponibles.");
+          setVacanciesLoading(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const canSubmit = Boolean(selectedVacancyId && file);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -48,13 +74,13 @@ export default function UploadCV({ vacancyId }: UploadCVProps) {
   }, []);
 
   const handleSubmit = async () => {
-    if (!file) return;
+    if (!file || !selectedVacancyId) return;
 
     setError(null);
     setIsSubmitting(true);
 
     try {
-      const data = await submitApplication(vacancyId, file, getToken);
+      const data = await submitApplication(selectedVacancyId, file, getToken);
       setResult(data);
     } catch (e) {
       if (e instanceof ApplicationError) {
@@ -86,6 +112,7 @@ export default function UploadCV({ vacancyId }: UploadCVProps) {
             onClick={() => {
               setResult(null);
               setFile(null);
+              setSelectedVacancyId("");
             }}
           >
             Enviar otra postulación
@@ -102,9 +129,43 @@ export default function UploadCV({ vacancyId }: UploadCVProps) {
           Subir Curriculum Vitae
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          Sólo archivos PDF. El análisis mediante IA se ejecuta
-          automáticamente después del envío.
+          Selecciona una vacante y sube tu CV en PDF. El análisis mediante IA se
+          ejecuta automáticamente después del envío.
         </p>
+      </div>
+
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Vacante
+        </label>
+
+        {vacanciesLoading ? (
+          <div className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-400">
+            Cargando vacantes...
+          </div>
+        ) : vacanciesError ? (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+            <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-red-700">{vacanciesError}</p>
+          </div>
+        ) : vacancies.length === 0 ? (
+          <div className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-500 bg-slate-50">
+            No hay vacantes disponibles en este momento.
+          </div>
+        ) : (
+          <select
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 bg-white text-slate-900"
+            value={selectedVacancyId}
+            onChange={(e) => setSelectedVacancyId(e.target.value)}
+          >
+            <option value="">Selecciona una vacante</option>
+            {vacancies.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.title} — {v.faculty}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div
@@ -157,7 +218,7 @@ export default function UploadCV({ vacancyId }: UploadCVProps) {
 
       <Button
         className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-        disabled={!file || isSubmitting}
+        disabled={!canSubmit || isSubmitting}
         isLoading={isSubmitting}
         onClick={handleSubmit}
       >
