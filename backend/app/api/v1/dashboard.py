@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/stats", response_model=DashboardStatsResponse)
 async def get_dashboard_stats(
-    _user: dict = Depends(require_role(["hr_staff"])),
+    _user: dict = Depends(require_role(["human_resources"])),
     repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> DashboardStatsResponse:
     """Return aggregate recruitment statistics for the HR dashboard.

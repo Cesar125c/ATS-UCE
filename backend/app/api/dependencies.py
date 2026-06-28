@@ -1,8 +1,14 @@
 """FastAPI dependency injection wiring. Maps interfaces to concrete implementations."""
 
+import logging
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
+
+logger = logging.getLogger("ats_uce")
 
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
 from app.application.use_cases.record_authority_decision import RecordAuthorityDecisionUseCase
@@ -33,7 +39,7 @@ async def get_current_user(
     settings = get_settings()
     if settings.app_env == "development" and not settings.clerk_secret_key:
         # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
-        return {"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}
+        return {"user_id": "dev_user_001", "role": "human_resources", "email": "dev@uce.edu.ec"}
 
     adapter = ClerkAuthAdapter(settings)
     try:

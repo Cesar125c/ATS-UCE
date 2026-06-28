@@ -59,7 +59,7 @@ async def list_applications(
     status: FlowStatus | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(4, ge=1, le=50),
-    _user: dict = Depends(require_role(["hr_staff"])),
+    _user: dict = Depends(require_role(["human_resources"])),
     repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> ApplicationListResponse:
     """List applications filtered by optional status, with pagination."""
