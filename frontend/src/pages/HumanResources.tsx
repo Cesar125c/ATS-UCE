@@ -1,42 +1,38 @@
 import { useState, useEffect, useCallback } from "react";
-import MainLayout from "../components/layout/MainLayout";
+import DashboardLayout from "../components/layout/DashboardLayout";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import StatsCards from "../components/dashboard/StatsCards";
 import Filters from "../components/dashboard/Filters";
 import CandidateTable from "../components/dashboard/CandidateTable";
 import Pagination from "../components/dashboard/Pagination";
 import ApplicationsChart from "../components/dashboard/ApplicationsChart";
+import EvaluationModal from "../components/dashboard/EvaluationModal";
 import { getDashboardStats, getApplicationsByStatus } from "@/services/dashboardService";
 import { getVacancies } from "@/services/vacancyService";
-import type { DashboardStats } from "@/services/dashboardService";
-import type { ApplicationResponse } from "@/types/application";
+import type { DashboardStats, ApplicationRankingItem } from "@/services/dashboardService";
 import type { Vacancy } from "@/types/vacancy";
 
 export default function HumanResources() {
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("HR_STAGE");
   const [page, setPage] = useState(1);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [applications, setApplications] = useState<ApplicationResponse[]>([]);
+  const [items, setItems] = useState<ApplicationRankingItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [pageSize, setPageSize] = useState(4);
-  const [vacancyMap, setVacancyMap] = useState<Map<string, Vacancy>>(new Map());
+  const [pageSize, setPageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [evaluatingAppId, setEvaluatingAppId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [appsResult, vacancies] = await Promise.all([
-        getApplicationsByStatus(status || undefined, page, pageSize),
-        getVacancies(),
-      ]);
-      setApplications(appsResult.items);
-      setTotal(appsResult.total);
-      setPageSize(appsResult.page_size);
-      setVacancyMap(new Map(vacancies.map((v) => [v.id, v])));
+      const result = await getApplicationsByStatus(status || undefined, page, pageSize);
+      setItems(result.items);
+      setTotal(result.total);
+      setPageSize(result.page_size);
+      setTotalPages(result.pages);
     } catch {
       setError("Error al cargar los datos del dashboard.");
     } finally {
@@ -69,8 +65,13 @@ export default function HumanResources() {
     setPage(1);
   };
 
+  const handleEvaluationSuccess = () => {
+    setEvaluatingAppId(null);
+    fetchData();
+  };
+
   return (
-    <MainLayout>
+    <DashboardLayout>
       <DashboardHeader />
 
       <StatsCards stats={stats} />
@@ -78,9 +79,9 @@ export default function HumanResources() {
       <Filters status={status} onStatusChange={handleStatusChange} />
 
       <CandidateTable
-        applications={applications}
-        vacancies={vacancyMap}
+        items={items}
         loading={loading}
+        onEvaluate={setEvaluatingAppId}
       />
 
       {error && (
@@ -100,6 +101,14 @@ export default function HumanResources() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
         <ApplicationsChart />
       </div>
-    </MainLayout>
+
+      {evaluatingAppId && (
+        <EvaluationModal
+          applicationId={evaluatingAppId}
+          onClose={() => setEvaluatingAppId(null)}
+          onSuccess={handleEvaluationSuccess}
+        />
+      )}
+    </DashboardLayout>
   );
 }

@@ -1,4 +1,4 @@
-import MainLayout from "../components/layout/MainLayout";
+import PortalLayout from "../components/layout/PortalLayout";
 
 import ApplicantHeader from "../components/applicant/ApplicantHeader";
 import ApplicantStats from "../components/applicant/ApplicantStats";
@@ -11,30 +11,19 @@ import HelpCards from "../components/applicant/HelpCards";
 
 export default function Applicant() {
   return (
-    <MainLayout>
-
+    <PortalLayout>
       <ApplicantHeader />
-
       <ApplicantStats />
-
       <UploadNotice />
-
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
         <div className="xl:col-span-2">
           <UploadCV />
         </div>
-
         <AIAnalysis />
-
       </div>
-
       <ApplicationStatus />
-
       <ApplicationHistory />
-
       <HelpCards />
-
-    </MainLayout>
+    </PortalLayout>
   );
 }

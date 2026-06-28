@@ -14,16 +14,13 @@ export default function Header() {
   return (
     <header className="bg-blue-950 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-        {/* Logo */}
         <div>
           <h1 className="text-3xl font-bold">ATS-UCE</h1>
-
           <p className="text-sm text-slate-300">
             Teacher Recruitment Management System
           </p>
         </div>
 
-        {/* Clerk Authentication */}
         <div className="flex items-center gap-3">
           <Show when="signed-out">
             <Button
@@ -52,7 +49,6 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Sign In Modal */}
       <SignInModal
         isOpen={isSignInOpen}
         onClose={() => setIsSignInOpen(false)}
