@@ -7,6 +7,8 @@ import logging
 from uuid import UUID
 
 import resend
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import get_settings
 
@@ -39,6 +41,25 @@ _STAGE_MESSAGES: dict[str, tuple[str, str]] = {
     ),
 }
 
+_AUTHORITY_NOTIFICATIONS: dict[str, tuple[str, str]] = {
+    "HR_STAGE": (
+        "Nueva postulación lista para revisión",
+        "Una nueva postulación ha avanzado a la etapa de revisión de RRHH.",
+    ),
+    "DEAN_STAGE": (
+        "Postulación aprobada por RRHH — revisión del Decano",
+        "Una postulación ha sido aprobada por RRHH y requiere revisión del Decano.",
+    ),
+    "RECTOR_STAGE": (
+        "Postulación aprobada por el Decano — revisión del Rector",
+        "Una postulación ha sido aprobada por el Decano y requiere revisión del Rector.",
+    ),
+    "FINANCE_STAGE": (
+        "Postulación aprobada por el Rector — revisión del Director Financiero",
+        "Una postulación ha sido aprobada por el Rector y requiere revisión financiera.",
+    ),
+}
+
 
 class ResendEmailAdapter:
     """Adapter for sending email notifications via Resend API. Never raises — logs and swallows all failures."""
@@ -67,8 +88,49 @@ class ResendEmailAdapter:
                 ),
             )
             logger.info("Email sent to %s — subject: %s", to, subject)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Failed to send email to %s — subject: %s — error: %s", to, subject, exc)
+
+    # ------------------------------------------------------------------
+    # Email resolution helpers
+    # ------------------------------------------------------------------
+
+    async def _resolve_applicant_email(self, application_id: UUID) -> str | None:
+        """Look up the applicant's email from the database via application_id."""
+        try:
+            from app.infrastructure.database.models.application_model import ApplicationModel
+            from app.infrastructure.database.models.applicant_model import ApplicantModel
+            from app.infrastructure.database.models.user_model import UserModel
+            from app.infrastructure.database.session import get_db_session
+
+            async with get_db_session() as session:
+                result = await session.execute(
+                    select(UserModel.email)
+                    .join(ApplicantModel, ApplicantModel.user_id == UserModel.id)
+                    .join(ApplicationModel, ApplicationModel.applicant_id == ApplicantModel.id)
+                    .where(ApplicationModel.id == application_id)
+                )
+                email = result.scalars().first()
+                return email
+        except Exception as exc:
+            logger.error("Failed to resolve applicant email for application %s: %s", application_id, exc)
+            return None
+
+    async def _resolve_authority_emails(self) -> list[str]:
+        """Look up emails of all users with role 'authorities'."""
+        try:
+            from app.infrastructure.database.models.user_model import UserModel
+            from app.infrastructure.database.session import get_db_session
+
+            async with get_db_session() as session:
+                result = await session.execute(
+                    select(UserModel.email).where(UserModel.role == "authorities")
+                )
+                emails = result.scalars().all()
+                return list(emails)
+        except Exception as exc:
+            logger.error("Failed to resolve authority emails: %s", exc)
+            return []
 
     # ------------------------------------------------------------------
     # Public notification methods — never raise
@@ -93,14 +155,10 @@ class ResendEmailAdapter:
                     "for preselection at this time. We encourage you to apply again in the future."
                 )
 
-            # applicant_id used as a routing key; real email lookup happens via user service
-            # For now we log the intent — email will be wired when user-lookup is available (Sprint 5)
             logger.info(
                 "Rejection notification queued for applicant %s — reason: %s", applicant_id, reason
             )
-            # When the email address is resolvable, call dispatch:
-            # await self.dispatch(to=email, subject=subject, html=f"<p>{body}</p>")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(
                 "Failed to queue rejection notification for applicant %s: %s", applicant_id, exc
             )
@@ -118,14 +176,36 @@ class ResendEmailAdapter:
             logger.info(
                 "Stage notification queued for applicant %s — stage: %s", applicant_id, stage
             )
-            # When the email address is resolvable:
-            # await self.dispatch(to=email, subject=subject, html=f"<p>{message}</p>")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(
                 "Failed to queue stage notification for applicant %s — stage %s: %s",
                 applicant_id,
                 stage,
                 exc,
+            )
+
+    async def send_authority_notification(
+        self, application_id: UUID, *, stage: str
+    ) -> None:
+        """Notify all authority users that an application has moved to their stage."""
+        try:
+            notif = _AUTHORITY_NOTIFICATIONS.get(stage)
+            if not notif:
+                logger.info("No authority notification defined for stage: %s", stage)
+                return
+
+            subject, message = notif
+            authority_emails = await self._resolve_authority_emails()
+            for email in authority_emails:
+                await self.dispatch(
+                    to=email,
+                    subject=subject,
+                    html=f"<p>{message}</p>",
+                )
+        except Exception as exc:
+            logger.error(
+                "Failed to send authority notification for application %s — stage %s: %s",
+                application_id, stage, exc,
             )
 
     # ------------------------------------------------------------------
