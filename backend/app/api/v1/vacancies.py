@@ -1,30 +1,47 @@
-"""Public vacancy listing endpoint — no authentication required."""
-
-from uuid import UUID
+"""Vacancy endpoints — listing and creation for the administration panel."""
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 
-from app.api.dependencies import get_vacancy_repository
+from app.api.dependencies import get_vacancy_repository, require_role
+from app.application.dtos.vacancy_dtos import VacancyCreateRequest, VacancyResponse
+from app.domain.entities.vacancy import Vacancy
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
 router = APIRouter()
 
 
-class VacancyResponse(BaseModel):
-    id: UUID
-    title: str
-    faculty: str
-    department: str
-    is_active: bool
+def _to_response(v: Vacancy) -> dict:
+    return {
+        "id": str(v.id),
+        "title": v.title,
+        "faculty": v.faculty,
+        "department": v.department,
+        "is_active": v.is_active,
+    }
 
-    model_config = {"from_attributes": True}
 
-
-@router.get("/", response_model=list[VacancyResponse])
+@router.get("/")
 async def list_vacancies(
     repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
-) -> list[VacancyResponse]:
+) -> list[dict]:
     """Return all active vacancies for the applicant dropdown."""
     vacancies = await repo.find_all_active()
-    return [VacancyResponse.model_validate(v) for v in vacancies]
+    return [_to_response(v) for v in vacancies]
+
+
+@router.post("/", status_code=201)
+async def create_vacancy(
+    body: VacancyCreateRequest,
+    _user: dict = Depends(require_role(["human_resources", "authorities"])),
+    repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
+) -> dict:
+    """Create a new vacancy. Accessible by RRHH and Authorities."""
+    vacancy = Vacancy(
+        title=body.title,
+        faculty=body.faculty,
+        department=body.department,
+        description=body.description,
+        requirements=body.requirements,
+    )
+    saved = await repo.save(vacancy)
+    return _to_response(saved)
