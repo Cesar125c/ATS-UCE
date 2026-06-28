@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { useUser } from "@clerk/react";
 import { useRoleRedirect } from "./hooks/useRoleRedirect";
 import ApiInitializer from "./components/ApiInitializer";
@@ -6,6 +7,9 @@ import SignUp from "./pages/SignUp";
 import Authorities from "./pages/Authorities";
 import Applicant from "./pages/Applicant";
 import HumanResources from "./pages/HumanResources";
+import Candidates from "./pages/Candidates";
+import Reports from "./pages/Reports";
+import Administration from "./pages/Administrator";
 
 const normalizePath = (pathname: string) =>
   pathname.toLowerCase().replace(/\/$/, "");
@@ -20,16 +24,19 @@ const PATH_ROLE_MAP: Record<string, string> = {
   "/applicant": "applicant",
   "/human-resources": "human_resources",
   "/authority": "authorities",
-  "/administrator": "authorities",
+  "/administrator": "human_resources",
+  "/candidates": "human_resources",
+  "/reports": "human_resources",
 };
 
 function App() {
   useRoleRedirect();
   const { isLoaded, isSignedIn, user } = useUser();
-  const currentPath = normalizePath(window.location.pathname);
+  const location = useLocation();
+  const currentPath = normalizePath(location.pathname);
   const expectedRole = PATH_ROLE_MAP[currentPath];
 
-  // Role-gated pages: block render until we confirm the user has the right role
+  // Redirect if user has a different role than the page they're trying to access.
   if (expectedRole && isLoaded && isSignedIn) {
     const userRole = user?.publicMetadata?.role as string | undefined;
     if (userRole && userRole !== expectedRole) {
@@ -39,11 +46,9 @@ function App() {
       }
       return null;
     }
-    if (!userRole) {
-      // Metadata still loading — show nothing, useRoleRedirect will handle it
-      return null;
-    }
   }
+
+  const knownPaths = ["/sign-up", "/applicant", "/human-resources", "/administrator", "/authority", "/candidates", "/reports"];
 
   return (
     <>
@@ -51,8 +56,11 @@ function App() {
       {currentPath === "/sign-up" && <SignUp />}
       {currentPath === "/applicant" && <Applicant />}
       {currentPath === "/human-resources" && <HumanResources />}
-      {(currentPath === "/administrator" || currentPath === "/authority") && <Authorities />}
-      {!["/sign-up", "/applicant", "/human-resources", "/administrator", "/authority"].includes(currentPath) && <Home />}
+      {currentPath === "/candidates" && <Candidates />}
+      {currentPath === "/reports" && <Reports />}
+      {currentPath === "/administrator" && <Administration />}
+      {currentPath === "/authority" && <Authorities />}
+      {!knownPaths.includes(currentPath) && <Home />}
     </>
   );
 }

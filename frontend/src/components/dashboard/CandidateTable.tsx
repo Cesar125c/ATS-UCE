@@ -1,15 +1,14 @@
 import Card from "../ui/Card";
 import CandidateRow from "./CandidateRow";
-import type { ApplicationResponse } from "@/types/application";
-import type { Vacancy } from "@/types/vacancy";
+import type { ApplicationRankingItem } from "@/services/dashboardService";
 
 interface CandidateTableProps {
-  applications: ApplicationResponse[];
-  vacancies: Map<string, Vacancy>;
+  items: ApplicationRankingItem[];
   loading?: boolean;
+  onEvaluate: (applicationId: string) => void;
 }
 
-export default function CandidateTable({ applications, vacancies, loading }: CandidateTableProps) {
+export default function CandidateTable({ items, loading, onEvaluate }: CandidateTableProps) {
   if (loading) {
     return (
       <Card className="p-0 overflow-hidden">
@@ -37,21 +36,22 @@ export default function CandidateTable({ applications, vacancies, loading }: Can
             <th className="px-6 py-3">Facultad</th>
             <th className="px-6 py-3">Puntaje</th>
             <th className="px-6 py-3">Estado</th>
+            <th className="px-6 py-3">Acciones</th>
           </tr>
         </thead>
 
         <tbody>
-          {applications.map((app) => (
+          {items.map((item) => (
             <CandidateRow
-              key={app.id}
-              application={app}
-              vacancy={vacancies.get(app.vacancy_id)}
+              key={item.id}
+              item={item}
+              onEvaluate={onEvaluate}
             />
           ))}
         </tbody>
       </table>
 
-      {applications.length === 0 && (
+      {items.length === 0 && (
         <div className="px-6 py-12 text-center text-slate-500">
           No hay postulaciones para este filtro.
         </div>
