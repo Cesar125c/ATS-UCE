@@ -10,6 +10,8 @@ from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 
 logger = logging.getLogger("ats_uce")
 
+from app.application.use_cases.get_application_status import GetApplicationStatusUseCase
+from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
 from app.application.use_cases.record_authority_decision import RecordAuthorityDecisionUseCase
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
@@ -111,3 +113,17 @@ async def get_record_authority_decision_usecase(
 ) -> RecordAuthorityDecisionUseCase:
     workflow_service = WorkflowApprovalService()
     return RecordAuthorityDecisionUseCase(application_repo, workflow_service)
+
+
+async def get_application_status_usecase(
+    applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+    vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
+) -> GetApplicationStatusUseCase:
+    return GetApplicationStatusUseCase(applicant_repo, application_repo, vacancy_repo)
+
+
+async def get_review_ranking_usecase(
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+) -> ReviewRankingUseCase:
+    return ReviewRankingUseCase(application_repo)

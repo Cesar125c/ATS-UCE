@@ -43,3 +43,8 @@ class IApplicationRepository(ABC):
 
     @abstractmethod
     async def save_evaluation(self, evaluation: Evaluation) -> None: ...
+
+    @abstractmethod
+    async def find_status_history_by_application_id(
+        self, application_id: UUID
+    ) -> list[StatusHistory]: ...
