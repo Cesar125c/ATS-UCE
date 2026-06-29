@@ -6,9 +6,10 @@ import type { Vacancy } from "@/types/vacancy";
 
 interface VacancyTableProps {
   refreshKey: number;
+  onRefresh: () => void;
 }
 
-export default function VacancyTable({ refreshKey }: VacancyTableProps) {
+export default function VacancyTable({ refreshKey, onRefresh }: VacancyTableProps) {
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +58,7 @@ export default function VacancyTable({ refreshKey }: VacancyTableProps) {
               </td>
             </tr>
           ) : (
-            vacancies.map((v) => <VacancyRow key={v.id} vacancy={v} />)
+            vacancies.map((v) => <VacancyRow key={v.id} vacancy={v} onDeleted={onRefresh} />)
           )}
         </tbody>
       </table>

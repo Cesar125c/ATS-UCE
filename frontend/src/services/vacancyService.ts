@@ -19,3 +19,9 @@ export async function createVacancy(body: CreateVacancyRequest): Promise<Vacancy
     body: JSON.stringify(body),
   });
 }
+
+export async function deleteVacancy(vacancyId: string): Promise<void> {
+  await apiFetch(`/api/v1/vacancies/${vacancyId}`, {
+    method: "DELETE",
+  });
+}
