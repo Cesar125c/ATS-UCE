@@ -1,39 +1,20 @@
 from fastapi import APIRouter, Depends, Form, File, HTTPException, Query, UploadFile
 from uuid import UUID
-from uuid import UUID
 
 from app.api.dependencies import (
-    get_current_user,
     require_role,
     get_submit_application_usecase,
     get_applicant_repository,
-    get_application_repository,
     get_review_ranking_usecase,
 )
-from app.application.dtos.application_dtos import ApplicationResponse
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
 from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
-from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
-from app.domain.value_objects.flow_status import FlowStatus
-from app.application.tasks.ai_scoring import process_ai_score_task
 
 router = APIRouter()
 
 _PDF_CONTENT_TYPES = {"application/pdf"}
 _MAX_CV_SIZE_BYTES = 10_485_760  # 10 MB
-
-
-def _compute_grade(total: float | None) -> str:
-    if total is None:
-        return "INSUFFICIENT"
-    if total >= 85:
-        return "EXCELLENT"
-    if total >= 70:
-        return "GOOD"
-    if total >= 60:
-        return "ACCEPTABLE"
-    return "INSUFFICIENT"
 
 
 @router.get("/")
@@ -54,7 +35,6 @@ async def list_applications(
         page=page,
         page_size=page_size,
     )
-    # Format items for the frontend table
     items = []
     for r in result["items"]:
         items.append({
@@ -91,21 +71,19 @@ async def get_cv_presigned_url(
 ) -> dict:
     """Generate a presigned URL for downloading a CV."""
     from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
-
     adapter = BackblazeStorageAdapter()
     url = await adapter.generate_presigned_url(storage_key)
     return {"url": url}
 
 
-@router.post("/", response_model=ApplicationResponse, status_code=201)
+@router.post("/", status_code=201)
 async def submit_application(
     vacancy_id: UUID = Form(...),
     cv_file: UploadFile = File(...),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
     current_user: dict = Depends(require_role(["applicant"])),
     use_case: SubmitApplicationUseCase = Depends(get_submit_application_usecase),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
-) -> ApplicationResponse:
+):
     """Submit a new application with a CV PDF."""
 
     if cv_file.content_type not in _PDF_CONTENT_TYPES:
