@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Depends, Form, File, HTTPException, Query, UploadFile
+from uuid import UUID
 from uuid import UUID
 
 from app.api.dependencies import (
@@ -98,9 +99,9 @@ async def get_cv_presigned_url(
 
 @router.post("/", response_model=ApplicationResponse, status_code=201)
 async def submit_application(
-    vacancy_id: UUID,
-    cv_file: UploadFile,
-    background_tasks: BackgroundTasks,
+    vacancy_id: UUID = Form(...),
+    cv_file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     current_user: dict = Depends(require_role(["applicant"])),
     use_case: SubmitApplicationUseCase = Depends(get_submit_application_usecase),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
@@ -120,6 +121,13 @@ async def submit_application(
 
     application = await use_case.execute(applicant.id, vacancy_id, contents)
 
-    background_tasks.add_task(process_ai_score_task, application.id)
-
-    return ApplicationResponse.model_validate(application)
+    return {
+        "id": str(application.id),
+        "applicant_id": str(application.applicant_id),
+        "vacancy_id": str(application.vacancy_id),
+        "status": application.status.value,
+        "ai_score": None,
+        "status_history": [],
+        "created_at": application.created_at.isoformat(),
+        "updated_at": application.updated_at.isoformat(),
+    }
