@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Form, File, HTTPException, Query, UploadFile
+import asyncio as _asyncio
 from uuid import UUID
 
 from app.api.dependencies import (
@@ -10,6 +11,7 @@ from app.api.dependencies import (
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
 from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
+from app.application.tasks.ai_scoring import process_ai_score_task
 
 router = APIRouter()
 
@@ -98,6 +100,9 @@ async def submit_application(
         raise HTTPException(status_code=404, detail="Applicant profile not found")
 
     application = await use_case.execute(applicant.id, vacancy_id, contents)
+
+    # Fire-and-forget AI scoring in a truly independent task
+    _asyncio.create_task(process_ai_score_task(application.id))
 
     return {
         "id": str(application.id),
