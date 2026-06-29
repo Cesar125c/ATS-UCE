@@ -1,80 +1,53 @@
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import VacancyStatus from "./VacancyStatus";
-import VacancyActions from "./VacancyActions";
-
-export interface Vacancy {
-
-  id: string;
-
-  title: string;
-
-  faculty: string;
-
-  type: string;
-
-  status: "Activa" | "Pausada" | "Cerrada";
-
-  applicants: number;
-
-}
+import { deleteVacancy } from "@/services/vacancyService";
+import type { Vacancy } from "@/types/vacancy";
 
 interface VacancyRowProps {
-
   vacancy: Vacancy;
-
+  onDeleted: () => void;
 }
 
-export default function VacancyRow({
-  vacancy,
-}: VacancyRowProps) {
+export default function VacancyRow({ vacancy, onDeleted }: VacancyRowProps) {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm(`Deactivate vacancy "${vacancy.title}"?`)) return;
+    setDeleting(true);
+    try {
+      await deleteVacancy(vacancy.id);
+      onDeleted();
+    } catch {
+      // silently fail
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
-
     <tr className="border-b hover:bg-slate-50 transition-colors">
-
-      <td className="px-6 py-5 font-medium text-slate-700">
-        {vacancy.id}
+      <td className="px-6 py-5 font-medium text-slate-700 font-mono text-xs">
+        {vacancy.id.slice(0, 8)}
       </td>
-
       <td className="px-6 py-5">
-
-        <div>
-
-          <h3 className="font-medium text-slate-800">
-            {vacancy.title}
-          </h3>
-
-        </div>
-
+        <h3 className="font-medium text-slate-800">{vacancy.title}</h3>
+        <p className="text-xs text-slate-500">{vacancy.department}</p>
       </td>
-
-      <td className="px-6 py-5 text-slate-700">
-        {vacancy.faculty}
-      </td>
-
-      <td className="px-6 py-5 text-slate-700">
-        {vacancy.type}
-      </td>
-
+      <td className="px-6 py-5 text-slate-700">{vacancy.faculty}</td>
       <td className="px-6 py-5">
-
-        <VacancyStatus
-          status={vacancy.status}
-        />
-
+        <VacancyStatus status={vacancy.is_active ? "Activa" : "Cerrada"} />
       </td>
-
-      <td className="px-6 py-5 text-center font-semibold">
-        {vacancy.applicants}
-      </td>
-
       <td className="px-6 py-5 text-right">
-
-        <VacancyActions />
-
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="rounded-lg p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+          title="Deactivate vacancy"
+        >
+          <Trash2 size={16} />
+        </button>
       </td>
-
     </tr>
-
   );
-
 }

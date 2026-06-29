@@ -13,6 +13,7 @@ from app.infrastructure.database.session import Base
 
 if TYPE_CHECKING:
     from app.infrastructure.database.models.application_model import ApplicationModel
+    from app.infrastructure.database.models.user_model import UserModel
 
 
 class ApplicantModel(Base):
@@ -24,6 +25,8 @@ class ApplicantModel(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
     )
+
+    user: Mapped[UserModel] = relationship("UserModel")
 
     applications: Mapped[list[ApplicationModel]] = relationship(
         "ApplicationModel",

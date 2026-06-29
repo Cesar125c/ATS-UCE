@@ -28,9 +28,13 @@ export interface ApplicationResponse {
   id: string;
   applicant_id: string;
   vacancy_id: string;
+  vacancy_title?: string;
+  vacancy_faculty?: string;
   status: FlowStatus;
   ai_score: AIScoreDTO | null;
+  error_reason?: string | null;
   status_history: StatusHistoryDTO[];
+  submitted_at?: string;
   created_at: string;
   updated_at: string;
 }

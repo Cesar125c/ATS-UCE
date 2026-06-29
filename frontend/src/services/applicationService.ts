@@ -86,5 +86,6 @@ export async function submitApplication(
 }
 
 export async function getMyApplicationStatus(): Promise<ApplicationResponse[]> {
-  return apiFetch<ApplicationResponse[]>("/api/v1/applicants/me/status");
+  const data = await apiFetch<{ applications: ApplicationResponse[] }>("/api/v1/applicants/me/status");
+  return data.applications ?? [];
 }

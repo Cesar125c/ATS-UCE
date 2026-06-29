@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Depends, Form, File, HTTPException, Query, UploadFile
+import asyncio as _asyncio
 from uuid import UUID
 
-from app.api.dependencies import get_current_user, require_role, get_submit_application_usecase, get_applicant_repository, get_application_repository
-from app.application.dtos.application_dtos import ApplicationResponse, ApplicationListResponse
+from app.api.dependencies import (
+    require_role,
+    get_submit_application_usecase,
+    get_applicant_repository,
+    get_review_ranking_usecase,
+)
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
+from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
-from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
-from app.domain.value_objects.flow_status import FlowStatus
 from app.application.tasks.ai_scoring import process_ai_score_task
 
 router = APIRouter()
@@ -15,86 +19,98 @@ _PDF_CONTENT_TYPES = {"application/pdf"}
 _MAX_CV_SIZE_BYTES = 10_485_760  # 10 MB
 
 
-def _to_response(model) -> ApplicationResponse:
-    """Map an ORM ApplicationModel (with eager-loaded status_history) to ApplicationResponse."""
-    score = model.score_total
-    return ApplicationResponse(
-        id=model.id,
-        applicant_id=model.applicant_id,
-        vacancy_id=model.vacancy_id,
-        status=model.status,
-        ai_score={
-            "total": score,
-            "academic_training": model.score_academic or 0.0,
-            "experience": model.score_experience or 0.0,
-            "publications": model.score_production or 0.0,
-            "profile_match": model.score_profile_match or 0.0,
-            "languages_competencies": model.score_languages or 0.0,
-            "evaluation_summary": model.evaluation_summary or "",
-            "grade": _compute_grade(score),
-        } if score is not None else None,
-        status_history=[
-            {"status": sh.status, "transitioned_at": sh.transitioned_at}
-            for sh in (model.status_history or [])
-        ],
-        created_at=model.created_at,
-        updated_at=model.updated_at,
-    )
-
-
-def _compute_grade(total: float | None) -> str:
-    if total is None:
-        return "INSUFFICIENT"
-    if total >= 85:
-        return "EXCELLENT"
-    if total >= 70:
-        return "GOOD"
-    if total >= 60:
-        return "ACCEPTABLE"
-    return "INSUFFICIENT"
-
-
-@router.get("/", response_model=ApplicationListResponse)
+@router.get("/")
 async def list_applications(
-    status: FlowStatus | None = Query(None),
+    status: str = Query("HR_STAGE"),
+    faculty: str | None = Query(None),
+    min_score: float | None = Query(None, ge=0, le=100),
     page: int = Query(1, ge=1),
-    page_size: int = Query(4, ge=1, le=50),
+    page_size: int = Query(20, ge=1, le=100),
     _user: dict = Depends(require_role(["human_resources"])),
-    repo: SQLAApplicationRepository = Depends(get_application_repository),
-) -> ApplicationListResponse:
-    """List applications filtered by optional status, with pagination."""
-    models, total = await repo.find_models_by_status(status, page, page_size)
-    items = [_to_response(m) for m in models]
-    return ApplicationListResponse(items=items, total=total, page=page, page_size=page_size)
+    use_case: ReviewRankingUseCase = Depends(get_review_ranking_usecase),
+):
+    """List applications filtered by status, faculty, score, with pagination."""
+    result = await use_case.execute(
+        status=status,
+        faculty=faculty,
+        min_score=min_score,
+        page=page,
+        page_size=page_size,
+    )
+    items = []
+    for r in result["items"]:
+        items.append({
+            "id": r["id"],
+            "applicant_id": r["applicant_id"],
+            "applicant_name": r["applicant_name"],
+            "applicant_email": r["applicant_email"],
+            "vacancy_title": r["vacancy_title"],
+            "vacancy_faculty": r["vacancy_faculty"],
+            "status": r["status"],
+            "score_total": r["score_total"],
+            "score_academic": r["score_academic"],
+            "score_experience": r["score_experience"],
+            "score_production": r["score_production"],
+            "score_profile_match": r["score_profile_match"],
+            "score_languages": r["score_languages"],
+            "evaluation_summary": r["evaluation_summary"],
+            "cv_storage_key": r["cv_storage_key"],
+            "submitted_at": r["submitted_at"],
+        })
+    return {
+        "items": items,
+        "total": result["total"],
+        "page": result["page"],
+        "page_size": result["page_size"],
+        "pages": result["pages"],
+    }
 
-@router.post("/", response_model=ApplicationResponse, status_code=201)
+
+@router.get("/cv-presigned/{storage_key:path}")
+async def get_cv_presigned_url(
+    storage_key: str,
+    _user: dict = Depends(require_role(["human_resources", "authorities"])),
+) -> dict:
+    """Generate a presigned URL for downloading a CV."""
+    from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
+    adapter = BackblazeStorageAdapter()
+    url = await adapter.generate_presigned_url(storage_key)
+    return {"url": url}
+
+
+@router.post("/", status_code=201)
 async def submit_application(
-    vacancy_id: UUID,
-    cv_file: UploadFile,
-    background_tasks: BackgroundTasks,
+    vacancy_id: UUID = Form(...),
+    cv_file: UploadFile = File(...),
     current_user: dict = Depends(require_role(["applicant"])),
     use_case: SubmitApplicationUseCase = Depends(get_submit_application_usecase),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
-) -> ApplicationResponse:
+):
     """Submit a new application with a CV PDF."""
-    
-    # Validation
+
     if cv_file.content_type not in _PDF_CONTENT_TYPES:
         raise HTTPException(status_code=422, detail="File must be a PDF under 10 MB")
-    
+
     contents = await cv_file.read()
     if len(contents) > _MAX_CV_SIZE_BYTES:
         raise HTTPException(status_code=422, detail="File must be a PDF under 10 MB")
-    
-    # Verify applicant exists
+
     applicant = await applicant_repo.find_by_clerk_user_id(current_user["user_id"])
     if applicant is None:
         raise HTTPException(status_code=404, detail="Applicant profile not found")
-    
-    # Execute use case
+
     application = await use_case.execute(applicant.id, vacancy_id, contents)
-    
-    # Trigger background task (fire-and-forget)
-    background_tasks.add_task(process_ai_score_task, application.id)
-    
-    return ApplicationResponse.model_validate(application)
+
+    # Fire-and-forget AI scoring in a truly independent task
+    _asyncio.create_task(process_ai_score_task(application.id))
+
+    return {
+        "id": str(application.id),
+        "applicant_id": str(application.applicant_id),
+        "vacancy_id": str(application.vacancy_id),
+        "status": application.status.value,
+        "ai_score": None,
+        "status_history": [],
+        "created_at": application.created_at.isoformat(),
+        "updated_at": application.updated_at.isoformat(),
+    }

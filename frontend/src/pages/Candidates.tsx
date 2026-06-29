@@ -1,21 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import DashboardHeader from "../components/dashboard/DashboardHeader";
-import StatsCards from "../components/dashboard/StatsCards";
 import Filters from "../components/dashboard/Filters";
 import CandidateTable from "../components/dashboard/CandidateTable";
 import Pagination from "../components/dashboard/Pagination";
-import ApplicationsChart from "../components/dashboard/ApplicationsChart";
 import EvaluationModal from "../components/dashboard/EvaluationModal";
-import { getDashboardStats, getApplicationsByStatus } from "@/services/dashboardService";
-import { getVacancies } from "@/services/vacancyService";
-import type { DashboardStats, ApplicationRankingItem } from "@/services/dashboardService";
-import type { Vacancy } from "@/types/vacancy";
+import { getApplicationsByStatus } from "@/services/dashboardService";
+import type { ApplicationRankingItem } from "@/services/dashboardService";
 
-export default function HumanResources() {
+export default function Candidates() {
   const [status, setStatus] = useState("HR_STAGE");
   const [page, setPage] = useState(1);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [items, setItems] = useState<ApplicationRankingItem[]>([]);
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -34,7 +28,7 @@ export default function HumanResources() {
       setPageSize(result.page_size);
       setTotalPages(result.pages);
     } catch {
-      setError("Error al cargar los datos del dashboard.");
+      setError("Error al cargar los candidatos.");
     } finally {
       setLoading(false);
     }
@@ -44,27 +38,6 @@ export default function HumanResources() {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadStats() {
-      try {
-        const data = await getDashboardStats();
-        if (!cancelled) setStats(data);
-      } catch {
-        // stats failure is non-blocking
-      }
-    }
-    loadStats();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const handleStatusChange = (newStatus: string) => {
-    setStatus(newStatus);
-    setPage(1);
-  };
-
   const handleEvaluationSuccess = () => {
     setEvaluatingAppId(null);
     fetchData();
@@ -72,17 +45,16 @@ export default function HumanResources() {
 
   return (
     <DashboardLayout>
-      <DashboardHeader />
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900">Candidatos</h1>
+        <p className="text-slate-500 mt-2">
+          Revisa, filtra y evalúa las postulaciones por estado del proceso.
+        </p>
+      </div>
 
-      <StatsCards stats={stats} />
+      <Filters status={status} onStatusChange={(s) => { setStatus(s); setPage(1); }} />
 
-      <Filters status={status} onStatusChange={handleStatusChange} />
-
-      <CandidateTable
-        items={items}
-        loading={loading}
-        onEvaluate={setEvaluatingAppId}
-      />
+      <CandidateTable items={items} loading={loading} onEvaluate={setEvaluatingAppId} />
 
       {error && (
         <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -97,10 +69,6 @@ export default function HumanResources() {
         pageSize={pageSize}
         onPageChange={setPage}
       />
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-        <ApplicationsChart />
-      </div>
 
       {evaluatingAppId && (
         <EvaluationModal

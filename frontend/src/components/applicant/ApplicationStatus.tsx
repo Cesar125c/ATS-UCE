@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { CheckCircle2, Circle, Clock3, Eye, XCircle, Loader2 } from "lucide-react";
 import Card from "../ui/Card";
 import { getMyApplicationStatus } from "@/services/applicationService";
+import ScoreBreakdown from "./ScoreBreakdown";
 import type { ApplicationResponse, FlowStatus, StatusHistoryDTO } from "@/types/application";
 
 const STEP_ORDER: FlowStatus[] = [
@@ -285,6 +286,14 @@ export default function ApplicationStatus() {
 
           <p className="text-sm text-slate-600 mt-1">{message.detail}</p>
 
+          {currentStatus === "REJECTED" && currentApp.error_reason && (
+            <div className="mt-3 pt-3 border-t border-red-200">
+              <p className="text-sm font-medium text-red-800">
+                Motivo: {currentApp.error_reason}
+              </p>
+            </div>
+          )}
+
           {isTerminal && currentStatus === "HIRED" && (
             <div className="mt-3 pt-3 border-t border-emerald-200">
               <p className="text-sm font-medium text-emerald-800">
@@ -307,6 +316,12 @@ export default function ApplicationStatus() {
           )}
         </div>
       </div>
+
+      {currentApp.ai_score && (
+        <div className="mt-6">
+          <ScoreBreakdown score={currentApp.ai_score} />
+        </div>
+      )}
     </Card>
   );
 }
