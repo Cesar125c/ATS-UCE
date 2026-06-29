@@ -1,11 +1,16 @@
-"""Vacancy endpoints — listing and creation for the administration panel."""
+"""Vacancy endpoints — listing, creation, and management for the administration panel."""
 
-from fastapi import APIRouter, Depends
+from uuid import UUID
 
-from app.api.dependencies import get_vacancy_repository, require_role
-from app.application.dtos.vacancy_dtos import VacancyCreateRequest, VacancyResponse
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.api.dependencies import get_vacancy_repository, get_db_session, require_role
+from app.application.dtos.vacancy_dtos import VacancyCreateRequest
 from app.domain.entities.vacancy import Vacancy
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
+from app.infrastructure.database.models.vacancy_model import VacancyModel
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -45,3 +50,22 @@ async def create_vacancy(
     )
     saved = await repo.save(vacancy)
     return _to_response(saved)
+
+
+@router.delete("/{vacancy_id}")
+async def delete_vacancy(
+    vacancy_id: UUID,
+    _user: dict = Depends(require_role(["human_resources"])),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Soft-delete a vacancy by setting is_active=False. Only RRHH can delete."""
+    result = await session.execute(
+        select(VacancyModel).where(VacancyModel.id == vacancy_id)
+    )
+    model = result.scalar_one_or_none()
+    if model is None:
+        raise HTTPException(status_code=404, detail="Vacancy not found")
+
+    model.is_active = False
+    await session.flush()
+    return {"success": True, "message": "Vacancy deactivated"}
