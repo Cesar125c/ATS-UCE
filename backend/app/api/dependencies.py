@@ -66,6 +66,27 @@ async def get_current_user(
                 claims["role"] = user.role
                 claims["email"] = claims.get("email") or user.email
                 logger.debug("Role resolved from local DB for %s: %s", clerk_id, user.role)
+            else:
+                # User authenticated with Clerk but doesn't exist in our DB yet.
+                # Auto-create as applicant — they can re-register with a different role if needed.
+                email = claims.get("email", "") or f"{clerk_id}@unknown.uce.edu.ec"
+                new_user = UserModel(
+                    clerk_id=clerk_id,
+                    email=email,
+                    first_name="Applicant",
+                    last_name="",
+                    role="applicant",
+                )
+                session.add(new_user)
+                await session.flush()
+                # Also create the applicant record for the applicants table
+                from app.infrastructure.database.models.applicant_model import ApplicantModel
+                applicant = ApplicantModel(user_id=new_user.id)
+                session.add(applicant)
+                await session.flush()
+                claims["role"] = "applicant"
+                claims["email"] = new_user.email
+                logger.info("Auto-created user %s as applicant", clerk_id)
 
     return claims
 

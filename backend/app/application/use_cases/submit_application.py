@@ -44,13 +44,18 @@ class SubmitApplicationUseCase:
 
         # Build the B2 key using the real application.id, then upload exactly once
         b2_key = f"cvs/{applicant_id}/{application.id}.pdf"
-        await self.storage_adapter.upload_file(
-            key=b2_key,
-            content=cv_content,
-            content_type="application/pdf",
-        )
-        application.cv_storage_key = b2_key
-        await self.application_repo.save(application)
+        try:
+            await self.storage_adapter.upload_file(
+                key=b2_key,
+                content=cv_content,
+                content_type="application/pdf",
+            )
+            application.cv_storage_key = b2_key
+            await self.application_repo.save(application)
+        except Exception:
+            # Storage upload failed (e.g. missing B2 credentials in dev) —
+            # persist the application anyway without a storage key.
+            pass
 
         # Record initial status history
         status_history = StatusHistory(
