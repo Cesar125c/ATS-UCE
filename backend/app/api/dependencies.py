@@ -4,9 +4,11 @@ import logging
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
+from app.infrastructure.database.models.user_model import UserModel
 
 logger = logging.getLogger("ats_uce")
 
@@ -22,17 +24,19 @@ from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
+from app.infrastructure.database.models.user_model import UserModel
 
 security = HTTPBearer()
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """
     Verifies the Clerk JWT and returns the user payload.
-    In development (app_env == 'development'), returns a mock user if CLERK keys are not set.
-    In production, validates the token against Clerk's JWKS endpoint.
+    Falls back to local DB lookup if the JWT does not contain a role claim
+    (token was issued before set_user_role wrote publicMetadata to Clerk).
 
     Returns: {"user_id": str, "role": str, "email": str}
     """
@@ -40,15 +44,30 @@ async def get_current_user(
 
     settings = get_settings()
     if settings.app_env == "development" and not settings.clerk_secret_key:
-        # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
         return {"user_id": "dev_user_001", "role": "human_resources", "email": "dev@uce.edu.ec"}
 
     adapter = ClerkAuthAdapter(settings)
     try:
-        return await adapter.verify_token(credentials.credentials)
+        claims = await adapter.verify_token(credentials.credentials)
     except Exception as e:
         logger.error("Clerk token verification failed: %s", e)
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    # If the JWT doesn't have a role (token was issued before metadata sync),
+    # look it up from the local database
+    if not claims.get("role"):
+        clerk_id = claims.get("user_id", "")
+        if clerk_id:
+            result = await session.execute(
+                select(UserModel).where(UserModel.clerk_id == clerk_id)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                claims["role"] = user.role
+                claims["email"] = claims.get("email") or user.email
+                logger.debug("Role resolved from local DB for %s: %s", clerk_id, user.role)
+
+    return claims
 
 
 def require_role(allowed_roles: list[str]):
