@@ -39,7 +39,9 @@ from app.infrastructure.database.models.applicant_model import ApplicantModel  #
 from app.infrastructure.database.models.user_model import UserModel  # noqa: E402
 from app.infrastructure.database.models.vacancy_model import VacancyModel  # noqa: E402
 from app.infrastructure.database.session import Base  # noqa: E402
-from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository  # noqa: E402
+from app.infrastructure.repositories.sqla_application_repository import (  # noqa: E402
+    SQLAApplicationRepository,
+)
 from config import get_settings  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -59,8 +61,7 @@ _original_getaddrinfo = socket.getaddrinfo
 def _blocking_getaddrinfo(host, *args, **kwargs):
     if host in _BLOCKED_HOSTS:
         raise RuntimeError(
-            f"CI safety: test attempted real network call to '{host}'. "
-            "Mock the adapter instead."
+            f"CI safety: test attempted real network call to '{host}'. Mock the adapter instead."
         )
     return _original_getaddrinfo(host, *args, **kwargs)
 

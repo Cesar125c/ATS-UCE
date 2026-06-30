@@ -4,7 +4,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.dependencies import get_application_repository, get_record_authority_decision_usecase, require_role
+from app.api.dependencies import (
+    get_application_repository,
+    get_record_authority_decision_usecase,
+    require_role,
+)
 from app.application.dtos.evaluation_dtos import EvaluationRequest, EvaluationResponse
 from app.application.use_cases.record_authority_decision import RecordAuthorityDecisionUseCase
 from app.domain.exceptions import DomainError

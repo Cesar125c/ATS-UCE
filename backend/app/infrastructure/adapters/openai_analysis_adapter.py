@@ -3,25 +3,26 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import Optional
 
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-    RetryError,
-)
 from openai import OpenAI, OpenAIError
 from pydantic import BaseModel, Field, field_validator
+from tenacity import (
+    RetryError,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from app.domain.value_objects.ai_score import AIScore
 from config import get_settings
 
 logger = logging.getLogger(__name__)
 
+
 class OpenAIUnavailableError(Exception):
     """Raised when OpenAI API is unavailable after retries."""
+
 
 class AIScoreResponse(BaseModel):
     total_score: int = Field(..., ge=0, le=100)
@@ -32,7 +33,7 @@ class AIScoreResponse(BaseModel):
     score_languages: int = Field(..., ge=0, le=100)
     evaluation_summary: str = Field(..., max_length=200)
 
-    @field_validator('total_score')
+    @field_validator("total_score")
     def validate_total_score(cls, v, info):
         # In Pydantic v2, we validate the range but not the average calculation here
         # The average validation is done in a separate method
@@ -50,7 +51,11 @@ class AIScoreResponse(BaseModel):
         expected = sum(axes) / len(axes)
         # Allow 1-point rounding difference
         if not (expected - 1 <= self.total_score <= expected + 1):
-            raise ValueError(f'total_score must be average of 5 axes. Expected {expected}, got {self.total_score}. Axes: {axes}')
+            raise ValueError(
+                "total_score must be average of 5 axes. "
+                f"Expected {expected}, got {self.total_score}. Axes: {axes}"
+            )
+
 
 class OpenAIAnalysisAdapter:
     SYSTEM_PROMPT = """
@@ -92,7 +97,7 @@ class OpenAIAnalysisAdapter:
     {cv_text}
     """
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         self.client = OpenAI(api_key=api_key or get_settings().openai_api_key)
         self.model = get_settings().openai_model
 
@@ -118,7 +123,7 @@ class OpenAIAnalysisAdapter:
                     {"role": "user", "content": user_prompt},
                 ],
                 response_format={"type": "json_object"},
-            )
+            ),
         )
 
         # Parse and validate JSON response
@@ -137,7 +142,9 @@ class OpenAIAnalysisAdapter:
             evaluation_summary=ai_score_response.evaluation_summary,
         )
 
-    async def analyze_cv_with_fallback(self, cv_text: str, vacancy_title: str, vacancy_faculty: str) -> AIScore:
+    async def analyze_cv_with_fallback(
+        self, cv_text: str, vacancy_title: str, vacancy_faculty: str
+    ) -> AIScore:
         """Analyze CV with fallback for OpenAI failures."""
         try:
             return await self.analyze_cv(cv_text, vacancy_title, vacancy_faculty)

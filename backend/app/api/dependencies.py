@@ -7,24 +7,22 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
-from app.infrastructure.database.models.user_model import UserModel
-
-logger = logging.getLogger("ats_uce")
-
 from app.application.use_cases.get_application_status import GetApplicationStatusUseCase
-from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
 from app.application.use_cases.record_authority_decision import RecordAuthorityDecisionUseCase
+from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
 from app.domain.services.workflow_approval_service import WorkflowApprovalService
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
+from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
+from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
-from app.infrastructure.database.models.user_model import UserModel
+
+logger = logging.getLogger("ats_uce")
 
 security = HTTPBearer()
 
@@ -58,9 +56,7 @@ async def get_current_user(
     if not claims.get("role"):
         clerk_id = claims.get("user_id", "")
         if clerk_id:
-            result = await session.execute(
-                select(UserModel).where(UserModel.clerk_id == clerk_id)
-            )
+            result = await session.execute(select(UserModel).where(UserModel.clerk_id == clerk_id))
             user = result.scalar_one_or_none()
             if user:
                 claims["role"] = user.role
@@ -85,6 +81,7 @@ async def get_current_user(
                 # Also create the applicant record if role is applicant
                 if role == "applicant":
                     from app.infrastructure.database.models.applicant_model import ApplicantModel
+
                     applicant = ApplicantModel(user_id=new_user.id)
                     session.add(applicant)
                     await session.flush()

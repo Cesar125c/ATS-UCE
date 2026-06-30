@@ -1,6 +1,7 @@
-import pytest
+from unittest.mock import AsyncMock
 from uuid import UUID
-from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
 from app.domain.entities.application import Application

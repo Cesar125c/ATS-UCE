@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/react";
 import { apiFetch } from "@/services/api";
 

@@ -23,6 +23,5 @@ class WorkflowApprovalService:
         required = status.required_role()
         if role != required:
             raise DomainError(
-                f"Role '{role}' is not authorized for stage "
-                f"'{status}'. Required: '{required}'"
+                f"Role '{role}' is not authorized for stage '{status}'. Required: '{required}'"
             )

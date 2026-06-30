@@ -1,4 +1,4 @@
-import { apiFetch, ApiError } from "./api";
+import { apiFetch } from "./api";
 
 export interface EvaluationRequest {
   decision: "APPROVED" | "REJECTED";
@@ -28,12 +28,12 @@ export async function submitEvaluation(
 }
 
 export class EvaluationError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  status: number;
+
+  constructor(status: number, message: string) {
     super(message);
     this.name = "EvaluationError";
+    this.status = status;
   }
 }
 

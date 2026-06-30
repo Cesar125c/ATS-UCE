@@ -6,11 +6,9 @@ Uses clerk-backend-api >=6.0 which has:
   - sessions.create_token(...) and JWT verify via jwks_verify
 """
 
-import json
 import logging
 
 import jwt
-import httpx
 
 logger = logging.getLogger("ats_uce")
 
@@ -55,10 +53,7 @@ class ClerkAuthAdapter:
                 algorithms=["RS256"],
                 options={"verify_exp": True},
             )
-            role = (
-                claims.get("public_metadata", {}).get("role", "")
-                or claims.get("role", "")
-            )
+            role = claims.get("public_metadata", {}).get("role", "") or claims.get("role", "")
             return {
                 "user_id": claims.get("sub", ""),
                 "email": claims.get("email", ""),

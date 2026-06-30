@@ -6,6 +6,7 @@ import {
   UserCheck,
   Award,
 } from "lucide-react";
+import type { ElementType } from "react";
 import Card from "../ui/Card";
 import Badge from "../ui/Badge";
 import type { AIScoreDTO } from "@/types/application";
@@ -13,7 +14,7 @@ import type { AIScoreDTO } from "@/types/application";
 interface AxisDef {
   key: keyof AIScoreDTO;
   label: string;
-  icon: React.ElementType;
+  icon: ElementType;
   color: string;
 }
 

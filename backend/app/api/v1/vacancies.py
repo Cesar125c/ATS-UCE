@@ -3,14 +3,14 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_vacancy_repository, get_db_session, require_role
+from app.api.dependencies import get_db_session, get_vacancy_repository, require_role
 from app.application.dtos.vacancy_dtos import VacancyCreateRequest
 from app.domain.entities.vacancy import Vacancy
-from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 from app.infrastructure.database.models.vacancy_model import VacancyModel
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
 router = APIRouter()
 
@@ -59,9 +59,7 @@ async def delete_vacancy(
     session: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """Soft-delete a vacancy by setting is_active=False. Only RRHH can delete."""
-    result = await session.execute(
-        select(VacancyModel).where(VacancyModel.id == vacancy_id)
-    )
+    result = await session.execute(select(VacancyModel).where(VacancyModel.id == vacancy_id))
     model = result.scalar_one_or_none()
     if model is None:
         raise HTTPException(status_code=404, detail="Vacancy not found")

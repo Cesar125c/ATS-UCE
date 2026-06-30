@@ -1,6 +1,5 @@
-import { Search, Filter, RotateCcw } from "lucide-react";
+import { Search, RotateCcw } from "lucide-react";
 import Button from "../ui/Button";
-import type { FlowStatus } from "@/types/application";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "Todos los estados" },

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Card from "../ui/Card";
 
 interface DecisionFormProps {

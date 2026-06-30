@@ -101,7 +101,6 @@ export default function ApplicationStatus() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const previousStatusRef = useRef<FlowStatus | null>(null);
 
   const fetchStatus = async () => {
     try {

@@ -50,8 +50,8 @@ export default function NewVacancyModal({ open, onClose, onCreated }: NewVacancy
       });
       onCreated();
       onClose();
-    } catch (e: any) {
-      setError(e?.message || "Error al crear la vacante.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al crear la vacante.");
     } finally {
       setIsSubmitting(false);
     }

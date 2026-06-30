@@ -9,18 +9,24 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from config import Settings
 
+
 def get_settings():
     from config import get_settings
+
     return get_settings()
+
 
 class StorageError(Exception):
     """Base class for storage-related errors."""
 
+
 class StorageUploadError(StorageError):
     """Failed to upload file to Backblaze B2."""
 
+
 class StoragePresignError(StorageError):
     """Failed to generate pre-signed URL."""
+
 
 class StorageDownloadError(StorageError):
     """Failed to download file from Backblaze B2."""
@@ -32,7 +38,7 @@ class BackblazeStorageAdapter:
         self.bucket_name = self.settings.b2_bucket_name
 
     def _get_bucket(self):
-        from b2sdk.v2 import InMemoryAccountInfo, B2Api
+        from b2sdk.v2 import B2Api, InMemoryAccountInfo
 
         info = InMemoryAccountInfo()
         b2_api = B2Api(info)
