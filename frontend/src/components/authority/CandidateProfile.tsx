@@ -1,5 +1,4 @@
 import {
-  CheckCircle2,
   Download,
   Building2,
   ShieldCheck,

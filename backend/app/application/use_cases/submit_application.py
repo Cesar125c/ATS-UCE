@@ -4,8 +4,8 @@ from app.domain.entities.application import Application
 from app.domain.entities.status_history import StatusHistory
 from app.domain.value_objects.flow_status import FlowStatus
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
-from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
+from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
 

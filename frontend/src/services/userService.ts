@@ -1,6 +1,20 @@
 import type { SignUpFutureResource, UserResource } from "@clerk/shared/types";
 import { apiFetch } from "./api";
 
+type ClerkErrorLike = {
+  message?: string;
+};
+
+type SignUpCreateResult = Awaited<ReturnType<SignUpFutureResource["create"]>> & {
+  createdUserId?: string | null;
+  error?: ClerkErrorLike;
+  errors?: ClerkErrorLike | ClerkErrorLike[];
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export async function createUserWithRole(
   signUp: SignUpFutureResource | undefined,
   data: {
@@ -15,17 +29,16 @@ export async function createUserWithRole(
     throw new Error("Clerk sign-up is not ready");
   }
 
-  let createResult: any;
+  let createResult: SignUpCreateResult;
   try {
     createResult = await signUp.create({
       emailAddress: data.email,
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
-    });
-  } catch (e: any) {
-    const msg = e?.message || "Error creating account";
-    throw new Error(msg);
+    }) as SignUpCreateResult;
+  } catch (e: unknown) {
+    throw new Error(getErrorMessage(e, "Error creating account"), { cause: e });
   }
 
   if (createResult && (createResult.error || createResult.errors)) {

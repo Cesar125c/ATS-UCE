@@ -62,7 +62,7 @@ export default function Sidebar() {
             <NavLink
               key={item.title}
               to={item.path}
-              className={({ isActive }) =>
+              className={({ isActive }: { isActive: boolean }) =>
                 `mx-3 mb-2 flex items-center gap-3 rounded-lg px-3 py-3 transition-all ${
                   collapsed ? "justify-center" : ""
                 } ${

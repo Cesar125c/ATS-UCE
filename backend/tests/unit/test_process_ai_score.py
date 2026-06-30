@@ -1,11 +1,12 @@
-import pytest
-from uuid import UUID
 from unittest.mock import AsyncMock
+from uuid import UUID
+
+import pytest
 
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
 from app.domain.entities.application import Application
-from app.domain.value_objects.flow_status import FlowStatus
 from app.domain.value_objects.ai_score import AIScore
+from app.domain.value_objects.flow_status import FlowStatus
 from app.infrastructure.adapters.openai_analysis_adapter import OpenAIUnavailableError
 
 
@@ -47,9 +48,13 @@ async def test_ai_scoring_success(mocker):
 
     mock_vacancy_repo = AsyncMock()
     from app.domain.entities.vacancy import Vacancy
+
     mock_vacancy_repo.find_by_id.return_value = Vacancy(
-        title="Prof. Test", faculty="Eng", department="CS",
-        description="desc", requirements="req",
+        title="Prof. Test",
+        faculty="Eng",
+        department="CS",
+        description="desc",
+        requirements="req",
     )
 
     use_case = ProcessAIScoreUseCase(
@@ -98,9 +103,13 @@ async def test_ai_scoring_rejection(mocker):
 
     mock_vacancy_repo = AsyncMock()
     from app.domain.entities.vacancy import Vacancy
+
     mock_vacancy_repo.find_by_id.return_value = Vacancy(
-        title="Prof. Test", faculty="Eng", department="CS",
-        description="desc", requirements="req",
+        title="Prof. Test",
+        faculty="Eng",
+        department="CS",
+        description="desc",
+        requirements="req",
     )
 
     use_case = ProcessAIScoreUseCase(
@@ -137,9 +146,13 @@ async def test_ai_scoring_failure(mocker):
 
     mock_vacancy_repo = AsyncMock()
     from app.domain.entities.vacancy import Vacancy
+
     mock_vacancy_repo.find_by_id.return_value = Vacancy(
-        title="Prof. Test", faculty="Eng", department="CS",
-        description="desc", requirements="req",
+        title="Prof. Test",
+        faculty="Eng",
+        department="CS",
+        description="desc",
+        requirements="req",
     )
 
     use_case = ProcessAIScoreUseCase(

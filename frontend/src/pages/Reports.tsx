@@ -39,7 +39,9 @@ export default function Reports() {
       try {
         const data = await getDashboardStats();
         if (!cancelled) setStats(data);
-      } catch {}
+      } catch {
+        // Report widgets can render their empty state if stats are unavailable.
+      }
     }
     load();
     return () => { cancelled = true; };
@@ -121,7 +123,9 @@ export default function Reports() {
                     innerRadius={60}
                     outerRadius={100}
                     dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
+                    label={({ name, value }: { name?: string; value?: number }) =>
+                      `${name}: ${value}`
+                    }
                   >
                     {pieData.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />

@@ -1,17 +1,21 @@
-from datetime import UTC, datetime
-from typing import Optional
-from uuid import UUID, uuid4
 import asyncio
 import logging
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
 from app.domain.entities.application import Application
 from app.domain.entities.status_history import StatusHistory
-from app.domain.value_objects.ai_score import AIScore
-from app.domain.value_objects.flow_status import FlowStatus
 from app.domain.repositories.i_application_repository import IApplicationRepository
 from app.domain.repositories.i_vacancy_repository import IVacancyRepository
-from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter, StorageError
-from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter, OpenAIUnavailableError
+from app.domain.value_objects.flow_status import FlowStatus
+from app.infrastructure.adapters.backblaze_storage_adapter import (
+    BackblazeStorageAdapter,
+    StorageError,
+)
+from app.infrastructure.adapters.openai_analysis_adapter import (
+    OpenAIAnalysisAdapter,
+    OpenAIUnavailableError,
+)
 from app.infrastructure.adapters.resend_email_adapter import ResendEmailAdapter as EmailService
 
 logger = logging.getLogger(__name__)
@@ -92,14 +96,14 @@ class ProcessAIScoreUseCase:
         await self._application_repo.create_status_history(status_history)
         return application
 
-    async def _download_pdf(self, cv_storage_key: str) -> Optional[bytes]:
+    async def _download_pdf(self, cv_storage_key: str) -> bytes | None:
         try:
             return await self._storage_adapter.download_file(cv_storage_key)
         except StorageError as exc:
             logger.error("Failed to download PDF %s: %s", cv_storage_key, exc)
             return None
 
-    async def _extract_text_from_pdf(self, pdf_bytes: bytes, application_id: UUID) -> Optional[str]:
+    async def _extract_text_from_pdf(self, pdf_bytes: bytes, application_id: UUID) -> str | None:
         try:
             text = await asyncio.get_event_loop().run_in_executor(
                 None,
@@ -110,12 +114,15 @@ class ProcessAIScoreUseCase:
                 return None
             return text
         except Exception as exc:
-            logger.error("Failed to extract text from PDF for application %s: %s", application_id, exc)
+            logger.error(
+                "Failed to extract text from PDF for application %s: %s", application_id, exc
+            )
             return None
 
     @staticmethod
     def _sync_extract_text(pdf_bytes: bytes) -> str:
         import fitz  # PyMuPDF
+
         text = ""
         with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
             for page in doc:

@@ -1,7 +1,5 @@
 """Use case: Retrieve an applicant's application status with stepper history."""
 
-from uuid import UUID
-
 from app.domain.repositories.i_applicant_repository import IApplicantRepository
 from app.domain.repositories.i_application_repository import IApplicationRepository
 from app.domain.repositories.i_vacancy_repository import IVacancyRepository
@@ -31,8 +29,8 @@ class GetApplicationStatusUseCase:
         for app in applications:
             vacancy = await self._vacancy_repo.find_by_id(app.vacancy_id)
             score = app.ai_score
-            status_history_entries = await self._application_repo.find_status_history_by_application_id(
-                app.id
+            status_history_entries = (
+                await self._application_repo.find_status_history_by_application_id(app.id)
             )
 
             result.append(

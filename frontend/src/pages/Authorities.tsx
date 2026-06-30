@@ -4,8 +4,6 @@ import PendingCandidates from "../components/authority/PendingCandidates";
 import CandidateProfile from "../components/authority/CandidateProfile";
 import AIAnalysisSummary from "../components/authority/AIAnalysisSummary";
 import ProcessHistory from "../components/authority/ProcessHistory";
-import DecisionForm from "../components/authority/DecisionForm";
-import DecisionActions from "../components/authority/DecisionActions";
 import AuthorityDecisionPanel from "../components/authority/AuthorityDecisionPanel";
 
 export default function Authorities() {

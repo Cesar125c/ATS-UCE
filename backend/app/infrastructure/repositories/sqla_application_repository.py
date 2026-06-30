@@ -171,9 +171,9 @@ class SQLAApplicationRepository(IApplicationRepository):
         from app.domain.entities.status_history import StatusHistory as DomainStatusHistory
 
         result = await self._session.execute(
-            select(StatusHistoryModel).where(
-                StatusHistoryModel.application_id == application_id
-            ).order_by(StatusHistoryModel.transitioned_at.asc())
+            select(StatusHistoryModel)
+            .where(StatusHistoryModel.application_id == application_id)
+            .order_by(StatusHistoryModel.transitioned_at.asc())
         )
         models = result.scalars().all()
         return [
@@ -196,16 +196,12 @@ class SQLAApplicationRepository(IApplicationRepository):
     ) -> tuple[list[ApplicationModel], int]:
         """Returns ORM models with eager-loaded applicant+user+vacancy for the ranking table."""
         from app.infrastructure.database.models.applicant_model import ApplicantModel
-        from app.infrastructure.database.models.user_model import UserModel
         from app.infrastructure.database.models.vacancy_model import VacancyModel
 
-        query = (
-            select(ApplicationModel)
-            .options(
-                selectinload(ApplicationModel.status_history),
-                selectinload(ApplicationModel.vacancy),
-                selectinload(ApplicationModel.applicant).joinedload(ApplicantModel.user),
-            )
+        query = select(ApplicationModel).options(
+            selectinload(ApplicationModel.status_history),
+            selectinload(ApplicationModel.vacancy),
+            selectinload(ApplicationModel.applicant).joinedload(ApplicantModel.user),
         )
 
         count_query = select(func.count()).select_from(ApplicationModel)

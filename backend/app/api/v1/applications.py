@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, Form, File, HTTPException, Query, UploadFile
 import asyncio as _asyncio
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+
 from app.api.dependencies import (
-    require_role,
-    get_submit_application_usecase,
     get_applicant_repository,
     get_review_ranking_usecase,
+    get_submit_application_usecase,
+    require_role,
 )
-from app.application.use_cases.submit_application import SubmitApplicationUseCase
-from app.application.use_cases.review_ranking import ReviewRankingUseCase
-from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.application.tasks.ai_scoring import process_ai_score_task
+from app.application.use_cases.review_ranking import ReviewRankingUseCase
+from app.application.use_cases.submit_application import SubmitApplicationUseCase
+from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 
 router = APIRouter()
 
@@ -39,24 +40,26 @@ async def list_applications(
     )
     items = []
     for r in result["items"]:
-        items.append({
-            "id": r["id"],
-            "applicant_id": r["applicant_id"],
-            "applicant_name": r["applicant_name"],
-            "applicant_email": r["applicant_email"],
-            "vacancy_title": r["vacancy_title"],
-            "vacancy_faculty": r["vacancy_faculty"],
-            "status": r["status"],
-            "score_total": r["score_total"],
-            "score_academic": r["score_academic"],
-            "score_experience": r["score_experience"],
-            "score_production": r["score_production"],
-            "score_profile_match": r["score_profile_match"],
-            "score_languages": r["score_languages"],
-            "evaluation_summary": r["evaluation_summary"],
-            "cv_storage_key": r["cv_storage_key"],
-            "submitted_at": r["submitted_at"],
-        })
+        items.append(
+            {
+                "id": r["id"],
+                "applicant_id": r["applicant_id"],
+                "applicant_name": r["applicant_name"],
+                "applicant_email": r["applicant_email"],
+                "vacancy_title": r["vacancy_title"],
+                "vacancy_faculty": r["vacancy_faculty"],
+                "status": r["status"],
+                "score_total": r["score_total"],
+                "score_academic": r["score_academic"],
+                "score_experience": r["score_experience"],
+                "score_production": r["score_production"],
+                "score_profile_match": r["score_profile_match"],
+                "score_languages": r["score_languages"],
+                "evaluation_summary": r["evaluation_summary"],
+                "cv_storage_key": r["cv_storage_key"],
+                "submitted_at": r["submitted_at"],
+            }
+        )
     return {
         "items": items,
         "total": result["total"],
@@ -73,6 +76,7 @@ async def get_cv_presigned_url(
 ) -> dict:
     """Generate a presigned URL for downloading a CV."""
     from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
+
     adapter = BackblazeStorageAdapter()
     url = await adapter.generate_presigned_url(storage_key)
     return {"url": url}

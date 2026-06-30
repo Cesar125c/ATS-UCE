@@ -8,9 +8,7 @@ import Pagination from "../components/dashboard/Pagination";
 import ApplicationsChart from "../components/dashboard/ApplicationsChart";
 import EvaluationModal from "../components/dashboard/EvaluationModal";
 import { getDashboardStats, getApplicationsByStatus } from "@/services/dashboardService";
-import { getVacancies } from "@/services/vacancyService";
 import type { DashboardStats, ApplicationRankingItem } from "@/services/dashboardService";
-import type { Vacancy } from "@/types/vacancy";
 
 export default function HumanResources() {
   const [status, setStatus] = useState("HR_STAGE");

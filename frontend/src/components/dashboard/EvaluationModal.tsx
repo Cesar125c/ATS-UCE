@@ -32,8 +32,8 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
     try {
       await submitEvaluation(applicationId, body);
       onSuccess();
-    } catch (e: any) {
-      const msg = e?.message || "Error al registrar la decisión.";
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al registrar la decisión.";
       setServerError(msg);
     } finally {
       setIsSubmitting(false);

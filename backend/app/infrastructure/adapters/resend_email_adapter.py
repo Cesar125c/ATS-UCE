@@ -8,7 +8,6 @@ from uuid import UUID
 
 import resend
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import get_settings
 
@@ -21,23 +20,28 @@ _STAGE_MESSAGES: dict[str, tuple[str, str]] = {
     ),
     "DEAN_STAGE": (
         "Your application has advanced to Dean review",
-        "Congratulations! Your application has been approved by HR and is now under review by the Dean.",
+        "Congratulations! Your application has been approved by HR and is now under "
+        "review by the Dean.",
     ),
     "RECTOR_STAGE": (
         "Your application has advanced to Rector review",
-        "Congratulations! Your application has been approved by the Dean and is now under review by the Rector.",
+        "Congratulations! Your application has been approved by the Dean and is now "
+        "under review by the Rector.",
     ),
     "FINANCE_STAGE": (
         "Your application has advanced to Finance review",
-        "Congratulations! Your application has been approved by the Rector and is now under financial review.",
+        "Congratulations! Your application has been approved by the Rector and is now "
+        "under financial review.",
     ),
     "HIRED": (
         "Congratulations — you have been hired!",
-        "We are delighted to inform you that you have been selected for the position. Welcome to UCE!",
+        "We are delighted to inform you that you have been selected for the position. "
+        "Welcome to UCE!",
     ),
     "REJECTED": (
         "Update on your application",
-        "Thank you for your interest. After careful review, we regret to inform you that your application was not selected at this time.",
+        "Thank you for your interest. After careful review, we regret to inform you "
+        "that your application was not selected at this time.",
     ),
 }
 
@@ -62,7 +66,7 @@ _AUTHORITY_NOTIFICATIONS: dict[str, tuple[str, str]] = {
 
 
 class ResendEmailAdapter:
-    """Adapter for sending email notifications via Resend API. Never raises — logs and swallows all failures."""
+    """Adapter for Resend notifications that logs and swallows delivery failures."""
 
     def __init__(self) -> None:
         settings = get_settings()
@@ -98,8 +102,8 @@ class ResendEmailAdapter:
     async def _resolve_applicant_email(self, application_id: UUID) -> str | None:
         """Look up the applicant's email from the database via application_id."""
         try:
-            from app.infrastructure.database.models.application_model import ApplicationModel
             from app.infrastructure.database.models.applicant_model import ApplicantModel
+            from app.infrastructure.database.models.application_model import ApplicationModel
             from app.infrastructure.database.models.user_model import UserModel
             from app.infrastructure.database.session import get_db_session
 
@@ -113,7 +117,9 @@ class ResendEmailAdapter:
                 email = result.scalars().first()
                 return email
         except Exception as exc:
-            logger.error("Failed to resolve applicant email for application %s: %s", application_id, exc)
+            logger.error(
+                "Failed to resolve applicant email for application %s: %s", application_id, exc
+            )
             return None
 
     async def _resolve_authority_emails(self) -> list[str]:
@@ -136,9 +142,7 @@ class ResendEmailAdapter:
     # Public notification methods — never raise
     # ------------------------------------------------------------------
 
-    async def send_rejection_notification(
-        self, applicant_id: UUID, *, reason: str = ""
-    ) -> None:
+    async def send_rejection_notification(self, applicant_id: UUID, *, reason: str = "") -> None:
         """Notify applicant that their application was rejected."""
         try:
             if reason == "CV is not readable" or reason == "CV_NOT_READABLE":
@@ -151,12 +155,17 @@ class ResendEmailAdapter:
                 subject = "Update on your UCE application"
                 body = (
                     "Thank you for your interest in a position at Universidad Central del Ecuador. "
-                    "After careful review, your application did not meet the minimum score threshold "
+                    "After careful review, your application did not meet the minimum "
+                    "score threshold "
                     "for preselection at this time. We encourage you to apply again in the future."
                 )
 
             logger.info(
-                "Rejection notification queued for applicant %s — reason: %s", applicant_id, reason
+                "Rejection notification queued for applicant %s — reason: %s — subject: %s — %s",
+                applicant_id,
+                reason,
+                subject,
+                body,
             )
         except Exception as exc:
             logger.error(
@@ -170,7 +179,8 @@ class ResendEmailAdapter:
                 stage,
                 (
                     "Update on your UCE application",
-                    "Your application status has been updated. Please log in to check your current stage.",
+                    "Your application status has been updated. Please log in to check "
+                    "your current stage.",
                 ),
             )
             logger.info(
@@ -184,9 +194,7 @@ class ResendEmailAdapter:
                 exc,
             )
 
-    async def send_authority_notification(
-        self, application_id: UUID, *, stage: str
-    ) -> None:
+    async def send_authority_notification(self, application_id: UUID, *, stage: str) -> None:
         """Notify all authority users that an application has moved to their stage."""
         try:
             notif = _AUTHORITY_NOTIFICATIONS.get(stage)
@@ -205,7 +213,9 @@ class ResendEmailAdapter:
         except Exception as exc:
             logger.error(
                 "Failed to send authority notification for application %s — stage %s: %s",
-                application_id, stage, exc,
+                application_id,
+                stage,
+                exc,
             )
 
     # ------------------------------------------------------------------
@@ -223,9 +233,7 @@ class ResendEmailAdapter:
             ),
         )
 
-    async def send_status_update(
-        self, to_email: str, applicant_name: str, new_status: str
-    ) -> None:
+    async def send_status_update(self, to_email: str, applicant_name: str, new_status: str) -> None:
         subject, message = _STAGE_MESSAGES.get(
             new_status,
             (
