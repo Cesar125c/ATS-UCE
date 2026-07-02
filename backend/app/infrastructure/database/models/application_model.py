@@ -39,6 +39,7 @@ class ApplicationModel(Base):
     score_profile_match: Mapped[float | None] = mapped_column(Float, nullable=True)
     score_languages: Mapped[float | None] = mapped_column(Float, nullable=True)
     evaluation_summary: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    error_reason: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

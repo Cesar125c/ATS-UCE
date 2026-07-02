@@ -1,23 +1,18 @@
-"""Application endpoints — submit, list, and inspect job applications."""
-
+import asyncio as _asyncio
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 
 from app.api.dependencies import (
     get_applicant_repository,
-    get_application_repository,
+    get_review_ranking_usecase,
     get_submit_application_usecase,
     require_role,
 )
-from app.application.dtos.application_dtos import (
-    ApplicationListResponse,
-    ApplicationResponse,
-    PendingCountResponse,
-)
+from app.application.tasks.ai_scoring import process_ai_score_task
+from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
-from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 
 router = APIRouter()
 
@@ -25,57 +20,78 @@ _PDF_CONTENT_TYPES = {"application/pdf"}
 _MAX_CV_SIZE_BYTES = 10_485_760  # 10 MB
 
 
-# ─── Route order: static paths MUST precede path params ───────────────────────
-
-
-@router.get("/", response_model=ApplicationListResponse)
+@router.get("/")
 async def list_applications(
-    page: int = 1,
-    page_size: int = 20,
-    faculty: str | None = None,
-    min_score: float | None = None,
-    _user: dict = Depends(require_role(["hr_staff"])),
-    repo: SQLAApplicationRepository = Depends(get_application_repository),
-) -> ApplicationListResponse:
-    """Return paginated list of applications (Sprint 3)."""
-    raise HTTPException(status_code=501, detail="Not implemented — Sprint 3")
+    status: str = Query("HR_STAGE"),
+    faculty: str | None = Query(None),
+    min_score: float | None = Query(None, ge=0, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    _user: dict = Depends(require_role(["human_resources"])),
+    use_case: ReviewRankingUseCase = Depends(get_review_ranking_usecase),
+):
+    """List applications filtered by status, faculty, score, with pagination."""
+    result = await use_case.execute(
+        status=status,
+        faculty=faculty,
+        min_score=min_score,
+        page=page,
+        page_size=page_size,
+    )
+    items = []
+    for r in result["items"]:
+        items.append(
+            {
+                "id": r["id"],
+                "applicant_id": r["applicant_id"],
+                "applicant_name": r["applicant_name"],
+                "applicant_email": r["applicant_email"],
+                "vacancy_title": r["vacancy_title"],
+                "vacancy_faculty": r["vacancy_faculty"],
+                "status": r["status"],
+                "score_total": r["score_total"],
+                "score_academic": r["score_academic"],
+                "score_experience": r["score_experience"],
+                "score_production": r["score_production"],
+                "score_profile_match": r["score_profile_match"],
+                "score_languages": r["score_languages"],
+                "evaluation_summary": r["evaluation_summary"],
+                "cv_storage_key": r["cv_storage_key"],
+                "submitted_at": r["submitted_at"],
+            }
+        )
+    return {
+        "items": items,
+        "total": result["total"],
+        "page": result["page"],
+        "page_size": result["page_size"],
+        "pages": result["pages"],
+    }
 
 
-@router.get("/pending-count", response_model=PendingCountResponse)
-async def get_pending_count(
-    _user: dict = Depends(require_role(["dean", "rector", "finance_director"])),
-    repo: SQLAApplicationRepository = Depends(get_application_repository),
-) -> PendingCountResponse:
-    """Return the count of applications awaiting a decision (Sprint 3).
+@router.get("/cv-presigned/{storage_key:path}")
+async def get_cv_presigned_url(
+    storage_key: str,
+    _user: dict = Depends(require_role(["human_resources", "authorities"])),
+) -> dict:
+    """Generate a presigned URL for downloading a CV."""
+    from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 
-    ⚠️ This route MUST be declared before GET /{id} to prevent FastAPI
-    from matching the literal string 'pending-count' as a UUID.
-    """
-    raise HTTPException(status_code=501, detail="Not implemented — Sprint 3")
-
-
-@router.get("/{id}", response_model=ApplicationResponse)
-async def get_application(
-    id: UUID,
-    _user: dict = Depends(require_role(["hr_staff", "dean", "rector", "finance_director"])),
-    repo: SQLAApplicationRepository = Depends(get_application_repository),
-) -> ApplicationResponse:
-    """Return a single application by UUID (Sprint 3)."""
-    raise HTTPException(status_code=501, detail="Not implemented — Sprint 3")
+    adapter = BackblazeStorageAdapter()
+    url = await adapter.generate_presigned_url(storage_key)
+    return {"url": url}
 
 
-@router.post("/", response_model=ApplicationResponse, status_code=201)
+@router.post("/", status_code=201)
 async def submit_application(
-    vacancy_id: UUID,
-    cv_file: UploadFile,
+    vacancy_id: UUID = Form(...),
+    cv_file: UploadFile = File(...),
     current_user: dict = Depends(require_role(["applicant"])),
     use_case: SubmitApplicationUseCase = Depends(get_submit_application_usecase),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
-) -> ApplicationResponse:
-    """Submit a new application with a CV PDF.
+):
+    """Submit a new application with a CV PDF."""
 
-    Accepts multipart/form-data: vacancy_id (UUID) + cv_file (UploadFile).
-    """
     if cv_file.content_type not in _PDF_CONTENT_TYPES:
         raise HTTPException(status_code=422, detail="File must be a PDF under 10 MB")
 
@@ -88,4 +104,17 @@ async def submit_application(
         raise HTTPException(status_code=404, detail="Applicant profile not found")
 
     application = await use_case.execute(applicant.id, vacancy_id, contents)
-    return ApplicationResponse.model_validate(application)
+
+    # Fire-and-forget AI scoring in a truly independent task
+    _asyncio.create_task(process_ai_score_task(application.id))
+
+    return {
+        "id": str(application.id),
+        "applicant_id": str(application.applicant_id),
+        "vacancy_id": str(application.vacancy_id),
+        "status": application.status.value,
+        "ai_score": None,
+        "status_history": [],
+        "created_at": application.created_at.isoformat(),
+        "updated_at": application.updated_at.isoformat(),
+    }

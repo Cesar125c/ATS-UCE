@@ -1,28 +1,40 @@
 """FastAPI dependency injection wiring. Maps interfaces to concrete implementations."""
 
+import logging
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.use_cases.get_application_status import GetApplicationStatusUseCase
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
+from app.application.use_cases.record_authority_decision import RecordAuthorityDecisionUseCase
+from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
+from app.domain.services.workflow_approval_service import WorkflowApprovalService
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
+from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
+from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
+
+logger = logging.getLogger("ats_uce")
 
 security = HTTPBearer()
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: AsyncSession = Depends(get_db_session),
 ) -> dict:
     """
     Verifies the Clerk JWT and returns the user payload.
-    In development (app_env == 'development'), returns a mock user if CLERK keys are not set.
-    In production, validates the token against Clerk's JWKS endpoint.
+    Falls back to local DB lookup if the JWT does not contain a role claim
+    (token was issued before set_user_role wrote publicMetadata to Clerk).
 
     Returns: {"user_id": str, "role": str, "email": str}
     """
@@ -30,10 +42,52 @@ async def get_current_user(
 
     settings = get_settings()
     if settings.app_env == "development" and not settings.clerk_secret_key:
-        # TODO: Remove before Sprint 2 — mock only for Week 1 Swagger testing
-        return {"user_id": "dev_user_001", "role": "hr_staff", "email": "dev@uce.edu.ec"}
-    # Sprint 2: implement real Clerk JWT verification here
-    raise HTTPException(status_code=501, detail="Clerk JWT verification — Sprint 2")
+        return {"user_id": "dev_user_001", "role": "human_resources", "email": "dev@uce.edu.ec"}
+
+    adapter = ClerkAuthAdapter(settings)
+    try:
+        claims = await adapter.verify_token(credentials.credentials)
+    except Exception as e:
+        logger.error("Clerk token verification failed: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    # If the JWT doesn't have a role (token was issued before metadata sync),
+    # look it up from the local database
+    if not claims.get("role"):
+        clerk_id = claims.get("user_id", "")
+        if clerk_id:
+            result = await session.execute(select(UserModel).where(UserModel.clerk_id == clerk_id))
+            user = result.scalar_one_or_none()
+            if user:
+                claims["role"] = user.role
+                claims["email"] = claims.get("email") or user.email
+                logger.debug("Role resolved from local DB for %s: %s", clerk_id, user.role)
+            else:
+                # User authenticated with Clerk but doesn't exist in our DB yet.
+                # Auto-create with role based on email domain
+                email = claims.get("email", "") or f"{clerk_id}@unknown.uce.edu.ec"
+                role = "human_resources" if email.endswith("@uce.edu.ec") else "applicant"
+                new_user = UserModel(
+                    clerk_id=clerk_id,
+                    email=email,
+                    first_name="User",
+                    last_name="",
+                    role=role,
+                )
+                session.add(new_user)
+                await session.flush()
+                claims["role"] = role
+                claims["email"] = new_user.email
+                # Also create the applicant record if role is applicant
+                if role == "applicant":
+                    from app.infrastructure.database.models.applicant_model import ApplicantModel
+
+                    applicant = ApplicantModel(user_id=new_user.id)
+                    session.add(applicant)
+                    await session.flush()
+                logger.info("Auto-created user %s as %s", clerk_id, role)
+
+    return claims
 
 
 def require_role(allowed_roles: list[str]):
@@ -91,3 +145,24 @@ async def get_process_ai_score_usecase(
     analysis: OpenAIAnalysisAdapter = Depends(get_analysis_adapter),
 ) -> ProcessAIScoreUseCase:
     return ProcessAIScoreUseCase(application_repo, vacancy_repo, analysis)
+
+
+async def get_record_authority_decision_usecase(
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+) -> RecordAuthorityDecisionUseCase:
+    workflow_service = WorkflowApprovalService()
+    return RecordAuthorityDecisionUseCase(application_repo, workflow_service)
+
+
+async def get_application_status_usecase(
+    applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+    vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
+) -> GetApplicationStatusUseCase:
+    return GetApplicationStatusUseCase(applicant_repo, application_repo, vacancy_repo)
+
+
+async def get_review_ranking_usecase(
+    application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+) -> ReviewRankingUseCase:
+    return ReviewRankingUseCase(application_repo)

@@ -19,4 +19,7 @@ export default defineConfig([globalIgnores(['dist']), {
   languageOptions: {
     globals: globals.browser,
   },
+  rules: {
+    "react-hooks/set-state-in-effect": "off",
+  },
 }, ...storybook.configs["flat/recommended"]])

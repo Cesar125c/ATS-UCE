@@ -16,6 +16,7 @@ class Application:
     id: UUID = field(default_factory=uuid4)
     status: FlowStatus = FlowStatus.RECEIVED
     ai_score: AIScore | None = None
+    error_reason: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
