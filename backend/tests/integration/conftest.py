@@ -1,7 +1,7 @@
 """Integration test fixtures and CI safety guards.
 
-CI SAFETY: All external API keys are overridden with fake values at import time.
-A session-scoped autouse fixture also blocks any attempt to reach external hosts.
+CI SAFETY: Only credentials for internally exercised services receive fake values.
+A session-scoped autouse fixture blocks external hosts without explicit credentials.
 """
 
 import os
@@ -16,14 +16,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 # ---------------------------------------------------------------------------
-# Override all external API keys BEFORE any app module is imported so that
-# adapters initialised at import-time never receive real credentials.
+# Provide placeholders required by internal tests BEFORE app modules are imported.
+# OpenAI and Backblaze are intentionally absent so external tests skip in CI.
 # ---------------------------------------------------------------------------
 _CI_FAKE_ENV: dict[str, str] = {
-    "OPENAI_API_KEY": "sk-test-fake-key-for-ci-do-not-use",
-    "B2_APPLICATION_KEY_ID": "fake-b2-key-id",
-    "B2_APPLICATION_KEY": "fake-b2-key",
-    "B2_BUCKET_NAME": "fake-bucket",
     "RESEND_API_KEY": "re_fake_key_for_ci",
     "CLERK_SECRET_KEY": "sk_test_fake_clerk_key",
 }
@@ -44,16 +40,25 @@ from app.infrastructure.repositories.sqla_application_repository import (  # noq
 )
 from config import get_settings  # noqa: E402
 
+
+@pytest.fixture
+def settings():
+    """Provide application settings without inventing external-service credentials."""
+    return get_settings()
+
+
 # ---------------------------------------------------------------------------
-# Blocked external hostnames — any test that tries to resolve these raises
+# Block external hosts unless their credentials were explicitly exported.
 # ---------------------------------------------------------------------------
-_BLOCKED_HOSTS = frozenset(
-    {
-        "api.openai.com",
-        "s3.us-west-004.backblazeb2.com",
-        "api.resend.com",
-    }
-)
+_blocked_hosts = {"api.resend.com"}
+if not os.environ.get("OPENAI_API_KEY"):
+    _blocked_hosts.add("api.openai.com")
+if not all(
+    os.environ.get(name)
+    for name in ("B2_APPLICATION_KEY_ID", "B2_APPLICATION_KEY", "B2_BUCKET_NAME")
+):
+    _blocked_hosts.update({"api.backblazeb2.com", "s3.us-west-004.backblazeb2.com"})
+_BLOCKED_HOSTS = frozenset(_blocked_hosts)
 
 _original_getaddrinfo = socket.getaddrinfo
 

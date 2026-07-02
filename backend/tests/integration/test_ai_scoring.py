@@ -1,3 +1,4 @@
+import os
 from unittest.mock import MagicMock
 from uuid import UUID
 
@@ -11,7 +12,13 @@ from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
+_HAS_OPENAI_CREDENTIALS = bool(os.environ.get("OPENAI_API_KEY"))
 
+
+@pytest.mark.skipif(
+    not _HAS_OPENAI_CREDENTIALS,
+    reason="Requires OPENAI_API_KEY exported in the test environment",
+)
 @pytest.mark.asyncio
 async def test_ai_scoring_end_to_end(settings):
     if not settings.openai_api_key:
