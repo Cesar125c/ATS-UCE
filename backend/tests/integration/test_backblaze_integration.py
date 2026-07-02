@@ -1,10 +1,20 @@
+import os
 from uuid import uuid4
 
 import pytest
 
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 
+_HAS_B2_CREDENTIALS = all(
+    os.environ.get(name)
+    for name in ("B2_APPLICATION_KEY_ID", "B2_APPLICATION_KEY", "B2_BUCKET_NAME")
+)
 
+
+@pytest.mark.skipif(
+    not _HAS_B2_CREDENTIALS,
+    reason="Requires Backblaze B2 credentials exported in the test environment",
+)
 @pytest.mark.asyncio
 async def test_integration_roundtrip(settings):
     if not all(
@@ -31,6 +41,10 @@ async def test_integration_roundtrip(settings):
     assert "X-Amz-Signature" in url
 
 
+@pytest.mark.skipif(
+    not _HAS_B2_CREDENTIALS,
+    reason="Requires Backblaze B2 credentials exported in the test environment",
+)
 @pytest.mark.asyncio
 async def test_large_file_handling(settings):
     if not all(
