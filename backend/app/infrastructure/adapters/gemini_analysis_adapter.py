@@ -174,13 +174,10 @@ class GeminiAnalysisAdapter:
         if self._use_fallback:
             return await self._simulated_analyze(cv_text, vacancy_title, vacancy_faculty)
 
-        prompt = (
-            f"{self.SYSTEM_PROMPT}\n\n"
-            + self.USER_PROMPT_TEMPLATE.format(
-                vacancy_title=vacancy_title,
-                vacancy_faculty=vacancy_faculty,
-                cv_text=cv_text[:5000],
-            )
+        prompt = f"{self.SYSTEM_PROMPT}\n\n" + self.USER_PROMPT_TEMPLATE.format(
+            vacancy_title=vacancy_title,
+            vacancy_faculty=vacancy_faculty,
+            cv_text=cv_text[:5000],
         )
 
         loop = asyncio.get_event_loop()
