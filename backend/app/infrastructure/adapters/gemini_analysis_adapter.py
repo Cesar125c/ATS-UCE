@@ -97,7 +97,7 @@ class GeminiAnalysisAdapter:
 
             if key:
                 self._client = google_genai.Client(api_key=key)
-                resp = self._client.models.generate_content(
+                self._client.models.generate_content(
                     model="gemini-2.0-flash",
                     contents="ping",
                     config={"temperature": 0, "max_output_tokens": 5},
@@ -174,7 +174,14 @@ class GeminiAnalysisAdapter:
         if self._use_fallback:
             return await self._simulated_analyze(cv_text, vacancy_title, vacancy_faculty)
 
-        prompt = f"{self.SYSTEM_PROMPT}\n\n{self.USER_PROMPT_TEMPLATE.format(vacancy_title=vacancy_title, vacancy_faculty=vacancy_faculty, cv_text=cv_text[:5000])}"
+        prompt = (
+            f"{self.SYSTEM_PROMPT}\n\n"
+            + self.USER_PROMPT_TEMPLATE.format(
+                vacancy_title=vacancy_title,
+                vacancy_faculty=vacancy_faculty,
+                cv_text=cv_text[:5000],
+            )
+        )
 
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
