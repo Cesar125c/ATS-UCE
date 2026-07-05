@@ -125,14 +125,15 @@ async def app_repo(session: AsyncSession) -> SQLAApplicationRepository:
 
 
 @pytest_asyncio.fixture
-async def application_refs(session: AsyncSession) -> tuple[UUID, UUID]:
+async def application_refs(session: AsyncSession) -> tuple[UUID, UUID, str]:
     user_id = uuid4()
     applicant_id = uuid4()
     vacancy_id = uuid4()
+    clerk_id = f"clerk-{user_id}"
 
     user = UserModel(
         id=user_id,
-        clerk_id=f"clerk-{user_id}",
+        clerk_id=clerk_id,
         email=f"{user_id}@example.com",
         first_name="Test",
         last_name="Applicant",
@@ -151,14 +152,14 @@ async def application_refs(session: AsyncSession) -> tuple[UUID, UUID]:
     session.add_all([user, applicant, vacancy])
     await session.flush()
 
-    return applicant_id, vacancy_id
+    return applicant_id, vacancy_id, clerk_id
 
 
 @pytest_asyncio.fixture
 async def saved_application(
-    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID, str]
 ) -> Application:
-    applicant_id, vacancy_id = application_refs
+    applicant_id, vacancy_id, _ = application_refs
     app = Application(
         applicant_id=applicant_id,
         vacancy_id=vacancy_id,
@@ -169,9 +170,9 @@ async def saved_application(
 
 @pytest_asyncio.fixture
 async def application_with_score(
-    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID, str]
 ) -> Application:
-    applicant_id, vacancy_id = application_refs
+    applicant_id, vacancy_id, _ = application_refs
     app = Application(
         applicant_id=applicant_id,
         vacancy_id=vacancy_id,
