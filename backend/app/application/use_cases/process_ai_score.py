@@ -12,10 +12,7 @@ from app.infrastructure.adapters.backblaze_storage_adapter import (
     BackblazeStorageAdapter,
     StorageError,
 )
-from app.infrastructure.adapters.openai_analysis_adapter import (
-    OpenAIAnalysisAdapter,
-    OpenAIUnavailableError,
-)
+from app.infrastructure.adapters.groq_analysis_adapter import AIUnavailableError
 from app.infrastructure.adapters.resend_email_adapter import ResendEmailAdapter as EmailService
 
 logger = logging.getLogger(__name__)
@@ -26,7 +23,7 @@ class ProcessAIScoreUseCase:
         self,
         application_repo: IApplicationRepository,
         vacancy_repo: IVacancyRepository,
-        analysis_adapter: OpenAIAnalysisAdapter,
+        analysis_adapter,  # GeminiAnalysisAdapter or OpenAIAnalysisAdapter
         storage_adapter: BackblazeStorageAdapter,
         email_service: EmailService,
     ) -> None:
@@ -65,7 +62,7 @@ class ProcessAIScoreUseCase:
             )
             application.assign_ai_score(ai_score)
             await self._application_repo.save(application)
-        except OpenAIUnavailableError as exc:
+        except AIUnavailableError as exc:
             # After all retries exhausted: persist error_reason, keep status PROCESSING_AI
             application.error_reason = "OPENAI_UNAVAILABLE"
             history_entry = StatusHistory(

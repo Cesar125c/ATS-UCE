@@ -15,7 +15,7 @@ from app.application.use_cases.submit_application import SubmitApplicationUseCas
 from app.domain.services.workflow_approval_service import WorkflowApprovalService
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
-from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
+from app.infrastructure.adapters.groq_analysis_adapter import GroqAnalysisAdapter
 from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
@@ -126,8 +126,8 @@ async def get_storage_adapter() -> BackblazeStorageAdapter:
     return BackblazeStorageAdapter()
 
 
-async def get_analysis_adapter() -> OpenAIAnalysisAdapter:
-    return OpenAIAnalysisAdapter()
+async def get_analysis_adapter() -> GroqAnalysisAdapter:
+    return GroqAnalysisAdapter()
 
 
 async def get_submit_application_usecase(
@@ -142,7 +142,7 @@ async def get_submit_application_usecase(
 async def get_process_ai_score_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
     vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
-    analysis: OpenAIAnalysisAdapter = Depends(get_analysis_adapter),
+    analysis: GroqAnalysisAdapter = Depends(get_analysis_adapter),
 ) -> ProcessAIScoreUseCase:
     return ProcessAIScoreUseCase(application_repo, vacancy_repo, analysis)
 

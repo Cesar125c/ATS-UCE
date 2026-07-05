@@ -2,7 +2,7 @@ from uuid import UUID
 
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
-from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
+from app.infrastructure.adapters.groq_analysis_adapter import GroqAnalysisAdapter
 from app.infrastructure.adapters.resend_email_adapter import ResendEmailAdapter
 from app.infrastructure.database.session import AsyncSessionLocal
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
@@ -14,7 +14,7 @@ async def process_ai_score_task(application_id: UUID):
     async with AsyncSessionLocal() as session:
         repo = SQLAApplicationRepository(session)
         vacancy_repo = SQLAVacancyRepository(session)
-        analysis_adapter = OpenAIAnalysisAdapter()
+        analysis_adapter = GroqAnalysisAdapter()
         storage_adapter = BackblazeStorageAdapter()
         email_service = ResendEmailAdapter()
         use_case = ProcessAIScoreUseCase(
@@ -22,5 +22,7 @@ async def process_ai_score_task(application_id: UUID):
         )
         try:
             await use_case.execute(application_id)
+            await session.commit()
         except Exception as e:
+            await session.rollback()
             raise e
