@@ -1,6 +1,6 @@
 """DTOs for authentication endpoints."""
 
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 VALID_ROLES = {"applicant", "human_resources", "authorities"}
 INSTITUTIONAL_DOMAIN = "@uce.edu.ec"
@@ -9,8 +9,8 @@ INSTITUTIONAL_ROLES = {"human_resources", "authorities"}
 
 class RegisterRequest(BaseModel):
     clerk_user_id: str
-    first_name: str
-    last_name: str
+    first_name: str = Field(..., max_length=100)
+    last_name: str = Field(..., max_length=100)
     email: EmailStr
     role: str
 
