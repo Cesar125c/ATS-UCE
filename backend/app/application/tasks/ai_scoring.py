@@ -36,7 +36,9 @@ async def process_ai_score_task(application_id: UUID):
             except ValueError as e:
                 await session.rollback()
                 if "not found" in str(e) and attempt < 2:
-                    logger.debug("Application %s not visible yet, retry %d/3", application_id, attempt + 1)
+                    logger.debug(
+                        "Application %s not visible yet, retry %d/3", application_id, attempt + 1
+                    )
                     continue
                 raise
             except Exception:
