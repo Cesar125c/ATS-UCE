@@ -2,7 +2,8 @@
 
 import logging
 
-from fastapi import Depends, HTTPException
+import jwt
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -166,3 +167,21 @@ async def get_review_ranking_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> ReviewRankingUseCase:
     return ReviewRankingUseCase(application_repo)
+
+
+def rate_limit_key(request: Request) -> str:
+    """Extract the Clerk user_id from the JWT for per-user rate limiting.
+    Falls back to client IP if no valid token is present.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer ") :]
+        try:
+            payload = jwt.decode(token, options={"verify_signature": False})
+            user_id = payload.get("sub") or payload.get("user_id", "")
+            if user_id:
+                return f"user:{user_id}"
+        except Exception:
+            pass
+    client_ip = request.client.host if request.client else "unknown"
+    return f"ip:{client_ip}"

@@ -1,7 +1,7 @@
 import asyncio as _asyncio
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 
 from app.api.dependencies import (
     get_applicant_repository,
@@ -9,6 +9,7 @@ from app.api.dependencies import (
     get_submit_application_usecase,
     require_role,
 )
+from app.api.limiter import limiter
 from app.application.tasks.ai_scoring import process_ai_score_task
 from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
@@ -83,7 +84,9 @@ async def get_cv_presigned_url(
 
 
 @router.post("/", status_code=201)
+@limiter.limit("5/minute")
 async def submit_application(
+    request: Request,
     vacancy_id: UUID = Form(...),
     cv_file: UploadFile = File(...),
     current_user: dict = Depends(require_role(["applicant"])),

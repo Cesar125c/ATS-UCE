@@ -2,13 +2,14 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.dependencies import (
     get_application_repository,
     get_record_authority_decision_usecase,
     require_role,
 )
+from app.api.limiter import limiter
 from app.application.dtos.evaluation_dtos import EvaluationRequest, EvaluationResponse
 from app.application.use_cases.record_authority_decision import RecordAuthorityDecisionUseCase
 from app.domain.exceptions import DomainError
@@ -22,7 +23,9 @@ router = APIRouter()
     response_model=EvaluationResponse,
     status_code=201,
 )
+@limiter.limit("10/minute")
 async def create_evaluation(
+    request: Request,
     application_id: UUID,
     body: EvaluationRequest,
     current_user: dict = Depends(require_role(["human_resources", "authorities"])),
