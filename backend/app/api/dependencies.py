@@ -83,7 +83,9 @@ async def get_current_user(
                     claims["role"] = role
                     claims["email"] = new_user.email
                     if role == "applicant":
-                        from app.infrastructure.database.models.applicant_model import ApplicantModel
+                        from app.infrastructure.database.models.applicant_model import (
+                            ApplicantModel,
+                        )
 
                         applicant = ApplicantModel(user_id=new_user.id)
                         session.add(applicant)
