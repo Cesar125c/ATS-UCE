@@ -68,3 +68,12 @@ def test_full_approval_flow_through_all_stages_to_hired(
 
     assert app.status == FlowStatus.HIRED
     assert app.status.is_terminal is True
+
+
+def test_get_required_role_returns_correct_role() -> None:
+    service = WorkflowApprovalService()
+    assert service.get_required_role(FlowStatus.HR_STAGE) == "human_resources"
+    assert service.get_required_role(FlowStatus.DEAN_STAGE) == "authorities"
+    assert service.get_required_role(FlowStatus.RECTOR_STAGE) == "authorities"
+    assert service.get_required_role(FlowStatus.FINANCE_STAGE) == "authorities"
+    assert service.get_required_role(FlowStatus.RECEIVED) == ""
