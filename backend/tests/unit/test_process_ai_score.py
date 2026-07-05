@@ -7,7 +7,7 @@ from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
 from app.domain.entities.application import Application
 from app.domain.value_objects.ai_score import AIScore
 from app.domain.value_objects.flow_status import FlowStatus
-from app.infrastructure.adapters.openai_analysis_adapter import OpenAIUnavailableError
+from app.infrastructure.adapters.groq_analysis_adapter import AIUnavailableError
 
 
 def _make_mock_app(status: FlowStatus = FlowStatus.RECEIVED) -> Application:
@@ -137,7 +137,7 @@ async def test_ai_scoring_failure(mocker):
     mock_storage.download_file.return_value = mock_pdf
 
     mock_analysis = AsyncMock()
-    mock_analysis.analyze_cv_with_fallback.side_effect = OpenAIUnavailableError("OpenAI down")
+    mock_analysis.analyze_cv_with_fallback.side_effect = AIUnavailableError("AI down")
 
     mock_app_repo = AsyncMock()
     mock_app = _make_mock_app()
