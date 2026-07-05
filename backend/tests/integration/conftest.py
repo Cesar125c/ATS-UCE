@@ -7,13 +7,20 @@ A session-scoped autouse fixture blocks external hosts without explicit credenti
 import os
 import socket
 from collections.abc import AsyncGenerator
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
+from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
+
+# ---------------------------------------------------------------------------
+# Load .env BEFORE setting placeholders so real credentials are preserved.
+# ---------------------------------------------------------------------------
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent.parent / ".env")
 
 # ---------------------------------------------------------------------------
 # Provide placeholders required by internal tests BEFORE app modules are imported.
