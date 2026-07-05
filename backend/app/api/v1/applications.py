@@ -28,7 +28,7 @@ async def list_applications(
     min_score: float | None = Query(None, ge=0, le=100),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    _user: dict = Depends(require_role(["human_resources"])),
+    _user: dict = Depends(require_role(["human_resources", "authorities"])),
     use_case: ReviewRankingUseCase = Depends(get_review_ranking_usecase),
 ):
     """List applications filtered by status, faculty, score, with pagination."""
