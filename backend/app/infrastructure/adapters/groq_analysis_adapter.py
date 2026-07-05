@@ -92,33 +92,19 @@ class GroqAnalysisAdapter:
             self._use_fallback = False
             logger.info("Groq adapter initialized with real API")
         else:
-            logger.warning(
-                "No Groq API key configured — using simulated scores"
-            )
+            logger.warning("No Groq API key configured — using simulated scores")
 
     async def _simulated_analyze(
         self, cv_text: str, vacancy_title: str, vacancy_faculty: str
     ) -> AIScore:
         text_lower = cv_text.lower()
-        phd = (
-            15
-            if "ph.d" in text_lower
-            or "phd" in text_lower
-            or "doctor" in text_lower
-            else 0
-        )
+        phd = 15 if "ph.d" in text_lower or "phd" in text_lower or "doctor" in text_lower else 0
         masters = (
-            10
-            if "master" in text_lower
-            or "maestría" in text_lower
-            or "m.sc" in text_lower
-            else 0
+            10 if "master" in text_lower or "maestría" in text_lower or "m.sc" in text_lower else 0
         )
         bachelors = (
             5
-            if "bachelor" in text_lower
-            or "licenciatura" in text_lower
-            or "ingenier" in text_lower
+            if "bachelor" in text_lower or "licenciatura" in text_lower or "ingenier" in text_lower
             else 0
         )
         academic = min(100, 55 + phd + masters + bachelors)
@@ -148,9 +134,7 @@ class GroqAnalysisAdapter:
         if "german" in text_lower or "alemán" in text_lower:
             lang_score += 5
         languages = min(100, lang_score)
-        total = round(
-            (academic + experience + production + profile_match + languages) / 5
-        )
+        total = round((academic + experience + production + profile_match + languages) / 5)
         summary = (
             f"Academic:{academic}% Exp:{experience}% "
             f"Research:{production}% Match:{profile_match}% Lang:{languages}%"
@@ -170,13 +154,9 @@ class GroqAnalysisAdapter:
         wait=wait_exponential(multiplier=1, min=1, max=4),
         retry=retry_if_exception_type((GroqError, Exception)),
     )
-    async def analyze_cv(
-        self, cv_text: str, vacancy_title: str, vacancy_faculty: str
-    ) -> AIScore:
+    async def analyze_cv(self, cv_text: str, vacancy_title: str, vacancy_faculty: str) -> AIScore:
         if self._use_fallback:
-            return await self._simulated_analyze(
-                cv_text, vacancy_title, vacancy_faculty
-            )
+            return await self._simulated_analyze(cv_text, vacancy_title, vacancy_faculty)
 
         user_prompt = self.USER_PROMPT_TEMPLATE.format(
             vacancy_title=vacancy_title,
@@ -221,6 +201,4 @@ class GroqAnalysisAdapter:
             return await self.analyze_cv(cv_text, vacancy_title, vacancy_faculty)
         except Exception as e:
             logger.error("Groq unavailable after retries: %s", e)
-            raise AIUnavailableError(
-                f"Groq API unavailable after 3 attempts: {e}"
-            )
+            raise AIUnavailableError(f"Groq API unavailable after 3 attempts: {e}")
