@@ -1,5 +1,6 @@
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from app.domain.entities.application import Application
 from app.domain.entities.evaluation import Evaluation
