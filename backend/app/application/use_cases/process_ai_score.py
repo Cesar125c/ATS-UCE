@@ -13,7 +13,7 @@ from app.infrastructure.adapters.backblaze_storage_adapter import (
     StorageError,
 )
 from app.infrastructure.adapters.resend_email_adapter import ResendEmailAdapter as EmailService
-from app.infrastructure.adapters.gemini_analysis_adapter import AIUnavailableError
+from app.infrastructure.adapters.groq_analysis_adapter import AIUnavailableError
 
 logger = logging.getLogger(__name__)
 

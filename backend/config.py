@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Gemini
     gemini_api_key: str = ""
 
+    # Groq
+    groq_api_key: str = ""
+
     # Resend email
     resend_api_key: str = ""
     resend_from_email: str = "talentpath@uce.edu.ec"
