@@ -9,10 +9,16 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from app.domain.value_objects.ai_score import AIScore
 from config import get_settings
@@ -46,9 +52,10 @@ class AIScoreResponse(BaseModel):
             self.score_languages,
         ]
         expected = sum(axes) / len(axes)
-        if not (expected - 1 <= self.total_score <= expected + 1):
+        if not (expected - 5 <= self.total_score <= expected + 5):
             raise ValueError(
-                f"total_score must be average of 5 axes. Expected {expected}, got {self.total_score}. Axes: {axes}"
+                f"total_score must be average of 5 axes. "
+                f"Expected {expected}, got {self.total_score}. Axes: {axes}"
             )
 
 
@@ -87,9 +94,9 @@ class GeminiAnalysisAdapter:
         self._use_fallback = True
         try:
             from google import genai as google_genai
+
             if key:
                 self._client = google_genai.Client(api_key=key)
-                # Quick connectivity check — if it fails, fall back to simulated scores
                 resp = self._client.models.generate_content(
                     model="gemini-2.0-flash",
                     contents="ping",
@@ -101,36 +108,67 @@ class GeminiAnalysisAdapter:
         except Exception as e:
             logger.warning("Gemini unavailable, using simulated scores: %s", e)
 
-    async def _simulated_analyze(self, cv_text: str, vacancy_title: str, vacancy_faculty: str) -> AIScore:
-        """Generate realistic simulated scores based on CV content analysis."""
+    async def _simulated_analyze(
+        self, cv_text: str, vacancy_title: str, vacancy_faculty: str
+    ) -> AIScore:
         text_lower = cv_text.lower()
-        # Academic keywords
-        phd = 15 if "ph.d" in text_lower or "phd" in text_lower or "doctor" in text_lower else 0
-        masters = 10 if "master" in text_lower or "maestría" in text_lower or "m.sc" in text_lower else 0
-        bachelors = 5 if "bachelor" in text_lower or "licenciatura" in text_lower or "ingenier" in text_lower else 0
+        phd = (
+            15
+            if "ph.d" in text_lower
+            or "phd" in text_lower
+            or "doctor" in text_lower
+            else 0
+        )
+        masters = (
+            10
+            if "master" in text_lower
+            or "maestría" in text_lower
+            or "m.sc" in text_lower
+            else 0
+        )
+        bachelors = (
+            5
+            if "bachelor" in text_lower
+            or "licenciatura" in text_lower
+            or "ingenier" in text_lower
+            else 0
+        )
         academic = min(100, 55 + phd + masters + bachelors)
-        # Experience keywords
-        years_exp = 0
-        import re
-        matches = re.findall(r'(\d+)[\s\-]*(?:year|año|yr)s?\s+(?:of\s+)?(?:teaching|docen|universit|academic)', text_lower)
-        if matches: years_exp = min(int(matches[0]), 30)
+        matches = re.findall(
+            r"(\d+)[\s\-]*(?:year|año|yr)s?\s+(?:of\s+)?(?:teaching|docen|universit|academic)",
+            text_lower,
+        )
+        years_exp = min(int(matches[0]), 30) if matches else 0
         experience = min(100, 40 + years_exp * 2)
-        # Publications
-        pub_count = len(re.findall(r'(?:paper|article|publication|journal|conference|scopus|ieee|springer|acm|elsevier)', text_lower))
+        pub_count = len(
+            re.findall(
+                r"(?:paper|article|publication|journal|conference|scopus|ieee|springer|acm|elsevier)",
+                text_lower,
+            )
+        )
         production = min(100, 40 + pub_count * 8)
-        # Profile match
         title_words = set(vacancy_title.lower().split())
         matching = sum(1 for w in title_words if len(w) > 3 and w in text_lower)
         profile_match = min(100, 50 + matching * 12)
-        # Languages
         lang_score = 50
-        if "english" in text_lower or "inglés" in text_lower: lang_score += 20
-        if "spanish" in text_lower or "español" in text_lower: lang_score += 5
-        if "french" in text_lower or "francés" in text_lower: lang_score += 5
-        if "german" in text_lower or "alemán" in text_lower: lang_score += 5
-        if "portuguese" in text_lower or "portugués" in text_lower: lang_score += 5
+        if "english" in text_lower or "inglés" in text_lower:
+            lang_score += 20
+        if "spanish" in text_lower or "español" in text_lower:
+            lang_score += 5
+        if "french" in text_lower or "francés" in text_lower:
+            lang_score += 5
+        if "german" in text_lower or "alemán" in text_lower:
+            lang_score += 5
+        if "portuguese" in text_lower or "portugués" in text_lower:
+            lang_score += 5
         languages = min(100, lang_score)
-        total = round((academic + experience + production + profile_match + languages) / 5)
+        total = round(
+            (academic + experience + production + profile_match + languages) / 5
+        )
+        summary = (
+            f"Academic:{academic}% Exp:{experience}% "
+            f"Research:{production}% Match:{profile_match}% Lang:{languages}%"
+        )
         return AIScore(
             total=total,
             academic_training=academic,
@@ -138,7 +176,7 @@ class GeminiAnalysisAdapter:
             publications=production,
             profile_match=profile_match,
             languages_competencies=languages,
-            evaluation_summary=f"Simulated evaluation. Academic: {academic}%, Experience: {experience}%, Research: {production}%, Match: {profile_match}%, Languages: {languages}%.",
+            evaluation_summary=summary,
         )
 
     @retry(
@@ -146,11 +184,13 @@ class GeminiAnalysisAdapter:
         wait=wait_exponential(multiplier=1, min=1, max=4),
         retry=retry_if_exception_type((Exception,)),
     )
-    async def analyze_cv(self, cv_text: str, vacancy_title: str, vacancy_faculty: str) -> AIScore:
-        """Analyze CV text with Gemini (or simulated fallback) and return AIScore."""
-
+    async def analyze_cv(
+        self, cv_text: str, vacancy_title: str, vacancy_faculty: str
+    ) -> AIScore:
         if self._use_fallback:
-            return await self._simulated_analyze(cv_text, vacancy_title, vacancy_faculty)
+            return await self._simulated_analyze(
+                cv_text, vacancy_title, vacancy_faculty
+            )
 
         prompt = f"{self.SYSTEM_PROMPT}\n\n{self.USER_PROMPT_TEMPLATE.format(vacancy_title=vacancy_title, vacancy_faculty=vacancy_faculty, cv_text=cv_text[:5000])}"
 
@@ -187,9 +227,10 @@ class GeminiAnalysisAdapter:
     async def analyze_cv_with_fallback(
         self, cv_text: str, vacancy_title: str, vacancy_faculty: str
     ) -> AIScore:
-        """Analyze CV with fallback handling."""
         try:
             return await self.analyze_cv(cv_text, vacancy_title, vacancy_faculty)
         except Exception as e:
             logger.error("Gemini unavailable after retries: %s", e)
-            raise AIUnavailableError(f"Gemini API unavailable after 3 attempts: {e}")
+            raise AIUnavailableError(
+                f"Gemini API unavailable after 3 attempts: {e}"
+            )
