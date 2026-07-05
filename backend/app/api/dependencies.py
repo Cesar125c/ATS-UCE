@@ -65,28 +65,44 @@ async def get_current_user(
                 logger.debug("Role resolved from local DB for %s: %s", clerk_id, user.role)
             else:
                 # User authenticated with Clerk but doesn't exist in our DB yet.
-                # Auto-create with role based on email domain
+                # Auto-create with role based on email domain.
+                # Wrap in try/except to handle race condition where parallel
+                # requests both try to auto-create the same user.
                 email = claims.get("email", "") or f"{clerk_id}@unknown.uce.edu.ec"
                 role = "human_resources" if email.endswith("@uce.edu.ec") else "applicant"
-                new_user = UserModel(
-                    clerk_id=clerk_id,
-                    email=email,
-                    first_name="User",
-                    last_name="",
-                    role=role,
-                )
-                session.add(new_user)
-                await session.flush()
-                claims["role"] = role
-                claims["email"] = new_user.email
-                # Also create the applicant record if role is applicant
-                if role == "applicant":
-                    from app.infrastructure.database.models.applicant_model import ApplicantModel
-
-                    applicant = ApplicantModel(user_id=new_user.id)
-                    session.add(applicant)
+                try:
+                    new_user = UserModel(
+                        clerk_id=clerk_id,
+                        email=email,
+                        first_name="User",
+                        last_name="",
+                        role=role,
+                    )
+                    session.add(new_user)
                     await session.flush()
-                logger.info("Auto-created user %s as %s", clerk_id, role)
+                    claims["role"] = role
+                    claims["email"] = new_user.email
+                    if role == "applicant":
+                        from app.infrastructure.database.models.applicant_model import (
+                            ApplicantModel,
+                        )
+
+                        applicant = ApplicantModel(user_id=new_user.id)
+                        session.add(applicant)
+                        await session.flush()
+                    logger.info("Auto-created user %s as %s", clerk_id, role)
+                except Exception:
+                    await session.rollback()
+                    result = await session.execute(
+                        select(UserModel).where(UserModel.clerk_id == clerk_id)
+                    )
+                    user = result.scalar_one_or_none()
+                    if user:
+                        claims["role"] = user.role
+                        claims["email"] = user.email
+                        logger.debug("User %s already auto-created by concurrent request", clerk_id)
+                    else:
+                        raise
 
     return claims
 

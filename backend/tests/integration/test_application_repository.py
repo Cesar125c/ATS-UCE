@@ -10,9 +10,9 @@ from app.infrastructure.repositories.sqla_application_repository import SQLAAppl
 
 @pytest.mark.integration
 async def test_save_persists_new_application(
-    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID, str]
 ) -> None:
-    applicant_id, vacancy_id = application_refs
+    applicant_id, vacancy_id, _ = application_refs
     app = Application(
         applicant_id=applicant_id,
         vacancy_id=vacancy_id,
