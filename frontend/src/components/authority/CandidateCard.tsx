@@ -1,24 +1,28 @@
 import Badge from "../ui/Badge";
+import type { ApplicationRankingItem } from "@/services/dashboardService";
 
-export interface Candidate {
-  id: number;
-  name: string;
-  position: string;
-  faculty: string;
-  score: number;
-}
+const STATUS_LABEL: Record<string, string> = {
+  DEAN_STAGE: "Decano",
+  RECTOR_STAGE: "Rector",
+  FINANCE_STAGE: "Financiero",
+};
 
 interface CandidateCardProps {
-  candidate: Candidate;
+  candidate: ApplicationRankingItem;
   selected?: boolean;
+  onClick?: () => void;
 }
 
 export default function CandidateCard({
   candidate,
   selected = false,
+  onClick,
 }: CandidateCardProps) {
+  const stageLabel = STATUS_LABEL[candidate.status] || candidate.status;
+
   return (
     <div
+      onClick={onClick}
       className={`cursor-pointer border-b transition-all p-5 ${
         selected
           ? "border-l-4 border-l-sky-500 bg-sky-50"
@@ -26,27 +30,20 @@ export default function CandidateCard({
       }`}
     >
       <div className="flex justify-between">
-
         <div>
-
           <h3 className="font-semibold text-slate-800">
-            {candidate.name}
+            {candidate.applicant_name}
           </h3>
-
           <p className="text-sm text-slate-600 mt-1">
-            {candidate.position}
+            {candidate.vacancy_title}
           </p>
-
           <p className="text-xs uppercase text-slate-400 mt-1">
-            {candidate.faculty}
+            {candidate.vacancy_faculty} · {stageLabel}
           </p>
-
         </div>
-
         <Badge variant="primary">
-          IA {candidate.score}
+          IA {candidate.score_total ?? "—"}
         </Badge>
-
       </div>
     </div>
   );
