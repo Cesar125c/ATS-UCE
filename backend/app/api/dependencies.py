@@ -2,7 +2,8 @@
 
 import logging
 
-from fastapi import Depends, HTTPException
+import jwt
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +16,7 @@ from app.application.use_cases.submit_application import SubmitApplicationUseCas
 from app.domain.services.workflow_approval_service import WorkflowApprovalService
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
 from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
-from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
+from app.infrastructure.adapters.groq_analysis_adapter import GroqAnalysisAdapter
 from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
@@ -64,28 +65,44 @@ async def get_current_user(
                 logger.debug("Role resolved from local DB for %s: %s", clerk_id, user.role)
             else:
                 # User authenticated with Clerk but doesn't exist in our DB yet.
-                # Auto-create with role based on email domain
+                # Auto-create with role based on email domain.
+                # Wrap in try/except to handle race condition where parallel
+                # requests both try to auto-create the same user.
                 email = claims.get("email", "") or f"{clerk_id}@unknown.uce.edu.ec"
                 role = "human_resources" if email.endswith("@uce.edu.ec") else "applicant"
-                new_user = UserModel(
-                    clerk_id=clerk_id,
-                    email=email,
-                    first_name="User",
-                    last_name="",
-                    role=role,
-                )
-                session.add(new_user)
-                await session.flush()
-                claims["role"] = role
-                claims["email"] = new_user.email
-                # Also create the applicant record if role is applicant
-                if role == "applicant":
-                    from app.infrastructure.database.models.applicant_model import ApplicantModel
-
-                    applicant = ApplicantModel(user_id=new_user.id)
-                    session.add(applicant)
+                try:
+                    new_user = UserModel(
+                        clerk_id=clerk_id,
+                        email=email,
+                        first_name="User",
+                        last_name="",
+                        role=role,
+                    )
+                    session.add(new_user)
                     await session.flush()
-                logger.info("Auto-created user %s as %s", clerk_id, role)
+                    claims["role"] = role
+                    claims["email"] = new_user.email
+                    if role == "applicant":
+                        from app.infrastructure.database.models.applicant_model import (
+                            ApplicantModel,
+                        )
+
+                        applicant = ApplicantModel(user_id=new_user.id)
+                        session.add(applicant)
+                        await session.flush()
+                    logger.info("Auto-created user %s as %s", clerk_id, role)
+                except Exception:
+                    await session.rollback()
+                    result = await session.execute(
+                        select(UserModel).where(UserModel.clerk_id == clerk_id)
+                    )
+                    user = result.scalar_one_or_none()
+                    if user:
+                        claims["role"] = user.role
+                        claims["email"] = user.email
+                        logger.debug("User %s already auto-created by concurrent request", clerk_id)
+                    else:
+                        raise
 
     return claims
 
@@ -126,8 +143,8 @@ async def get_storage_adapter() -> BackblazeStorageAdapter:
     return BackblazeStorageAdapter()
 
 
-async def get_analysis_adapter() -> OpenAIAnalysisAdapter:
-    return OpenAIAnalysisAdapter()
+async def get_analysis_adapter() -> GroqAnalysisAdapter:
+    return GroqAnalysisAdapter()
 
 
 async def get_submit_application_usecase(
@@ -142,7 +159,7 @@ async def get_submit_application_usecase(
 async def get_process_ai_score_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
     vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
-    analysis: OpenAIAnalysisAdapter = Depends(get_analysis_adapter),
+    analysis: GroqAnalysisAdapter = Depends(get_analysis_adapter),
 ) -> ProcessAIScoreUseCase:
     return ProcessAIScoreUseCase(application_repo, vacancy_repo, analysis)
 
@@ -166,3 +183,21 @@ async def get_review_ranking_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
 ) -> ReviewRankingUseCase:
     return ReviewRankingUseCase(application_repo)
+
+
+def rate_limit_key(request: Request) -> str:
+    """Extract the Clerk user_id from the JWT for per-user rate limiting.
+    Falls back to client IP if no valid token is present.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer ") :]
+        try:
+            payload = jwt.decode(token, options={"verify_signature": False})
+            user_id = payload.get("sub") or payload.get("user_id", "")
+            if user_id:
+                return f"user:{user_id}"
+        except Exception:
+            pass
+    client_ip = request.client.host if request.client else "unknown"
+    return f"ip:{client_ip}"

@@ -47,7 +47,17 @@ export async function getApplicationsByStatus(
   if (status) params.set("status", status);
   params.set("page", String(page));
   params.set("page_size", String(pageSize));
-  return apiFetch<ApplicationListResponse>(`/api/v1/applications?${params}`);
+  return apiFetch<ApplicationListResponse>(`/api/v1/applications/?${params}`);
+}
+
+export async function getAllApplications(
+  page: number,
+  pageSize: number,
+): Promise<ApplicationListResponse> {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("page_size", String(pageSize));
+  return apiFetch<ApplicationListResponse>(`/api/v1/applications/?${params}`);
 }
 
 export async function getApplicationCVUrl(storageKey: string): Promise<string> {

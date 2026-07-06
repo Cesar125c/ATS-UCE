@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
 
+    # Gemini
+    gemini_api_key: str = ""
+
+    # Groq
+    groq_api_key: str = ""
+
     # Resend email
     resend_api_key: str = ""
     resend_from_email: str = "talentpath@uce.edu.ec"

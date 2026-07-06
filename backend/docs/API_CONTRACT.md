@@ -5,6 +5,18 @@
 **Protocol:** HTTP/1.1 + REST  
 **Authentication:** Bearer JWT (Clerk)  
 
+## Roles
+
+The system has exactly **3 roles**:
+
+| Role | Description |
+|---|---|
+| `applicant` | Postulante — submits applications, checks own status |
+| `human_resources` | Recursos Humanos — reviews at HR_STAGE, manages vacancies, views dashboard |
+| `authorities` | Autoridades — reviews at DEAN_STAGE, RECTOR_STAGE, FINANCE_STAGE |
+
+All three authority stages (dean, rector, finance) share the single `authorities` role. There is no per-stage role distinction — the stage sequence is ceremonial rather than a multi-signer authorization chain.
+
 ---
 
 ## 1. Health Check
@@ -14,7 +26,7 @@ GET /api/v1/health
 ```
 
 **Access:** Public (no auth required)  
-**Sprint:** 1 ✅ Implemented  
+**Status:** ✅ Implemented  
 
 ### Response `200`
 ```json
@@ -27,14 +39,47 @@ GET /api/v1/health
 
 ---
 
-## 2. List Applications (Ranking)
+## 2. Register User
+
+```
+POST /api/v1/register
+```
+
+**Access:** Public (no auth required)  
+**Status:** ✅ Implemented  
+
+Called immediately after Clerk signup to sync the user into the local database.
+
+### Request Body
+```json
+{
+  "clerk_id": "user_xxx",
+  "email": "user@example.com",
+  "full_name": "Jane Doe"
+}
+```
+
+### Response `201`
+```json
+{
+  "id": "uuid",
+  "clerk_id": "user_xxx",
+  "email": "user@example.com",
+  "full_name": "Jane Doe",
+  "role": null
+}
+```
+
+---
+
+## 3. List Applications (Ranking)
 
 ```
 GET /api/v1/applications
 ```
 
-**Access:** `hr_staff`  
-**Sprint:** 3 🔲  
+**Access:** `human_resources`  
+**Status:** ✅ Implemented  
 
 ### Query Parameters
 | Param | Type | Required | Default | Description |
@@ -84,47 +129,16 @@ GET /api/v1/applications
 
 ---
 
-## 3. Get Pending Count
+## 4. Get CV Presigned URL
 
 ```
-GET /api/v1/applications/pending-count
+GET /api/v1/applications/cv-presigned/{storage_key}
 ```
 
-**Access:** `dean`, `rector`, `finance_director`  
-**Sprint:** 3 🔲  
+**Access:** `human_resources`, `authorities`  
+**Status:** ✅ Implemented  
 
-### Response `200`
-```json
-{
-  "count": 5
-}
-```
-
-⚠️ This route MUST be declared before `GET /{id}` to prevent FastAPI from matching the literal string `pending-count` as a UUID.
-
----
-
-## 4. Get Application by ID
-
-```
-GET /api/v1/applications/{id}
-```
-
-**Access:** `hr_staff`, `dean`, `rector`, `finance_director`  
-**Sprint:** 3 🔲  
-
-### Path Parameters
-| Param | Type | Description |
-|---|---|---|
-| `id` | UUID | Application ID |
-
-### Response `200`
-Same schema as application item in List response.
-
-### Response `404`
-```json
-{"detail": "Application not found"}
-```
+Returns a time-limited presigned URL to download the applicant's CV from Backblaze B2.
 
 ---
 
@@ -136,7 +150,7 @@ POST /api/v1/applications/
 
 **Access:** `applicant`  
 **Content-Type:** `multipart/form-data`  
-**Sprint:** 2 🔲 (stub endpoint ready)  
+**Status:** ✅ Implemented  
 
 ### Form Data
 | Field | Type | Required | Description |
@@ -182,8 +196,8 @@ POST /api/v1/applications/
 POST /api/v1/applications/{application_id}/evaluations
 ```
 
-**Access:** `hr_staff`, `dean`, `rector`, `finance_director`  
-**Sprint:** 3 🔲  
+**Access:** `human_resources`, `authorities`  
+**Status:** ✅ Implemented  
 
 ### Path Parameters
 | Param | Type | Description |
@@ -212,12 +226,19 @@ POST /api/v1/applications/{application_id}/evaluations
 {
   "id": "uuid",
   "application_id": "uuid",
-  "reviewer_role": "hr_staff",
+  "reviewer_role": "human_resources",
   "decision": "APPROVED",
   "observations": "Candidate meets all requirements.",
   "created_at": "2026-05-21T12:00:00Z"
 }
 ```
+
+### Role Validation
+- API layer: JWT role must be `human_resources` or `authorities` → `403` if not
+- Domain layer: `WorkflowApprovalService.validate_role_for_status()` checks that the reviewer's role matches the stage's `required_role()`:
+  - `HR_STAGE` requires `human_resources`
+  - `DEAN_STAGE`, `RECTOR_STAGE`, `FINANCE_STAGE` require `authorities`
+  - Mismatch → `403` with `DomainError`
 
 ### Response `422`
 ```json
@@ -233,7 +254,7 @@ GET /api/v1/applicants/me/status
 ```
 
 **Access:** `applicant`  
-**Sprint:** 3 🔲  
+**Status:** ✅ Implemented  
 
 ### Response `200`
 ```json
@@ -274,8 +295,8 @@ Returns all applications belonging to the authenticated JWT user. No access to o
 GET /api/v1/dashboard/stats
 ```
 
-**Access:** `hr_staff`  
-**Sprint:** 3 🔲  
+**Access:** `human_resources`  
+**Status:** ✅ Implemented  
 
 ### Response `200`
 ```json
@@ -296,18 +317,88 @@ GET /api/v1/dashboard/stats
 
 ---
 
+## 9. User Management
+
+### Get Current User
+
+```
+GET /api/v1/users/me
+```
+
+**Access:** Any authenticated user  
+**Status:** ✅ Implemented  
+
+Returns the authenticated user's profile from the local database.
+
+### Set User Role
+
+```
+POST /api/v1/users/set-role
+```
+
+**Access:** Public (no auth required)  
+**Status:** ✅ Implemented  
+
+Sets or updates a user's role in Clerk public metadata and local DB.
+
+### Sync User Role
+
+```
+POST /api/v1/users/sync-role
+```
+
+**Access:** Public (no auth required)  
+**Status:** ✅ Implemented  
+
+Syncs the role from Clerk public metadata to the local DB.
+
+---
+
+## 10. Vacancies
+
+### List Vacancies
+
+```
+GET /api/v1/vacancies/
+```
+
+**Access:** Public (no auth required)  
+**Status:** ✅ Implemented  
+
+### Create Vacancy
+
+```
+POST /api/v1/vacancies/
+```
+
+**Access:** `human_resources`, `authorities`  
+**Status:** ✅ Implemented  
+
+### Delete Vacancy
+
+```
+DELETE /api/v1/vacancies/{vacancy_id}
+```
+
+**Access:** `human_resources`  
+**Status:** ✅ Implemented  
+
+---
+
 ## FlowStatus Enum
 
 | Value | Required Role | Description |
 |---|---|---|
 | `RECEIVED` | — | Initial state after submission |
 | `PROCESSING_AI` | — | AI analysis in progress |
-| `HR_STAGE` | `hr_staff` | HR review and ranking |
-| `DEAN_STAGE` | `dean` | Dean approval |
-| `RECTOR_STAGE` | `rector` | Rector approval |
-| `FINANCE_STAGE` | `finance_director` | Finance director approval |
+| `HR_STAGE` | `human_resources` | HR review and ranking |
+| `DEAN_STAGE` | `authorities` | Dean approval |
+| `RECTOR_STAGE` | `authorities` | Rector approval |
+| `FINANCE_STAGE` | `authorities` | Finance director approval |
 | `HIRED` | — | Final state — hired |
 | `REJECTED` | — | Final state — rejected at any stage |
+
+All three authority stages (DEAN, RECTOR, FINANCE) share the single `authorities` role. There is no per-stage role enforcement — the same reviewer can approve sequentially through all three stages.
 
 ## Error Codes
 
@@ -317,10 +408,8 @@ GET /api/v1/dashboard/stats
 | `403` | Valid JWT but role not authorized |
 | `404` | Resource not found |
 | `422` | Validation error (invalid input, missing required fields) |
-| `429` | Rate limit exceeded (Sprint 7) |
 | `500` | Internal server error |
-| `501` | Endpoint not yet implemented |
 
 ---
 
-*Last updated: 2026-06-01*
+*Last updated: 2026-07-05*

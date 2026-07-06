@@ -1,12 +1,16 @@
 """FastAPI application factory and entry point."""
 
 import logging
+import traceback
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
+from app.api.limiter import limiter
 from app.api.v1.router import router
 from app.domain.exceptions import DomainError
 from app.infrastructure.database.session import async_engine
@@ -41,6 +45,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.state.limiter = limiter
+    app.add_middleware(SlowAPIMiddleware)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -48,6 +55,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.exception_handler(RateLimitExceeded)
+    async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+        retry_after = getattr(exc, "retry_after", 60)
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded"},
+            headers={"Retry-After": str(retry_after)},
+        )
 
     @app.exception_handler(DomainError)
     async def domain_error_handler(_request: Request, exc: DomainError) -> JSONResponse:
@@ -62,7 +78,15 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def general_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled exception: %s", exc)
-        return JSONResponse(status_code=500, content={"message": "Internal server error"})
+        if settings.app_env == "production":
+            return JSONResponse(status_code=500, content={"message": "Internal server error"})
+        return JSONResponse(
+            status_code=500,
+            content={
+                "message": str(exc),
+                "detail": traceback.format_exc(),
+            },
+        )
 
     app.include_router(router)
     return app

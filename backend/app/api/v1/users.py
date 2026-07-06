@@ -3,7 +3,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,13 +18,22 @@ from config import get_settings
 logger = logging.getLogger("ats_uce")
 router = APIRouter()
 
+VALID_ROLES = {"applicant", "human_resources", "authorities"}
+
 
 class SetRoleRequest(BaseModel):
     clerkUserId: str
     role: str
     email: str = ""
-    firstName: str = ""
-    lastName: str = ""
+    firstName: str = Field("", max_length=100)
+    lastName: str = Field("", max_length=100)
+
+    @field_validator("role")
+    @classmethod
+    def role_must_be_valid(cls, v: str) -> str:
+        if v not in VALID_ROLES:
+            raise ValueError(f"Invalid role '{v}'. Must be one of: {sorted(VALID_ROLES)}")
+        return v
 
 
 class SyncRoleRequest(BaseModel):
@@ -52,16 +61,10 @@ async def set_user_role(
     session: AsyncSession = Depends(get_db_session),
 ):
     """Assign a role to a user during OAuth or email/password registration.
-    Validates the role, sets Clerk publicMetadata, and persists to the database.
+    Sets Clerk publicMetadata and persists to the database.
     Returns 409 if the user is already registered.
+    Role validation is handled by the Pydantic model (SetRoleRequest).
     """
-    allowed_roles = ["applicant", "human_resources", "authorities"]
-    if request.role not in allowed_roles:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid role. Must be one of: {', '.join(allowed_roles)}",
-        )
-
     existing = await session.execute(
         select(UserModel).where(UserModel.clerk_id == request.clerkUserId)
     )

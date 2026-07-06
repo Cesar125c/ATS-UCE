@@ -45,7 +45,7 @@ class GetApplicationStatusUseCase:
                             "total": score.total,
                             "score_academic": score.academic_training,
                             "score_experience": score.experience,
-                            "score_production": score.production,
+                            "score_production": score.publications,
                             "score_profile_match": score.profile_match,
                             "score_languages": score.languages_competencies,
                             "evaluation_summary": score.evaluation_summary,

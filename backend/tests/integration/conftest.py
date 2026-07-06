@@ -7,13 +7,20 @@ A session-scoped autouse fixture blocks external hosts without explicit credenti
 import os
 import socket
 from collections.abc import AsyncGenerator
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
+from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
+
+# ---------------------------------------------------------------------------
+# Load .env BEFORE setting placeholders so real credentials are preserved.
+# ---------------------------------------------------------------------------
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent.parent / ".env")
 
 # ---------------------------------------------------------------------------
 # Provide placeholders required by internal tests BEFORE app modules are imported.
@@ -118,14 +125,15 @@ async def app_repo(session: AsyncSession) -> SQLAApplicationRepository:
 
 
 @pytest_asyncio.fixture
-async def application_refs(session: AsyncSession) -> tuple[UUID, UUID]:
+async def application_refs(session: AsyncSession) -> tuple[UUID, UUID, str]:
     user_id = uuid4()
     applicant_id = uuid4()
     vacancy_id = uuid4()
+    clerk_id = f"clerk-{user_id}"
 
     user = UserModel(
         id=user_id,
-        clerk_id=f"clerk-{user_id}",
+        clerk_id=clerk_id,
         email=f"{user_id}@example.com",
         first_name="Test",
         last_name="Applicant",
@@ -144,14 +152,14 @@ async def application_refs(session: AsyncSession) -> tuple[UUID, UUID]:
     session.add_all([user, applicant, vacancy])
     await session.flush()
 
-    return applicant_id, vacancy_id
+    return applicant_id, vacancy_id, clerk_id
 
 
 @pytest_asyncio.fixture
 async def saved_application(
-    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID, str]
 ) -> Application:
-    applicant_id, vacancy_id = application_refs
+    applicant_id, vacancy_id, _ = application_refs
     app = Application(
         applicant_id=applicant_id,
         vacancy_id=vacancy_id,
@@ -162,9 +170,9 @@ async def saved_application(
 
 @pytest_asyncio.fixture
 async def application_with_score(
-    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID]
+    app_repo: SQLAApplicationRepository, application_refs: tuple[UUID, UUID, str]
 ) -> Application:
-    applicant_id, vacancy_id = application_refs
+    applicant_id, vacancy_id, _ = application_refs
     app = Application(
         applicant_id=applicant_id,
         vacancy_id=vacancy_id,

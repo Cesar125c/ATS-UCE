@@ -1,86 +1,124 @@
-import os
-from unittest.mock import MagicMock
+"""Integration test for AI scoring use case — uses mock Groq adapter, real DB."""
+
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
 import pytest
 
 from app.application.use_cases.process_ai_score import ProcessAIScoreUseCase
+from app.domain.entities.application import Application
+from app.domain.value_objects.ai_score import AIScore
 from app.domain.value_objects.flow_status import FlowStatus
 from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStorageAdapter
-from app.infrastructure.adapters.openai_analysis_adapter import OpenAIAnalysisAdapter
-from app.infrastructure.database.session import get_db_session
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
-_HAS_OPENAI_CREDENTIALS = bool(os.environ.get("OPENAI_API_KEY"))
 
+@pytest.mark.integration
+async def test_ai_scoring_with_preselected_score_advances_to_hr(
+    app_repo: SQLAApplicationRepository,
+    application_refs: tuple[UUID, UUID, str],
+) -> None:
+    applicant_id, vacancy_id, _ = application_refs
 
-@pytest.mark.skipif(
-    not _HAS_OPENAI_CREDENTIALS,
-    reason="Requires OPENAI_API_KEY exported in the test environment",
-)
-@pytest.mark.asyncio
-async def test_ai_scoring_end_to_end(settings):
-    if not settings.openai_api_key:
-        pytest.skip("OpenAI API key not configured")
+    import fitz
 
-    # Create test application
-    async with get_db_session() as session:
-        repo = SQLAApplicationRepository(session)
-        application = await create_test_application(repo)
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((100, 700), "AI scoring test CV content")
+    pdf_bytes = doc.tobytes()
+    doc.close()
 
-    # Upload test PDF
-    storage = BackblazeStorageAdapter()
-    test_pdf = b"%PDF-1.4 test content"
-    await storage.upload_file(
-        key=application.cv_storage_key,
-        content=test_pdf,
-        content_type="application/pdf",
+    storage = MagicMock(spec=BackblazeStorageAdapter)
+    storage.upload_file = AsyncMock()
+    storage.download_file = AsyncMock(return_value=pdf_bytes)
+
+    app = Application(
+        applicant_id=applicant_id,
+        vacancy_id=vacancy_id,
+        cv_storage_key="cvs/test-ai-score.pdf",
+    )
+    saved = await app_repo.save(app)
+
+    mock_analysis = MagicMock()
+    mock_analysis.analyze_cv_with_fallback = AsyncMock(
+        return_value=AIScore(
+            total=82.0,
+            academic_training=85.0,
+            experience=80.0,
+            publications=75.0,
+            profile_match=88.0,
+            languages_competencies=82.0,
+            evaluation_summary="Excellent candidate.",
+        )
     )
 
-    # Execute use case
     use_case = ProcessAIScoreUseCase(
-        application_repo=SQLAApplicationRepository(get_db_session()),
-        vacancy_repo=SQLAVacancyRepository(get_db_session()),
-        analysis_adapter=OpenAIAnalysisAdapter(),
+        application_repo=app_repo,
+        vacancy_repo=SQLAVacancyRepository(app_repo._session),
+        analysis_adapter=mock_analysis,
         storage_adapter=storage,
-        email_service=MagicMock(),
+        email_service=AsyncMock(),
+    )
+    await use_case.execute(saved.id)
+
+    updated = await app_repo.find_by_id(saved.id)
+    assert updated is not None
+    assert updated.status == FlowStatus.HR_STAGE
+    assert updated.ai_score is not None
+    assert updated.ai_score.total == 82.0
+
+
+@pytest.mark.integration
+async def test_ai_scoring_with_low_score_rejects(
+    app_repo: SQLAApplicationRepository,
+    application_refs: tuple[UUID, UUID, str],
+) -> None:
+    applicant_id, vacancy_id, _ = application_refs
+
+    import fitz
+
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((100, 700), "Low score test CV content")
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    storage = MagicMock(spec=BackblazeStorageAdapter)
+    storage.upload_file = AsyncMock()
+    storage.download_file = AsyncMock(return_value=pdf_bytes)
+
+    app = Application(
+        applicant_id=applicant_id,
+        vacancy_id=vacancy_id,
+        cv_storage_key="cvs/test-low-score.pdf",
+    )
+    saved = await app_repo.save(app)
+
+    mock_analysis = MagicMock()
+    mock_analysis.analyze_cv_with_fallback = AsyncMock(
+        return_value=AIScore(
+            total=45.0,
+            academic_training=40.0,
+            experience=50.0,
+            publications=30.0,
+            profile_match=55.0,
+            languages_competencies=40.0,
+            evaluation_summary="Insufficient qualifications.",
+        )
     )
 
-    await use_case.execute(application.id)
-
-    # Verify result
-    async with get_db_session() as session:
-        repo = SQLAApplicationRepository(session)
-        updated_app = await repo.find_by_id(application.id)
-
-        assert updated_app.status in [FlowStatus.HR_STAGE, FlowStatus.REJECTED]
-        assert updated_app.ai_score is not None
-        assert len(updated_app.ai_score.evaluation_summary) <= 200
-
-
-async def create_test_application(repo):
-    """Helper function to create a test application."""
-    from app.domain.entities.application import Application
-    from app.domain.entities.vacancy import Vacancy
-
-    # Create a test vacancy
-    vacancy = Vacancy(
-        title="Test Vacancy",
-        faculty="Test Faculty",
-        department="Test Department",
-        description="Test Description",
-        requirements="Test Requirements",
+    use_case = ProcessAIScoreUseCase(
+        application_repo=app_repo,
+        vacancy_repo=SQLAVacancyRepository(app_repo._session),
+        analysis_adapter=mock_analysis,
+        storage_adapter=storage,
+        email_service=AsyncMock(),
     )
-    await repo._session.merge(vacancy)
-    await repo._session.flush()
+    await use_case.execute(saved.id)
 
-    # Create a test application
-    application = Application(
-        applicant_id=UUID(int=1),
-        vacancy_id=vacancy.id,
-        cv_storage_key=f"cvs/user1/{UUID(int=1)}.pdf",
-        status=FlowStatus.RECEIVED,
-    )
-    await repo.create(application)
-    return application
+    updated = await app_repo.find_by_id(saved.id)
+    assert updated is not None
+    assert updated.status == FlowStatus.REJECTED
+    assert updated.ai_score is not None
+    assert updated.ai_score.total == 45.0
