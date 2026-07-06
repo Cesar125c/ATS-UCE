@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PortalLayout from "../components/layout/PortalLayout";
 import AuthorityHeader from "../components/authority/AuthorityHeader";
 import PendingCandidates from "../components/authority/PendingCandidates";
@@ -16,11 +16,7 @@ export default function Authorities() {
   const [selectedApp, setSelectedApp] = useState<ApplicationRankingItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       const result = await getAllApplications(1, 50);
       const authorityStages = ["DEAN_STAGE", "RECTOR_STAGE", "FINANCE_STAGE"];
@@ -28,13 +24,15 @@ export default function Authorities() {
         authorityStages.includes(app.status),
       );
       setApplications(filtered);
-      if (filtered.length > 0 && !selectedApp) {
-        setSelectedApp(filtered[0]);
-      }
+      setSelectedApp((prev) => (filtered.length > 0 && !prev ? filtered[0] : prev));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
   const handleEvaluationSuccess = async () => {
     await fetchApplications();
