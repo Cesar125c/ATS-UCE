@@ -23,7 +23,7 @@ _MAX_CV_SIZE_BYTES = 10_485_760  # 10 MB
 
 @router.get("/")
 async def list_applications(
-    status: str = Query("HR_STAGE"),
+    status: str | None = Query(None),
     faculty: str | None = Query(None),
     min_score: float | None = Query(None, ge=0, le=100),
     page: int = Query(1, ge=1),
