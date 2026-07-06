@@ -10,11 +10,11 @@ export interface CreateVacancyRequest {
 }
 
 export async function getVacancies(): Promise<Vacancy[]> {
-  return apiFetch<Vacancy[]>("/api/v1/vacancies");
+  return apiFetch<Vacancy[]>("/api/v1/vacancies/");
 }
 
 export async function createVacancy(body: CreateVacancyRequest): Promise<Vacancy> {
-  return apiFetch<Vacancy>("/api/v1/vacancies", {
+  return apiFetch<Vacancy>("/api/v1/vacancies/", {
     method: "POST",
     body: JSON.stringify(body),
   });
