@@ -28,7 +28,7 @@ UCE TalentPath automates the full teaching recruitment pipeline at UCE — from 
 | **Database** | PostgreSQL 16 |
 | **Auth** | Clerk (JWT · RBAC via `publicMetadata.role`) |
 | **Storage** | Backblaze B2 (S3-compatible) |
-| **AI** | OpenAI API — `gpt-4o-mini` |
+| **AI** | Groq (Llama 3.1) · OpenAI · Gemini (multi-provider) |
 | **Email** | Resend |
 | **Infrastructure** | Docker · Nginx · AWS EC2 · GitHub Actions |
 
@@ -61,24 +61,25 @@ RECEIVED → PROCESSING_AI → HR_STAGE → DEAN_STAGE → RECTOR_STAGE → FINA
 
 ```bash
 # 1. Clone
-git clone https://github.com/your-org/uce-talentpath.git
-cd uce-talentpath
+git clone https://github.com/Cesar125c/ATS-UCE.git
+cd ATS-UCE
 
 # 2. Configure environment
-cp backend/.env.example backend/.env
+cp .env.example .env
 # → fill in required values (see Environment Variables below)
 
 # 3. Start the stack
-cd backend && docker compose up --build -d
+docker compose up --build -d
 
 # 4. Run migrations
 docker compose exec api alembic upgrade head
 
-# 5. Start frontend
-cd ../frontend && npm install && npm run dev
+# 5. Open in browser
+# Frontend: http://localhost
+# API docs: http://localhost/api/v1/docs
 ```
 
-Backend runs at `http://localhost:8000` · API docs at `/docs` · Frontend at `http://localhost:5173`
+Backend runs at `http://localhost:8000` · API docs at `http://localhost/api/v1/docs` · Frontend at `http://localhost`
 
 ---
 
@@ -103,55 +104,81 @@ B2_ENDPOINT_URL=https://s3.us-west-004.backblazeb2.com
 
 # OpenAI
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o-mini
+
+# Groq
+GROQ_API_KEY=gsk_...
+
+# Gemini
+GEMINI_API_KEY=
 
 # Resend
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=talentpath@uce.edu.ec
 
 # CORS
-ALLOWED_ORIGINS=http://localhost:5173,file://
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost
 ```
 
-> Assign user roles in the Clerk Dashboard via `publicMetadata.role`:  
-> `applicant` · `hr_staff` · `dean` · `rector` · `finance_director`
+> **Roles (3):** `applicant` · `human_resources` · `authorities` — asignados via Clerk `publicMetadata.role`.
+> Las 3 etapas de autoridades (DEAN, RECTOR, FINANCE) comparten el rol `authorities`.
+
+## API Endpoints
+
+| Endpoint | Método | Acceso | Descripción |
+|----------|--------|--------|-------------|
+| `/api/v1/health` | GET | Público | Health check |
+| `/api/v1/register` | POST | Público | Sincronizar usuario post-Clerk |
+| `/api/v1/users/me` | GET | Auth | Perfil del usuario autenticado |
+| `/api/v1/users/set-role` | POST | Público | Asignar rol a usuario |
+| `/api/v1/users/sync-role` | POST | Público | Sincronizar rol con Clerk |
+| `/api/v1/applications/` | POST | `applicant` | Subir CV (PDF ≤ 10 MB), 5/min |
+| `/api/v1/applications/` | GET | `human_resources` | Ranking de postulaciones |
+| `/api/v1/applications/cv-presigned/{key}` | GET | `human_resources`, `authorities` | URL pre-firmada del CV |
+| `/api/v1/applications/{id}/evaluations` | POST | `human_resources`, `authorities` | Dictamen (APPROVED/REJECTED), 10/min |
+| `/api/v1/applicants/me/status` | GET | `applicant` | Estado de mis postulaciones |
+| `/api/v1/dashboard/stats` | GET | `human_resources` | Estadísticas del dashboard |
+| `/api/v1/vacancies/` | GET | Público | Listar vacantes activas |
+| `/api/v1/vacancies/` | POST | `human_resources`, `authorities` | Crear vacante |
+| `/api/v1/vacancies/{id}` | DELETE | `human_resources` | Eliminar vacante |
 
 ---
 
 ## Development Workflow
 
 ```
-feature/XX-NNN  →  develop  →  main
-                     ↓            ↓
-                  EC2 QA     EC2 Production
+feature/X  →  dev  →  qa  →  main
 ```
 
-Every PR to `develop` runs the full CI pipeline (`ruff` + `pytest`). Merging to `develop` deploys automatically to the QA instance. Merging to `main` deploys to production. Both environments run the same Docker Compose monolith (Nginx + FastAPI + PostgreSQL) on separate AWS EC2 instances.
+Cada PR a `dev` ejecuta CI (`ruff` + `pytest`). Las ramas feature parten de `dev` y se mergean vía PR. De `dev` se promueve a `qa` y luego a `main`.
 
 ```bash
 # Run tests
-pytest tests/unit/ -v                          # domain only, no DB needed
-pytest tests/integration/ -v                   # full flow, postgres in Docker
+uv run pytest tests/unit/ -v                      # domain + use cases, no DB
+docker compose exec api pytest tests/integration/ -v  # full flow, postgres in Docker
 
-# Lint
-ruff check app/
+# Lint & format
+uv run ruff check app/
+uv run ruff format app/
 ```
 
 ---
 
 ## Deployment
 
-Each environment is a self-contained Docker Compose stack on an EC2 instance:
+Cada entorno es un stack Docker Compose autónomo:
 
-| Container | Role |
+| Contenedor | Rol |
 |---|---|
-| `nginx:alpine` | Serves the React SPA + reverse-proxies `/api/*` to FastAPI |
-| `api` | FastAPI application |
-| `postgres:16` | Database (internal only, never exposed) |
+| `nginx:alpine` | Sirve el SPA React + reverse-proxy `/api/*` a FastAPI |
+| `api` | FastAPI + Uvicorn |
+| `postgres:16` | Base de datos (solo interno) |
+| `frontend` | React + Vite (dev) / build estático (prod) |
 
-Ports `8000` and `5432` are not exposed externally. All traffic enters through Nginx on `443`.
+Los puertos `8000` y `5432` no se exponen externamente. Todo el tráfico entra por Nginx en `80`.
 
-On every CD run the pipeline executes: `docker compose pull → up -d → alembic upgrade head → health check`.
+En cada CD: `docker compose pull → up -d → alembic upgrade head → health check`.
+
+Ver `backend/docs/production-architecture.md` para instrucciones detalladas de deploy.
 
 ---
 

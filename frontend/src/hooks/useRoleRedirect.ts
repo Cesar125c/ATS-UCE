@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { useUser } from '@clerk/react'
+import { useEffect, useRef } from "react";
+import { useUser } from "@clerk/react";
+import { apiFetch } from "@/services/api";
 
 const ROLE_PATH_MAP: Record<string, string> = {
   applicant: '/applicant',
@@ -7,76 +8,67 @@ const ROLE_PATH_MAP: Record<string, string> = {
   authorities: '/authority',
 }
 
+function redirectToRole(role: string) {
+  const targetPath = ROLE_PATH_MAP[role];
+  if (targetPath && window.location.pathname !== targetPath) {
+    window.location.replace(targetPath);
+  }
+}
+
 export function useRoleRedirect(): void {
   const { isLoaded, isSignedIn, user } = useUser()
-  const [reloadTick, setReloadTick] = useState(0)
   const phase = useRef(0)
+  const resolvedClerkId = useRef<string | null>(null)
 
   useEffect(() => {
     if (!isLoaded) return
 
     if (!isSignedIn) {
       phase.current = 0
+      resolvedClerkId.current = null
       return
     }
 
+    const clerkId = user?.id
+    if (!clerkId) return
+
     const run = async () => {
       const role = user?.publicMetadata?.role as string | undefined
-      const clerkId = user?.id
 
       if (role) {
         phase.current = 0
-
-        const targetPath = ROLE_PATH_MAP[role]
-        if (targetPath) {
-          const currentPath = window.location.pathname
-          if (currentPath !== targetPath) {
-            window.location.replace(targetPath)
-          }
-        }
+        redirectToRole(role)
         return
       }
 
-      // Phase 0 → first reload attempt
+      // Already gave up for this user — don't retry
+      if (phase.current >= 2) return
+
+      // Phase 0: reload once in case metadata just arrived
       if (phase.current === 0) {
         phase.current = 1
-        try {
-          await user?.reload()
-        } catch {
-          // reload failed
-        }
-        setReloadTick((t) => t + 1)
+        try { await user?.reload() } catch { /* CDN may be down */ }
         return
       }
 
-      // Phase 1 → reload didn't help, try syncing from DB to Clerk
-      if (phase.current === 1 && clerkId) {
+      // Phase 1: sync from DB to Clerk, then redirect using the returned role
+      if (phase.current === 1) {
         phase.current = 2
-        console.log('sync-role: calling with clerkUserId =', clerkId)
         try {
-          const res = await fetch('/api/v1/users/sync-role', {
+          const data = await apiFetch<{ role: string }>('/api/v1/users/sync-role', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clerkUserId: clerkId }),
-          })
-          const data = await res.json()
-          console.log('sync-role response:', res.status, data)
+          });
+          if (data.role) {
+            redirectToRole(data.role)
+          }
         } catch {
-          // sync failed
+          // sync failed — give up, no more retries
         }
-        try {
-          await user?.reload()
-        } catch {
-          // reload failed
-        }
-        setReloadTick((t) => t + 1)
         return
       }
-
-      // Phase 2+ → gave up
-      console.warn('useRoleRedirect: publicMetadata.role is not set for this user')
     }
 
     run()
-  }, [isLoaded, isSignedIn, user, reloadTick])
+  }, [isLoaded, isSignedIn, user])
 }

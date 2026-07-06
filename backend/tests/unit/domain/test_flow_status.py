@@ -38,8 +38,8 @@ def test_is_terminal_active() -> None:
 
 
 def test_required_role_mapping() -> None:
-    assert FlowStatus.HR_STAGE.required_role() == "hr_staff"
-    assert FlowStatus.DEAN_STAGE.required_role() == "dean"
-    assert FlowStatus.RECTOR_STAGE.required_role() == "rector"
-    assert FlowStatus.FINANCE_STAGE.required_role() == "finance_director"
+    assert FlowStatus.HR_STAGE.required_role() == "human_resources"
+    assert FlowStatus.DEAN_STAGE.required_role() == "authorities"
+    assert FlowStatus.RECTOR_STAGE.required_role() == "authorities"
+    assert FlowStatus.FINANCE_STAGE.required_role() == "authorities"
     assert FlowStatus.RECEIVED.required_role() == ""

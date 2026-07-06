@@ -28,6 +28,7 @@ class ApplicationMapper:
             cv_storage_key=model.cv_storage_key,
             status=FlowStatus(model.status),
             ai_score=ai_score,
+            error_reason=model.error_reason,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -48,6 +49,7 @@ class ApplicationMapper:
             score_profile_match=entity.ai_score.profile_match if entity.ai_score else None,
             score_languages=entity.ai_score.languages_competencies if entity.ai_score else None,
             evaluation_summary=entity.ai_score.evaluation_summary if entity.ai_score else None,
+            error_reason=entity.error_reason,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

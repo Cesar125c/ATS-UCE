@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from uuid import UUID
 
 from app.domain.entities.application import Application
+from app.domain.entities.evaluation import Evaluation
+from app.domain.entities.status_history import StatusHistory
 from app.domain.value_objects.flow_status import FlowStatus
 
 
@@ -35,3 +37,14 @@ class IApplicationRepository(ABC):
 
     @abstractmethod
     async def save(self, application: Application) -> Application: ...
+
+    @abstractmethod
+    async def create_status_history(self, entry: StatusHistory) -> None: ...
+
+    @abstractmethod
+    async def save_evaluation(self, evaluation: Evaluation) -> None: ...
+
+    @abstractmethod
+    async def find_status_history_by_application_id(
+        self, application_id: UUID
+    ) -> list[StatusHistory]: ...

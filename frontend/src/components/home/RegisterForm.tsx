@@ -29,6 +29,10 @@ export default function RegisterForm() {
   const { isSignedIn, isLoaded } = useAuth();
   const { signOut } = useClerk();
 
+  const handleSignOut = async () => {
+    await signOut({ redirectUrl: "/" });
+  };
+
   useEffect(() => {
     reset();
   }, [reset]);
@@ -46,7 +50,7 @@ export default function RegisterForm() {
           type="button"
           variant="secondary"
           size="lg"
-          onClick={() => signOut()}
+          onClick={handleSignOut}
         >
           Sign out
         </Button>

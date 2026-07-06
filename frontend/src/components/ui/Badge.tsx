@@ -2,13 +2,14 @@ import type { ReactNode } from 'react'
 
 interface BadgeProps {
   children: ReactNode
-  variant?: 'default' | 'cyan' | 'blue' | 'green' | 'red' | 'yellow'
-  size?: 'sm' | 'md'
+  variant?: 'default' | 'primary' | 'cyan' | 'blue' | 'green' | 'red' | 'yellow'
+  size?: 'sm' | 'md' | 'lg'
 }
 
 export default function Badge({ children, variant = 'default', size = 'md' }: BadgeProps) {
   const variantStyles = {
     default: 'bg-gray-100 text-gray-700',
+    primary: 'bg-sky-100 text-sky-700',
     cyan: 'bg-cyan-100 text-cyan-700',
     blue: 'bg-blue-100 text-blue-700',
     green: 'bg-green-100 text-green-700',
@@ -19,6 +20,7 @@ export default function Badge({ children, variant = 'default', size = 'md' }: Ba
   const sizeStyles = {
     sm: 'px-2 py-1 text-xs',
     md: 'px-4 py-2 text-sm',
+    lg: 'px-5 py-2.5 text-base',
   }
 
   return (

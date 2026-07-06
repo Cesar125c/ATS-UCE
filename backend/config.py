@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
 
+    # Gemini
+    gemini_api_key: str = ""
+
+    # Groq
+    groq_api_key: str = ""
+
     # Resend email
     resend_api_key: str = ""
     resend_from_email: str = "talentpath@uce.edu.ec"
@@ -39,7 +45,7 @@ class Settings(BaseSettings):
     # CORS
     allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
 
 @lru_cache

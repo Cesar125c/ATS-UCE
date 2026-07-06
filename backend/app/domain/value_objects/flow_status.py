@@ -28,10 +28,10 @@ class FlowStatus(StrEnum):
 
     def required_role(self) -> str:
         _roles: dict[FlowStatus, str] = {
-            FlowStatus.HR_STAGE: "hr_staff",
-            FlowStatus.DEAN_STAGE: "dean",
-            FlowStatus.RECTOR_STAGE: "rector",
-            FlowStatus.FINANCE_STAGE: "finance_director",
+            FlowStatus.HR_STAGE: "human_resources",
+            FlowStatus.DEAN_STAGE: "authorities",
+            FlowStatus.RECTOR_STAGE: "authorities",
+            FlowStatus.FINANCE_STAGE: "authorities",
         }
         return _roles.get(self, "")
 

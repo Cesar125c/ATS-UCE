@@ -13,7 +13,7 @@ def _make_evaluation(**overrides) -> Evaluation:
     defaults = {
         "application_id": uuid4(),
         "reviewer_clerk_id": "user_test_001",
-        "reviewer_role": "hr_staff",
+        "reviewer_role": "human_resources",
         "decision": EvaluationDecision.APPROVED,
         "observations": "",
     }
