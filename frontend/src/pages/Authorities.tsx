@@ -7,7 +7,7 @@ import AIAnalysisSummary from "../components/authority/AIAnalysisSummary";
 import ProcessHistory from "../components/authority/ProcessHistory";
 import AuthorityDecisionPanel from "../components/authority/AuthorityDecisionPanel";
 import {
-  getApplicationsByStatus,
+  getAllApplications,
   type ApplicationRankingItem,
 } from "@/services/dashboardService";
 
@@ -22,10 +22,14 @@ export default function Authorities() {
 
   const fetchApplications = async () => {
     try {
-      const result = await getApplicationsByStatus(undefined, 1, 50);
-      setApplications(result.items);
-      if (result.items.length > 0 && !selectedApp) {
-        setSelectedApp(result.items[0]);
+      const result = await getAllApplications(1, 50);
+      const authorityStages = ["DEAN_STAGE", "RECTOR_STAGE", "FINANCE_STAGE"];
+      const filtered = result.items.filter((app) =>
+        authorityStages.includes(app.status),
+      );
+      setApplications(filtered);
+      if (filtered.length > 0 && !selectedApp) {
+        setSelectedApp(filtered[0]);
       }
     } finally {
       setLoading(false);
