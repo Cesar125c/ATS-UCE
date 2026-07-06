@@ -11,7 +11,7 @@ class ReviewRankingUseCase:
 
     async def execute(
         self,
-        status: str = "HR_STAGE",
+        status: str | None = None,
         faculty: str | None = None,
         min_score: float | None = None,
         page: int = 1,

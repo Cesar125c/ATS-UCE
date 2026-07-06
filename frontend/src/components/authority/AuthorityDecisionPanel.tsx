@@ -9,10 +9,12 @@ import {
 
 interface AuthorityDecisionPanelProps {
   applicationId?: string;
+  onSuccess?: () => void;
 }
 
 export default function AuthorityDecisionPanel({
   applicationId,
+  onSuccess,
 }: AuthorityDecisionPanelProps) {
   const [observations, setObservations] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -36,6 +38,7 @@ export default function AuthorityDecisionPanel({
       await submitEvaluation(applicationId ?? "", body);
       setResult("success");
       setObservations("");
+      onSuccess?.();
     } catch {
       setResult("error");
     } finally {
