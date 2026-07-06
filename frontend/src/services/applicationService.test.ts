@@ -56,7 +56,7 @@ describe("submitApplication FormData structure", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
 
     const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toBe("/api/v1/applications");
+    expect(url).toBe("/api/v1/applications/");
     expect(init.method).toBe("POST");
     expect(init.headers).toEqual({
       Authorization: "Bearer test-jwt-token",
