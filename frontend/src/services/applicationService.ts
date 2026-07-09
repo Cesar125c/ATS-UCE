@@ -1,5 +1,5 @@
 import type { ApplicationResponse } from "@/types/application";
-import { apiFetch } from "./api";
+import { apiFetch, buildApiUrl } from "./api";
 
 const MAX_CV_SIZE_BYTES = 10_485_760; // 10 MB
 
@@ -57,7 +57,7 @@ export async function submitApplication(
   formData.append("vacancy_id", vacancyId);
   formData.append("cv_file", file, file.name);
 
-  const response = await fetch("/api/v1/applications/", {
+  const response = await fetch(buildApiUrl("/api/v1/applications/"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

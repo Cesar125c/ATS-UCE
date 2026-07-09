@@ -1,7 +1,17 @@
 let _getToken: (() => Promise<string | null>) | null = null;
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+
 export function initApi(getTokenFn: () => Promise<string | null>) {
   _getToken = getTokenFn;
+}
+
+export function buildApiUrl(input: RequestInfo | URL): RequestInfo | URL {
+  if (!apiBaseUrl || typeof input !== "string" || !input.startsWith("/")) {
+    return input;
+  }
+
+  return `${apiBaseUrl}${input}`;
 }
 
 export class ApiError extends Error {
@@ -46,7 +56,7 @@ export async function apiFetch<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(input, { ...init, headers });
+  const res = await fetch(buildApiUrl(input), { ...init, headers });
 
   if (res.status === 401) {
     window.location.assign("/login");

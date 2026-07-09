@@ -8,6 +8,12 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "tauri": "npx tauri",
+    "tauri:dev": "npx tauri dev",
+    "tauri:build": "npx tauri build",
+    "tauri:android:init": "npx tauri android init",
+    "tauri:android:dev": "npx tauri android dev",
+    "tauri:android:build": "npx tauri android build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
