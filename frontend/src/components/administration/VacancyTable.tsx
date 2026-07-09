@@ -1,34 +1,14 @@
-import { useState, useEffect } from "react";
 import Card from "../ui/Card";
 import VacancyRow from "./VacancyRow";
-import { getVacancies } from "@/services/vacancyService";
-import type { Vacancy } from "@/types/vacancy";
+import { useVacancies } from "@/hooks/useAppQueries";
 
 interface VacancyTableProps {
-  refreshKey: number;
-  onRefresh: () => void;
+  refreshKey?: number;
+  onRefresh?: () => void;
 }
 
-export default function VacancyTable({ refreshKey, onRefresh }: VacancyTableProps) {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const data = await getVacancies();
-        if (!cancelled) setVacancies(data);
-      } catch {
-        // keep existing data
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [refreshKey]);
+export default function VacancyTable({ onRefresh }: VacancyTableProps) {
+  const { data: vacancies = [], isLoading: loading } = useVacancies();
 
   if (loading && vacancies.length === 0) {
     return (

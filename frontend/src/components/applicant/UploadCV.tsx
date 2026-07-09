@@ -1,46 +1,25 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@clerk/react";
 import { UploadCloud, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
-import { submitApplication, validateCVFile, ApplicationError } from "@/services/applicationService";
-import { getVacancies } from "@/services/vacancyService";
+import { validateCVFile, ApplicationError } from "@/services/applicationService";
+import { useSubmitApplication, useVacancies } from "@/hooks/useAppQueries";
 import type { ApplicationResponse } from "@/types/application";
-import type { Vacancy } from "@/types/vacancy";
 
 export default function UploadCV() {
   const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [selectedVacancyId, setSelectedVacancyId] = useState("");
-  const [vacanciesLoading, setVacanciesLoading] = useState(true);
-  const [vacanciesError, setVacanciesError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ApplicationResponse | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await getVacancies();
-        if (!cancelled) {
-          setVacancies(data);
-          setVacanciesLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setVacanciesError("Error al cargar las vacantes disponibles.");
-          setVacanciesLoading(false);
-        }
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    data: vacancies = [],
+    isLoading: vacanciesLoading,
+    isError: vacanciesError,
+  } = useVacancies();
+  const submitApplicationMutation = useSubmitApplication();
 
   const canSubmit = Boolean(selectedVacancyId && file);
 
@@ -77,10 +56,12 @@ export default function UploadCV() {
     if (!file || !selectedVacancyId) return;
 
     setError(null);
-    setIsSubmitting(true);
-
     try {
-      const data = await submitApplication(selectedVacancyId, file, getToken);
+      const data = await submitApplicationMutation.mutateAsync({
+        vacancyId: selectedVacancyId,
+        file,
+        getToken,
+      });
       setResult(data);
     } catch (e) {
       if (e instanceof ApplicationError) {
@@ -88,8 +69,6 @@ export default function UploadCV() {
       } else {
         setError("Error inesperado al enviar la postulación.");
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -218,8 +197,8 @@ export default function UploadCV() {
 
       <Button
         className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-        disabled={!canSubmit || isSubmitting}
-        isLoading={isSubmitting}
+        disabled={!canSubmit || submitApplicationMutation.isPending}
+        isLoading={submitApplicationMutation.isPending}
         onClick={handleSubmit}
       >
         <FileText size={18} />

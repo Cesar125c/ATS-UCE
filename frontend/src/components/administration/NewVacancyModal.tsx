@@ -3,7 +3,7 @@ import { X, Save, Briefcase, Building2, FileText } from "lucide-react";
 
 import Button from "../ui/Button";
 import Card from "../ui/Card";
-import { createVacancy } from "@/services/vacancyService";
+import { useCreateVacancy } from "@/hooks/useAppQueries";
 
 const FACULTIES = [
   "Ingeniería",
@@ -30,6 +30,7 @@ export default function NewVacancyModal({ open, onClose, onCreated }: NewVacancy
   const [requirements, setRequirements] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const createVacancyMutation = useCreateVacancy();
 
   if (!open) return null;
 
@@ -41,7 +42,7 @@ export default function NewVacancyModal({ open, onClose, onCreated }: NewVacancy
     setError(null);
     setIsSubmitting(true);
     try {
-      await createVacancy({
+      await createVacancyMutation.mutateAsync({
         title: title.trim(),
         faculty,
         department: department.trim(),
