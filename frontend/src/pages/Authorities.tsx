@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApplications } from "@/hooks/useAppQueries";
 import type { ApplicationRankingItem } from "@/services/dashboardService";
 import AIAnalysisSummary from "../components/authority/AIAnalysisSummary";
@@ -14,8 +14,13 @@ const AUTHORITY_STAGES = ["DEAN_STAGE", "RECTOR_STAGE", "FINANCE_STAGE"];
 export default function Authorities() {
   const [selectedApp, setSelectedApp] = useState<ApplicationRankingItem | null>(null);
   const applicationsQuery = useApplications({ page: 1, pageSize: 50 });
-  const applications =
-    applicationsQuery.data?.items.filter((app) => AUTHORITY_STAGES.includes(app.status)) ?? [];
+  const applications = useMemo(
+    () =>
+      applicationsQuery.data?.items.filter((app) =>
+        AUTHORITY_STAGES.includes(app.status),
+      ) ?? [],
+    [applicationsQuery.data?.items],
+  );
 
   useEffect(() => {
     setSelectedApp((prev) => {
