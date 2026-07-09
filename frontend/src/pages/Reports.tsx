@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
 import { Users, TrendingUp, Clock3, CheckCircle2, BarChart3, PieChart, FileText } from "lucide-react";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import Card from "../components/ui/Card";
-import { getDashboardStats } from "@/services/dashboardService";
+import { useDashboardStats } from "@/hooks/useAppQueries";
 import {
   ResponsiveContainer,
   LineChart,
@@ -17,7 +16,6 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import type { DashboardStats } from "@/services/dashboardService";
 
 const COLORS = ["#dc2626", "#f59e0b", "#0ea5e9", "#22c55e"];
 
@@ -31,21 +29,7 @@ const trendData = [
 ];
 
 export default function Reports() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await getDashboardStats();
-        if (!cancelled) setStats(data);
-      } catch {
-        // Report widgets can render their empty state if stats are unavailable.
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
+  const { data: stats } = useDashboardStats();
 
   const pieData = stats
     ? [
