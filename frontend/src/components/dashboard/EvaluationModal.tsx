@@ -2,7 +2,8 @@ import { useState } from "react";
 import { X, AlertCircle } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
-import { submitEvaluation, validateEvaluation } from "@/services/evaluationService";
+import { validateEvaluation } from "@/services/evaluationService";
+import { useSubmitEvaluation } from "@/hooks/useAppQueries";
 import type { EvaluationRequest } from "@/services/evaluationService";
 
 interface EvaluationModalProps {
@@ -17,6 +18,7 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
   const [validationError, setValidationError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitEvaluationMutation = useSubmitEvaluation();
 
   const handleSubmit = async () => {
     const body: EvaluationRequest = { decision, observations };
@@ -30,7 +32,7 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
     setIsSubmitting(true);
 
     try {
-      await submitEvaluation(applicationId, body);
+      await submitEvaluationMutation.mutateAsync({ applicationId, body });
       onSuccess();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Error al registrar la decisión.";

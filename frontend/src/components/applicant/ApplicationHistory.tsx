@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
 import Card from "../ui/Card";
 import Badge from "../ui/Badge";
-import { getMyApplicationStatus } from "@/services/applicationService";
-import { getVacancies } from "@/services/vacancyService";
-import type { ApplicationResponse, FlowStatus } from "@/types/application";
+import { useMyApplications, useVacancies } from "@/hooks/useAppQueries";
+import type { FlowStatus } from "@/types/application";
 import type { Vacancy } from "@/types/vacancy";
 
 const STATUS_LABEL: Record<FlowStatus, string> = {
@@ -38,36 +36,19 @@ function formatDate(isoString: string): string {
 }
 
 export default function ApplicationHistory() {
-  const [applications, setApplications] = useState<ApplicationResponse[]>([]);
-  const [vacancyMap, setVacancyMap] = useState<Map<string, Vacancy>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const [apps, vacancies] = await Promise.all([
-          getMyApplicationStatus(),
-          getVacancies(),
-        ]);
-        if (cancelled) return;
-        setApplications(apps);
-        setVacancyMap(new Map(vacancies.map((v) => [v.id, v])));
-        setError(null);
-      } catch {
-        if (!cancelled) {
-          setError("Error al cargar el historial de postulaciones.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    data: applications = [],
+    isLoading: applicationsLoading,
+    isError: applicationsError,
+  } = useMyApplications();
+  const {
+    data: vacancies = [],
+    isLoading: vacanciesLoading,
+    isError: vacanciesError,
+  } = useVacancies();
+  const vacancyMap = new Map<string, Vacancy>(vacancies.map((v) => [v.id, v]));
+  const loading = applicationsLoading || vacanciesLoading;
+  const error = applicationsError || vacanciesError;
 
   if (loading) {
     return (
