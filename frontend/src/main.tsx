@@ -3,9 +3,11 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom";
 
 import { ClerkProvider } from "@clerk/react";
+import { QueryClientProvider } from "@tanstack/react-query";
 
 import App from "./App.tsx";
 import "./index.css";
+import { queryClient } from "./lib/queryClient";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -13,9 +15,11 @@ const app = (
   <StrictMode>
     {PUBLISHABLE_KEY ? (
       <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </QueryClientProvider>
       </ClerkProvider>
     ) : (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
