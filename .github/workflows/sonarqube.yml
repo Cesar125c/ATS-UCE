@@ -59,8 +59,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         continue-on-error: true
         env:
-          SONAR_TOKEN: sqa_aa7bc8432dfef802d94fca3cba95d37ed219857b
-          SONAR_HOST_URL: http://98.90.146.42:9000
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://98.90.146.42:9000' }}
         with:
           args: >
             -Dsonar.projectKey=g1-ATS-UCE
@@ -77,4 +77,5 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         env:
-          SONAR_TOKEN: sqa_aa7bc8432dfef802d94fca3cba95d37ed219857b
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://98.90.146.42:9000' }}
