@@ -29,6 +29,7 @@ dependencies = [
     "groq>=0.8.0",
     "slowapi>=0.1.9",
     "limits>=4.0.0",
+    "python-socketio>=5.11",
 ]
 
 [project.optional-dependencies]
