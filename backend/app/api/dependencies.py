@@ -19,6 +19,7 @@ from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 from app.infrastructure.adapters.groq_analysis_adapter import GroqAnalysisAdapter
 from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
+from app.infrastructure.realtime.socketio_notifier import SocketIONotifier
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
@@ -147,6 +148,10 @@ async def get_analysis_adapter() -> GroqAnalysisAdapter:
     return GroqAnalysisAdapter()
 
 
+async def get_realtime_notifier() -> SocketIONotifier:
+    return SocketIONotifier()
+
+
 async def get_submit_application_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
@@ -160,15 +165,22 @@ async def get_process_ai_score_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
     vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
     analysis: GroqAnalysisAdapter = Depends(get_analysis_adapter),
+    realtime_notifier: SocketIONotifier = Depends(get_realtime_notifier),
 ) -> ProcessAIScoreUseCase:
-    return ProcessAIScoreUseCase(application_repo, vacancy_repo, analysis)
+    return ProcessAIScoreUseCase(
+        application_repo,
+        vacancy_repo,
+        analysis,
+        realtime_notifier=realtime_notifier,
+    )
 
 
 async def get_record_authority_decision_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+    realtime_notifier: SocketIONotifier = Depends(get_realtime_notifier),
 ) -> RecordAuthorityDecisionUseCase:
     workflow_service = WorkflowApprovalService()
-    return RecordAuthorityDecisionUseCase(application_repo, workflow_service)
+    return RecordAuthorityDecisionUseCase(application_repo, workflow_service, realtime_notifier)
 
 
 async def get_application_status_usecase(

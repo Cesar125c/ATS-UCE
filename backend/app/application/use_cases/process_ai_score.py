@@ -24,14 +24,16 @@ class ProcessAIScoreUseCase:
         application_repo: IApplicationRepository,
         vacancy_repo: IVacancyRepository,
         analysis_adapter,  # GeminiAnalysisAdapter or OpenAIAnalysisAdapter
-        storage_adapter: BackblazeStorageAdapter,
-        email_service: EmailService,
+        storage_adapter: BackblazeStorageAdapter = None,
+        email_service: EmailService = None,
+        realtime_notifier=None,
     ) -> None:
         self._application_repo = application_repo
         self._vacancy_repo = vacancy_repo
         self._analysis_adapter = analysis_adapter
         self._storage_adapter = storage_adapter
         self._email_service = email_service
+        self._realtime_notifier = realtime_notifier
 
     async def execute(self, application_id: UUID) -> None:
         # 1. Update status to PROCESSING_AI
@@ -62,6 +64,13 @@ class ProcessAIScoreUseCase:
             )
             application.assign_ai_score(ai_score)
             await self._application_repo.save(application)
+
+            if application.status == FlowStatus.HR_STAGE and self._realtime_notifier is not None:
+                await self._realtime_notifier.notify_status_change(
+                    role=application.status.required_role(),
+                    application_id=str(application.id),
+                    new_status=FlowStatus.HR_STAGE.value,
+                )
         except AIUnavailableError as exc:
             # After all retries exhausted: persist error_reason, keep status PROCESSING_AI
             application.error_reason = "OPENAI_UNAVAILABLE"

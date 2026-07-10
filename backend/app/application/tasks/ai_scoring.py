@@ -7,6 +7,7 @@ from app.infrastructure.adapters.backblaze_storage_adapter import BackblazeStora
 from app.infrastructure.adapters.groq_analysis_adapter import GroqAnalysisAdapter
 from app.infrastructure.adapters.resend_email_adapter import ResendEmailAdapter
 from app.infrastructure.database.session import AsyncSessionLocal
+from app.infrastructure.realtime.socketio_notifier import SocketIONotifier
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
@@ -26,8 +27,14 @@ async def process_ai_score_task(application_id: UUID):
             analysis_adapter = GroqAnalysisAdapter()
             storage_adapter = BackblazeStorageAdapter()
             email_service = ResendEmailAdapter()
+            realtime_notifier = SocketIONotifier()
             use_case = ProcessAIScoreUseCase(
-                repo, vacancy_repo, analysis_adapter, storage_adapter, email_service
+                repo,
+                vacancy_repo,
+                analysis_adapter,
+                storage_adapter,
+                email_service,
+                realtime_notifier,
             )
             try:
                 await use_case.execute(application_id)

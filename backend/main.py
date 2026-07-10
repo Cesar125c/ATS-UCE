@@ -4,16 +4,19 @@ import logging
 import traceback
 from contextlib import asynccontextmanager
 
+import socketio
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+import app.api.websocket  # noqa: F401 — registers connect/disconnect handlers on sio
 from app.api.limiter import limiter
 from app.api.v1.router import router
 from app.domain.exceptions import DomainError
 from app.infrastructure.database.session import async_engine
+from app.infrastructure.realtime.socketio_server import sio
 from config import get_settings
 
 logger = logging.getLogger("ats_uce")
@@ -93,3 +96,4 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="/ws")
