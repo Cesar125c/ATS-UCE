@@ -59,8 +59,9 @@ export default function CandidateProfile({ application }: CandidateProfileProps)
             {application.score_total ?? "—"}%
           </h2>
           <Button
+            variant="danger"
             onClick={handleDownloadCV}
-            className="mt-5 bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+            className="mt-5 flex items-center gap-2"
           >
             <Download size={18} />
             Download CV (PDF)

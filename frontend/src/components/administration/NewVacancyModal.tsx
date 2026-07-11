@@ -155,7 +155,8 @@ export default function NewVacancyModal({ open, onClose, onCreated }: NewVacancy
             Cancel
           </Button>
           <Button
-            className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+            variant="danger"
+            className="flex items-center gap-2"
             onClick={handleSave}
             isLoading={isSubmitting}
           >

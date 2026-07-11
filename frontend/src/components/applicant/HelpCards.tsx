@@ -32,7 +32,10 @@ export default function HelpCards() {
 
           </div>
 
-          <Button className="bg-red-600 hover:bg-red-700">
+          <Button
+            variant="danger"
+            onClick={() => window.open("https://help.uce.edu.ec", "_blank")}
+          >
             Go Now
           </Button>
 
@@ -67,7 +70,10 @@ export default function HelpCards() {
 
           </div>
 
-          <Button className="bg-red-600 hover:bg-red-700">
+          <Button
+            variant="danger"
+            onClick={() => window.location.href = "mailto:support@uce.edu.ec"}
+          >
             Contact
           </Button>
 

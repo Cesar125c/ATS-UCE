@@ -6,6 +6,7 @@ export type RoleOption = 'applicant' | 'human_resources' | 'authorities'
 interface SelectRoleModalProps {
   isOpen: boolean
   onRoleSelect: (role: RoleOption) => void
+  onClose?: () => void
   isLoading?: boolean
 }
 
@@ -30,6 +31,7 @@ const ROLE_CONFIG = {
 export default function SelectRoleModal({
   isOpen,
   onRoleSelect,
+  onClose,
   isLoading = false,
 }: SelectRoleModalProps) {
   const [selectedRole, setSelectedRole] = useState<RoleOption | null>(null)
@@ -102,6 +104,7 @@ export default function SelectRoleModal({
             size="lg"
             fullWidth
             disabled={isLoading}
+            onClick={onClose}
           >
             Cancel
           </Button>

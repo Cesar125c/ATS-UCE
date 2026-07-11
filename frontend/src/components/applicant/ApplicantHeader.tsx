@@ -21,6 +21,7 @@ export default function ApplicantHeader() {
       <Button
         variant="outline"
         className="flex items-center gap-2"
+        onClick={() => window.open("/guide.pdf", "_blank")}
       >
         <Download size={18} />
 

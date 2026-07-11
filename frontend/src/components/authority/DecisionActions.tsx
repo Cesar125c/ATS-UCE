@@ -29,7 +29,8 @@ export default function DecisionActions({
       )}
 
       <Button
-        className="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
+        variant="outline"
+        className="w-full flex items-center justify-center gap-2"
         onClick={onApprove}
         disabled={submitting}
       >
@@ -38,7 +39,8 @@ export default function DecisionActions({
       </Button>
 
       <Button
-        className="w-full bg-white border border-red-300 text-red-600 hover:bg-red-50 flex items-center justify-center gap-2"
+        variant="danger"
+        className="w-full flex items-center justify-center gap-2"
         onClick={onReject}
         disabled={submitting}
       >
