@@ -35,7 +35,12 @@ function formatDate(isoString: string): string {
   });
 }
 
-export default function ApplicationHistory() {
+interface ApplicationHistoryProps {
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}
+
+export default function ApplicationHistory({ selectedId, onSelect }: ApplicationHistoryProps) {
   const {
     data: applications = [],
     isLoading: applicationsLoading,
@@ -88,7 +93,6 @@ export default function ApplicationHistory() {
             <th>Date</th>
             <th>Status</th>
             <th>AI Score</th>
-            <th></th>
           </tr>
         </thead>
 
@@ -96,10 +100,19 @@ export default function ApplicationHistory() {
           {applications.map((app) => {
             const vacancy = vacancyMap.get(app.vacancy_id);
             const status = app.status as FlowStatus;
+            const isSelected = app.id === selectedId;
 
             return (
-              <tr key={app.id} className="border-b hover:bg-slate-50">
-                <td className="py-4">
+              <tr
+                key={app.id}
+                className={`border-b cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-sky-50 border-l-4 border-l-sky-500"
+                    : "hover:bg-slate-50 border-l-4 border-l-transparent"
+                }`}
+                onClick={() => onSelect(app.id)}
+              >
+                <td className="py-4 pl-3">
                   <p className="font-medium">
                     {vacancy?.title ?? "Vacancy"}
                   </p>
@@ -121,12 +134,6 @@ export default function ApplicationHistory() {
 
                 <td className="font-semibold">
                   {app.ai_score ? `${Math.round(app.ai_score.total)}%` : "—"}
-                </td>
-
-                <td className="text-right">
-                  <span className="text-xs text-slate-400 font-mono">
-                    {app.id.slice(0, 8)}
-                  </span>
                 </td>
               </tr>
             );

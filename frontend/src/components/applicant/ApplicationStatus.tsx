@@ -89,7 +89,7 @@ function getStepDate(
   return entry ? formatDate(entry.transitioned_at) : "--";
 }
 
-export default function ApplicationStatus() {
+export default function ApplicationStatus({ applicationId }: { applicationId?: string | null }) {
   const {
     data: applications,
     isLoading,
@@ -120,7 +120,17 @@ export default function ApplicationStatus() {
     );
   }
 
-  const currentApp = applications[0];
+  const currentApp = applicationId
+    ? applications.find((app) => app.id === applicationId)
+    : applications[0];
+
+  if (!currentApp) {
+    return (
+      <Card className="p-6 mt-6 text-center text-slate-500">
+        Click an application from the history below to see its status.
+      </Card>
+    );
+  }
   const history = currentApp.status_history || [];
   const historyStatuses = new Set(history.map((h) => h.status));
   const currentStatus = currentApp.status;
