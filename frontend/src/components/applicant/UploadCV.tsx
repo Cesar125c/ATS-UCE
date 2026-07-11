@@ -1,48 +1,43 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "@clerk/react";
 import { UploadCloud, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
-import { submitApplication, validateCVFile, ApplicationError } from "@/services/applicationService";
-import { getVacancies } from "@/services/vacancyService";
+import { validateCVFile, ApplicationError } from "@/services/applicationService";
+import { useSubmitApplication, useVacancies } from "@/hooks/useAppQueries";
+import { extractTextFromPdf } from "@/utils/pdfExtractor";
 import type { ApplicationResponse } from "@/types/application";
-import type { Vacancy } from "@/types/vacancy";
 
 export default function UploadCV() {
   const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [selectedVacancyId, setSelectedVacancyId] = useState("");
-  const [vacanciesLoading, setVacanciesLoading] = useState(true);
-  const [vacanciesError, setVacanciesError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ApplicationResponse | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedText, setExtractedText] = useState<string | null>(null);
+  const {
+    data: vacancies = [],
+    isLoading: vacanciesLoading,
+    isError: vacanciesError,
+  } = useVacancies();
+  const submitApplicationMutation = useSubmitApplication();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await getVacancies();
-        if (!cancelled) {
-          setVacancies(data);
-          setVacanciesLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setVacanciesError("Error al cargar las vacantes disponibles.");
-          setVacanciesLoading(false);
-        }
-      }
+  const canSubmit = Boolean(selectedVacancyId && file && !isExtracting);
+
+  const startExtraction = async (pdfFile: File) => {
+    setIsExtracting(true);
+    setExtractedText(null);
+    try {
+      const text = await extractTextFromPdf(pdfFile);
+      setExtractedText(text);
+    } catch (e) {
+      console.warn("Wasm extraction failed, will fall back to server-side", e);
+    } finally {
+      setIsExtracting(false);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const canSubmit = Boolean(selectedVacancyId && file);
+  };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -56,6 +51,7 @@ export default function UploadCV() {
       }
       setError(null);
       setFile(droppedFile);
+      startExtraction(droppedFile);
     }
   }, []);
 
@@ -70,6 +66,7 @@ export default function UploadCV() {
       }
       setError(null);
       setFile(selectedFile);
+      startExtraction(selectedFile);
     }
   }, []);
 
@@ -77,19 +74,20 @@ export default function UploadCV() {
     if (!file || !selectedVacancyId) return;
 
     setError(null);
-    setIsSubmitting(true);
-
     try {
-      const data = await submitApplication(selectedVacancyId, file, getToken);
+      const data = await submitApplicationMutation.mutateAsync({
+        vacancyId: selectedVacancyId,
+        file,
+        getToken,
+        extractedText: extractedText ?? undefined,
+      });
       setResult(data);
     } catch (e) {
       if (e instanceof ApplicationError) {
-        setError(e.spanishDetail);
+        setError(e.detail);
       } else {
-        setError("Error inesperado al enviar la postulación.");
+        setError("Unexpected error while submitting the application.");
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -101,10 +99,10 @@ export default function UploadCV() {
             <CheckCircle size={32} className="text-green-600" />
           </div>
           <h3 className="text-xl font-semibold text-slate-900 mb-2">
-            ¡Postulación enviada!
+            Application submitted!
           </h3>
           <p className="text-slate-500">
-            Tu CV ha sido recibido y será analizado automáticamente.
+            Your CV has been received and will be analyzed automatically.
           </p>
           <button
             type="button"
@@ -113,9 +111,10 @@ export default function UploadCV() {
               setResult(null);
               setFile(null);
               setSelectedVacancyId("");
+              setExtractedText(null);
             }}
           >
-            Enviar otra postulación
+            Submit another application
           </button>
         </div>
       </Card>
@@ -126,22 +125,22 @@ export default function UploadCV() {
     <Card className="p-6 h-full">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-slate-900">
-          Subir Curriculum Vitae
+          Upload Curriculum Vitae
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          Selecciona una vacante y sube tu CV en PDF. El análisis mediante IA se
-          ejecuta automáticamente después del envío.
+          Select a vacancy and upload your CV in PDF. The AI analysis runs
+          automatically after submission.
         </p>
       </div>
 
       <div className="mb-5">
         <label className="block text-sm font-medium text-slate-700 mb-2">
-          Vacante
+          Vacancy
         </label>
 
         {vacanciesLoading ? (
           <div className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-400">
-            Cargando vacantes...
+            Loading vacancies...
           </div>
         ) : vacanciesError ? (
           <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
@@ -150,7 +149,7 @@ export default function UploadCV() {
           </div>
         ) : vacancies.length === 0 ? (
           <div className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-500 bg-slate-50">
-            No hay vacantes disponibles en este momento.
+            No vacancies available at this time.
           </div>
         ) : (
           <select
@@ -158,7 +157,7 @@ export default function UploadCV() {
             value={selectedVacancyId}
             onChange={(e) => setSelectedVacancyId(e.target.value)}
           >
-            <option value="">Selecciona una vacante</option>
+            <option value="">Select a vacancy</option>
             {vacancies.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.title} — {v.faculty}
@@ -188,15 +187,15 @@ export default function UploadCV() {
           <>
             <h3 className="font-medium text-slate-700">{file.name}</h3>
             <p className="text-sm text-slate-500 mt-1">
-              {(file.size / 1024 / 1024).toFixed(1)} MB — Haz clic para cambiar
+              {(file.size / 1024 / 1024).toFixed(1)} MB — Click to change
             </p>
           </>
         ) : (
           <>
             <h3 className="font-medium text-slate-700">
-              Arrastra o haz clic para subir
+              Drag or click to upload
             </h3>
-            <p className="text-sm text-slate-500 mt-2">PDF — máximo 10 MB</p>
+            <p className="text-sm text-slate-500 mt-2">PDF — maximum 10 MB</p>
           </>
         )}
       </div>
@@ -209,6 +208,13 @@ export default function UploadCV() {
         onChange={handleFileSelect}
       />
 
+      {isExtracting && (
+        <p className="text-sm text-blue-600 mt-2 text-center flex items-center justify-center gap-1">
+          <span className="inline-block w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          Extracting text with WebAssembly...
+        </p>
+      )}
+
       {error && (
         <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2">
           <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
@@ -217,13 +223,15 @@ export default function UploadCV() {
       )}
 
       <Button
-        className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-        disabled={!canSubmit || isSubmitting}
-        isLoading={isSubmitting}
+        variant="danger"
+        fullWidth
+        className="mt-6 disabled:opacity-50"
+        disabled={!canSubmit || submitApplicationMutation.isPending}
+        isLoading={submitApplicationMutation.isPending}
         onClick={handleSubmit}
       >
         <FileText size={18} />
-        Enviar Nueva Postulación
+        Submit New Application
       </Button>
     </Card>
   );

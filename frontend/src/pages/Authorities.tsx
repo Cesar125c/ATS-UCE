@@ -1,41 +1,35 @@
-import { useCallback, useEffect, useState } from "react";
-import PortalLayout from "../components/layout/PortalLayout";
-import AuthorityHeader from "../components/authority/AuthorityHeader";
-import PendingCandidates from "../components/authority/PendingCandidates";
-import CandidateProfile from "../components/authority/CandidateProfile";
+import { useEffect, useMemo, useState } from "react";
+import { useApplications } from "@/hooks/useAppQueries";
+import type { ApplicationRankingItem } from "@/services/dashboardService";
 import AIAnalysisSummary from "../components/authority/AIAnalysisSummary";
-import ProcessHistory from "../components/authority/ProcessHistory";
 import AuthorityDecisionPanel from "../components/authority/AuthorityDecisionPanel";
-import {
-  getAllApplications,
-  type ApplicationRankingItem,
-} from "@/services/dashboardService";
+import AuthorityHeader from "../components/authority/AuthorityHeader";
+import CandidateProfile from "../components/authority/CandidateProfile";
+import PendingCandidates from "../components/authority/PendingCandidates";
+import ProcessHistory from "../components/authority/ProcessHistory";
+import PortalLayout from "../components/layout/PortalLayout";
+
+const AUTHORITY_STAGES = ["DEAN_STAGE", "RECTOR_STAGE", "FINANCE_STAGE"];
 
 export default function Authorities() {
-  const [applications, setApplications] = useState<ApplicationRankingItem[]>([]);
   const [selectedApp, setSelectedApp] = useState<ApplicationRankingItem | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchApplications = useCallback(async () => {
-    try {
-      const result = await getAllApplications(1, 50);
-      const authorityStages = ["DEAN_STAGE", "RECTOR_STAGE", "FINANCE_STAGE"];
-      const filtered = result.items.filter((app) =>
-        authorityStages.includes(app.status),
-      );
-      setApplications(filtered);
-      setSelectedApp((prev) => (filtered.length > 0 && !prev ? filtered[0] : prev));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const applicationsQuery = useApplications({ page: 1, pageSize: 50 });
+  const applications = useMemo(
+    () =>
+      applicationsQuery.data?.items.filter((app) =>
+        AUTHORITY_STAGES.includes(app.status),
+      ) ?? [],
+    [applicationsQuery.data?.items],
+  );
 
   useEffect(() => {
-    fetchApplications();
-  }, [fetchApplications]);
+    setSelectedApp((prev) => {
+      if (prev && applications.some((app) => app.id === prev.id)) return prev;
+      return applications[0] ?? null;
+    });
+  }, [applications]);
 
-  const handleEvaluationSuccess = async () => {
-    await fetchApplications();
+  const handleEvaluationSuccess = () => {
     setSelectedApp(null);
   };
 
@@ -48,7 +42,7 @@ export default function Authorities() {
             applications={applications}
             selectedId={selectedApp?.id ?? null}
             onSelect={setSelectedApp}
-            loading={loading}
+            loading={applicationsQuery.isLoading}
           />
         </div>
         <div className="col-span-8">
@@ -59,7 +53,10 @@ export default function Authorities() {
                 <div className="col-span-2">
                   <AIAnalysisSummary application={selectedApp} />
                 </div>
-                <ProcessHistory />
+                <ProcessHistory
+                  applicationId={selectedApp.id}
+                  currentStatus={selectedApp.status}
+                />
               </div>
               <AuthorityDecisionPanel
                 applicationId={selectedApp.id}
@@ -67,9 +64,9 @@ export default function Authorities() {
               />
             </>
           )}
-          {!selectedApp && !loading && (
+          {!selectedApp && !applicationsQuery.isLoading && (
             <div className="text-center text-slate-500 mt-20">
-              No hay postulaciones pendientes de revisión.
+              No applications pending review.
             </div>
           )}
         </div>

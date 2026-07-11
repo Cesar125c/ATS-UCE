@@ -3,12 +3,12 @@ export default function AuthorityHeader() {
     <div className="mb-8">
 
       <h1 className="text-3xl font-bold text-slate-900">
-        Portal de Autoridad
+        Authority Portal
       </h1>
 
       <p className="text-slate-500 mt-2">
-        Revisa los candidatos pendientes, analiza la evaluación realizada por la IA
-        y registra la decisión final del proceso de contratación.
+        Review pending candidates, analyze the evaluation performed by the AI,
+        and register the final decision of the hiring process.
       </p>
 
     </div>

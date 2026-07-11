@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from "react";
-import { CheckCircle2, Circle, Clock3, Eye, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, Clock3, Eye, Loader2, XCircle } from "lucide-react";
+import { useMyApplications } from "@/hooks/useAppQueries";
+import type { FlowStatus, StatusHistoryDTO } from "@/types/application";
 import Card from "../ui/Card";
-import { getMyApplicationStatus } from "@/services/applicationService";
 import ScoreBreakdown from "./ScoreBreakdown";
-import type { ApplicationResponse, FlowStatus, StatusHistoryDTO } from "@/types/application";
 
 const STEP_ORDER: FlowStatus[] = [
   "RECEIVED",
@@ -16,60 +15,54 @@ const STEP_ORDER: FlowStatus[] = [
 ];
 
 const STEP_LABELS: Record<FlowStatus, string> = {
-  RECEIVED: "Recibido",
-  PROCESSING_AI: "Validación IA",
-  HR_STAGE: "Revisión RRHH",
-  DEAN_STAGE: "Decano",
+  RECEIVED: "Received",
+  PROCESSING_AI: "AI Validation",
+  HR_STAGE: "HR Review",
+  DEAN_STAGE: "Dean",
   RECTOR_STAGE: "Rector",
-  FINANCE_STAGE: "Financiero",
-  HIRED: "Seleccionado",
-  REJECTED: "Rechazado",
+  FINANCE_STAGE: "Finance",
+  HIRED: "Hired",
+  REJECTED: "Rejected",
 };
 
 const STATUS_MESSAGE: Record<string, { title: string; detail: string }> = {
   RECEIVED: {
-    title: "Tu postulación ha sido recibida.",
-    detail:
-      "Recibimos tu CV correctamente. El análisis mediante IA comenzará en breve.",
+    title: "Your application has been received.",
+    detail: "We received your CV successfully. The AI analysis will begin shortly.",
   },
   PROCESSING_AI: {
-    title: "Analizando tu CV mediante IA...",
+    title: "Analyzing your CV with AI...",
     detail:
-      "El sistema está evaluando tu perfil automáticamente. Este proceso puede tardar unos minutos. La página se actualizará automáticamente.",
+      "The system is evaluating your profile automatically. This process may take a few minutes.",
   },
   HR_STAGE: {
-    title: "Tu postulación se encuentra en Revisión RRHH.",
+    title: "Your application is under HR Review.",
     detail:
-      "Estamos verificando la validez de tus certificados. Recibirás un correo con novedades en las próximas 48 horas.",
+      "We are verifying the validity of your certificates. You will receive an email with updates within the next 48 hours.",
   },
   DEAN_STAGE: {
-    title: "Tu postulación está en revisión del Decano.",
-    detail:
-      "La autoridad académica está evaluando tu perfil para la vacante.",
+    title: "Your application is under review by the Dean.",
+    detail: "The academic authority is evaluating your profile for the vacancy.",
   },
   RECTOR_STAGE: {
-    title: "Tu postulación está en revisión del Rector.",
-    detail:
-      "La máxima autoridad está revisando tu postulación.",
+    title: "Your application is under review by the Rector.",
+    detail: "The highest authority is reviewing your application.",
   },
   FINANCE_STAGE: {
-    title: "Tu postulación está en revisión Financiera.",
-    detail:
-      "El departamento financiero está validando la disponibilidad presupuestaria.",
+    title: "Your application is under Finance review.",
+    detail: "The finance department is validating budget availability.",
   },
   HIRED: {
-    title: "¡Felicitaciones! Has sido seleccionado.",
-    detail:
-      "Tu postulación fue aprobada. Recibirás un correo con los siguientes pasos.",
+    title: "Congratulations, you have been hired.",
+    detail: "Your application was approved. You will receive an email with the next steps.",
   },
   REJECTED: {
-    title: "Tu postulación no ha sido seleccionada.",
+    title: "Your application has not been selected.",
     detail:
-      "Lamentablemente tu perfil no fue seleccionado en esta ocasión. Puedes postular a otras vacantes disponibles.",
+      "Unfortunately your profile was not selected this time. You can apply to other available vacancies.",
   },
 };
 
-const POLL_INTERVAL_MS = 10000;
 const TERMINAL_STATUSES: FlowStatus[] = ["HIRED", "REJECTED"];
 
 function computeStepStatus(
@@ -85,7 +78,7 @@ function computeStepStatus(
 
 function formatDate(isoString: string): string {
   const d = new Date(isoString);
-  return d.toLocaleDateString("es-EC", { day: "numeric", month: "short" });
+  return d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
 }
 
 function getStepDate(
@@ -96,62 +89,25 @@ function getStepDate(
   return entry ? formatDate(entry.transitioned_at) : "--";
 }
 
-export default function ApplicationStatus() {
-  const [applications, setApplications] = useState<ApplicationResponse[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+export default function ApplicationStatus({ applicationId }: { applicationId?: string | null }) {
+  const {
+    data: applications,
+    isLoading,
+    isError,
+  } = useMyApplications(true);
 
-  const fetchStatus = async () => {
-    try {
-      const data = await getMyApplicationStatus();
-      setApplications(data);
-      setError(null);
-    } catch {
-      setError("Error al cargar el estado de la postulación.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStatus();
-  }, []);
-
-  useEffect(() => {
-    if (!applications || applications.length === 0) return;
-
-    const currentStatus = applications[0].status;
-
-    if (currentStatus === "PROCESSING_AI") {
-      if (!pollRef.current) {
-        pollRef.current = setInterval(fetchStatus, POLL_INTERVAL_MS);
-      }
-    } else if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    };
-  }, [applications]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        Cargando estado de postulación...
+        Loading application status...
       </Card>
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <Card className="p-6 mt-6 text-center text-red-600">
-        {error}
+        Failed to load the application status.
       </Card>
     );
   }
@@ -159,20 +115,29 @@ export default function ApplicationStatus() {
   if (!applications || applications.length === 0) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        No tienes postulaciones registradas. Sube tu CV para comenzar.
+        You have no registered applications. Upload your CV to get started.
       </Card>
     );
   }
 
-  const currentApp = applications[0];
+  const currentApp = applicationId
+    ? applications.find((app) => app.id === applicationId)
+    : applications[0];
+
+  if (!currentApp) {
+    return (
+      <Card className="p-6 mt-6 text-center text-slate-500">
+        Click an application from the history below to see its status.
+      </Card>
+    );
+  }
   const history = currentApp.status_history || [];
   const historyStatuses = new Set(history.map((h) => h.status));
   const currentStatus = currentApp.status;
   const message = STATUS_MESSAGE[currentStatus] ?? {
-    title: "Estado desconocido",
+    title: "Unknown status",
     detail: "",
   };
-
   const isTerminal = TERMINAL_STATUSES.includes(currentStatus);
   const isProcessingAI = currentStatus === "PROCESSING_AI";
 
@@ -181,17 +146,15 @@ export default function ApplicationStatus() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h2 className="text-xl font-semibold">
-            Estado de Tu Postulación
+            Your Application Status
           </h2>
-
           <p className="text-sm text-slate-500 mt-1">
-            Seguimiento en tiempo real del proceso de selección.
+            Real-time tracking of the selection process.
           </p>
-
           {isProcessingAI && (
             <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
               <Loader2 size={12} className="animate-spin" />
-              Actualizando cada 10 segundos
+              Updating automatically
             </p>
           )}
         </div>
@@ -248,11 +211,8 @@ export default function ApplicationStatus() {
               </div>
 
               <p className="font-medium text-sm mt-3">{STEP_LABELS[step]}</p>
-
               <p className="text-xs text-slate-500">
-                {isCurrentProcessingAI
-                  ? "En curso..."
-                  : getStepDate(step, history)}
+                {isCurrentProcessingAI ? "In progress..." : getStepDate(step, history)}
               </p>
             </div>
           );
@@ -282,13 +242,12 @@ export default function ApplicationStatus() {
 
         <div>
           <h4 className="font-semibold">{message.title}</h4>
-
           <p className="text-sm text-slate-600 mt-1">{message.detail}</p>
 
           {currentStatus === "REJECTED" && currentApp.error_reason && (
             <div className="mt-3 pt-3 border-t border-red-200">
               <p className="text-sm font-medium text-red-800">
-                Motivo: {currentApp.error_reason}
+                Reason: {currentApp.error_reason}
               </p>
             </div>
           )}
@@ -296,11 +255,11 @@ export default function ApplicationStatus() {
           {isTerminal && currentStatus === "HIRED" && (
             <div className="mt-3 pt-3 border-t border-emerald-200">
               <p className="text-sm font-medium text-emerald-800">
-                Resultado final: {currentApp.ai_score?.grade ?? "—"}
+                Final result: {currentApp.ai_score?.grade ?? "--"}
               </p>
               {currentApp.ai_score && (
                 <p className="text-xs text-emerald-700 mt-1">
-                  Puntaje total: {currentApp.ai_score.total}/100
+                  Total score: {currentApp.ai_score.total}/100
                 </p>
               )}
             </div>
@@ -309,7 +268,7 @@ export default function ApplicationStatus() {
           {isTerminal && currentStatus === "REJECTED" && (
             <div className="mt-3 pt-3 border-t border-red-200">
               <p className="text-sm font-medium text-red-800">
-                Puedes postular a otras vacantes disponibles desde la sección de carga de CV.
+                You can apply to other available vacancies from the CV upload section.
               </p>
             </div>
           )}

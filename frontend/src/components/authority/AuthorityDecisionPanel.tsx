@@ -2,10 +2,10 @@ import { useState } from "react";
 import DecisionForm from "./DecisionForm";
 import DecisionActions from "./DecisionActions";
 import {
-  submitEvaluation,
   validateEvaluation,
   type EvaluationRequest,
 } from "@/services/evaluationService";
+import { useSubmitEvaluation } from "@/hooks/useAppQueries";
 
 interface AuthorityDecisionPanelProps {
   applicationId?: string;
@@ -20,6 +20,7 @@ export default function AuthorityDecisionPanel({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
+  const submitEvaluationMutation = useSubmitEvaluation();
 
   const handleDecision = async (decision: "APPROVED" | "REJECTED") => {
     setValidationError(null);
@@ -35,7 +36,10 @@ export default function AuthorityDecisionPanel({
 
     setSubmitting(true);
     try {
-      await submitEvaluation(applicationId ?? "", body);
+      await submitEvaluationMutation.mutateAsync({
+        applicationId: applicationId ?? "",
+        body,
+      });
       setResult("success");
       setObservations("");
       onSuccess?.();

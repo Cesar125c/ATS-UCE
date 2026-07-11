@@ -31,14 +31,14 @@ export default function PendingCandidates({
       <div className="p-5 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock3 size={18} className="text-sky-600" />
-          <h2 className="font-semibold">Pendientes de Aprobación</h2>
+          <h2 className="font-semibold">Pending Approvals</h2>
         </div>
         <span className="w-7 h-7 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-sm font-semibold">
           {applications.length}
         </span>
       </div>
 
-      {loading && <p className="p-5 text-sm text-slate-500">Cargando...</p>}
+      {loading && <p className="p-5 text-sm text-slate-500">Loading...</p>}
 
       {sorted.map((app) => (
         <CandidateCard
@@ -50,7 +50,7 @@ export default function PendingCandidates({
       ))}
 
       {!loading && applications.length === 0 && (
-        <p className="p-5 text-sm text-slate-500">No hay postulaciones pendientes.</p>
+        <p className="p-5 text-sm text-slate-500">No pending applications.</p>
       )}
     </Card>
   );

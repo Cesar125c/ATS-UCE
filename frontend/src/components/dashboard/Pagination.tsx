@@ -24,13 +24,13 @@ export default function Pagination({
   return (
     <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-6">
       <p className="text-sm text-slate-500">
-        Mostrando{" "}
+        Showing{" "}
         <span className="font-semibold text-slate-800">
           {start}-{end}
         </span>{" "}
-        de{" "}
+        of{" "}
         <span className="font-semibold text-slate-800">{totalItems}</span>{" "}
-        postulantes
+        applicants
       </p>
 
       <div className="flex items-center gap-2">
@@ -41,7 +41,7 @@ export default function Pagination({
           onClick={() => onPageChange(currentPage - 1)}
         >
           <ChevronLeft size={16} />
-          Anterior
+          Previous
         </Button>
 
         {Array.from({ length: totalPages }).map((_, index) => {
@@ -67,7 +67,7 @@ export default function Pagination({
           className="flex items-center gap-2"
           onClick={() => onPageChange(currentPage + 1)}
         >
-          Siguiente
+          Next
           <ChevronRight size={16} />
         </Button>
       </div>

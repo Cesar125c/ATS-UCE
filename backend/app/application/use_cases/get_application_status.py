@@ -36,6 +36,7 @@ class GetApplicationStatusUseCase:
             result.append(
                 {
                     "id": str(app.id),
+                    "applicant_id": str(app.applicant_id),
                     "vacancy_id": str(app.vacancy_id),
                     "vacancy_title": vacancy.title if vacancy else "",
                     "vacancy_faculty": vacancy.faculty if vacancy else "",
@@ -43,11 +44,11 @@ class GetApplicationStatusUseCase:
                     "ai_score": (
                         {
                             "total": score.total,
-                            "score_academic": score.academic_training,
-                            "score_experience": score.experience,
-                            "score_production": score.publications,
-                            "score_profile_match": score.profile_match,
-                            "score_languages": score.languages_competencies,
+                            "academic_training": score.academic_training,
+                            "experience": score.experience,
+                            "publications": score.publications,
+                            "profile_match": score.profile_match,
+                            "languages_competencies": score.languages_competencies,
                             "evaluation_summary": score.evaluation_summary,
                             "is_preselected": score.is_preselected,
                             "grade": score.grade,
@@ -64,6 +65,8 @@ class GetApplicationStatusUseCase:
                         for h in sorted(status_history_entries, key=lambda e: e.transitioned_at)
                     ],
                     "submitted_at": app.created_at.isoformat(),
+                    "created_at": app.created_at.isoformat(),
+                    "updated_at": app.updated_at.isoformat(),
                 }
             )
 

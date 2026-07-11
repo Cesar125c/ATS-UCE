@@ -1,68 +1,64 @@
+import { z } from "zod";
 import { apiFetch } from "./api";
+import {
+  DashboardStatsSchema,
+  ApplicationListResponseSchema,
+  ApplicationRankingItemSchema,
+  PresignedUrlSchema,
+  StatusHistorySchema,
+  MonthlyTrendSchema,
+} from "@/schemas/api";
+import type { StatusHistoryDTO } from "@/types/application";
 
-export interface DashboardStats {
-  total_applicants: number;
-  avg_score: number;
-  in_progress: number;
-  completed: number;
-}
-
-export interface ApplicationRankingItem {
-  id: string;
-  applicant_id: string;
-  applicant_name: string;
-  applicant_email: string;
-  vacancy_title: string;
-  vacancy_faculty: string;
-  status: string;
-  score_total: number | null;
-  score_academic: number | null;
-  score_experience: number | null;
-  score_production: number | null;
-  score_profile_match: number | null;
-  score_languages: number | null;
-  evaluation_summary: string | null;
-  cv_storage_key: string;
-  submitted_at: string;
-}
-
-export interface ApplicationListResponse {
-  items: ApplicationRankingItem[];
-  total: number;
-  page: number;
-  page_size: number;
-  pages: number;
-}
+export type DashboardStats = z.infer<typeof DashboardStatsSchema>;
+export type ApplicationRankingItem = z.infer<typeof ApplicationRankingItemSchema>;
+export type ApplicationListResponse = z.infer<typeof ApplicationListResponseSchema>;
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  return apiFetch<DashboardStats>("/api/v1/dashboard/stats");
+  return apiFetch<DashboardStats>("/api/v1/dashboard/stats", undefined, DashboardStatsSchema);
 }
 
-export async function getApplicationsByStatus(
-  status: string | undefined,
-  page: number,
-  pageSize: number,
-): Promise<ApplicationListResponse> {
+export async function getApplications(filters: {
+  status?: string;
+  page: number;
+  pageSize: number;
+  search?: string;
+}): Promise<ApplicationListResponse> {
   const params = new URLSearchParams();
-  if (status) params.set("status", status);
-  params.set("page", String(page));
-  params.set("page_size", String(pageSize));
-  return apiFetch<ApplicationListResponse>(`/api/v1/applications/?${params}`);
-}
-
-export async function getAllApplications(
-  page: number,
-  pageSize: number,
-): Promise<ApplicationListResponse> {
-  const params = new URLSearchParams();
-  params.set("page", String(page));
-  params.set("page_size", String(pageSize));
-  return apiFetch<ApplicationListResponse>(`/api/v1/applications/?${params}`);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.search) params.set("search", filters.search);
+  params.set("page", String(filters.page));
+  params.set("page_size", String(filters.pageSize));
+  return apiFetch<ApplicationListResponse>(
+    `/api/v1/applications/?${params}`,
+    undefined,
+    ApplicationListResponseSchema,
+  );
 }
 
 export async function getApplicationCVUrl(storageKey: string): Promise<string> {
   const data = await apiFetch<{ url: string }>(
     `/api/v1/applications/cv-presigned/${encodeURIComponent(storageKey)}`,
+    undefined,
+    PresignedUrlSchema,
   );
   return data.url;
+}
+
+export type MonthlyTrend = z.infer<typeof MonthlyTrendSchema>;
+
+export async function getApplicationTrend(months = 6): Promise<MonthlyTrend[]> {
+  return apiFetch<MonthlyTrend[]>(
+    `/api/v1/dashboard/applications-trend?months=${months}`,
+    undefined,
+    z.array(MonthlyTrendSchema),
+  );
+}
+
+export async function getApplicationHistory(applicationId: string): Promise<StatusHistoryDTO[]> {
+  return apiFetch<StatusHistoryDTO[]>(
+    `/api/v1/applications/${applicationId}/history`,
+    undefined,
+    z.array(StatusHistorySchema),
+  );
 }

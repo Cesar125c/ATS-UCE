@@ -5,15 +5,18 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Reques
 
 from app.api.dependencies import (
     get_applicant_repository,
+    get_application_repository,
     get_review_ranking_usecase,
     get_submit_application_usecase,
     require_role,
 )
 from app.api.limiter import limiter
+from app.application.dtos.application_dtos import StatusHistoryDTO
 from app.application.tasks.ai_scoring import process_ai_score_task
 from app.application.use_cases.review_ranking import ReviewRankingUseCase
 from app.application.use_cases.submit_application import SubmitApplicationUseCase
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
+from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 
 router = APIRouter()
 
@@ -26,6 +29,7 @@ async def list_applications(
     status: str | None = Query(None),
     faculty: str | None = Query(None),
     min_score: float | None = Query(None, ge=0, le=100),
+    search: str | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     _user: dict = Depends(require_role(["human_resources", "authorities"])),
@@ -36,6 +40,7 @@ async def list_applications(
         status=status,
         faculty=faculty,
         min_score=min_score,
+        search=search,
         page=page,
         page_size=page_size,
     )
@@ -83,12 +88,26 @@ async def get_cv_presigned_url(
     return {"url": url}
 
 
+@router.get("/{id}/history", response_model=list[StatusHistoryDTO])
+async def get_application_history(
+    id: UUID,
+    _user: dict = Depends(require_role(["human_resources", "authorities", "applicant"])),
+    repo: SQLAApplicationRepository = Depends(get_application_repository),
+) -> list[StatusHistoryDTO]:
+    """Return the status transition history for a single application."""
+    history = await repo.find_status_history_by_application_id(id)
+    if not history:
+        raise HTTPException(404, detail="Application not found")
+    return [StatusHistoryDTO(status=h.status, transitioned_at=h.transitioned_at) for h in history]
+
+
 @router.post("/", status_code=201)
 @limiter.limit("5/minute")
 async def submit_application(
     request: Request,
     vacancy_id: UUID = Form(...),
     cv_file: UploadFile = File(...),
+    extracted_text: str | None = Form(None),
     current_user: dict = Depends(require_role(["applicant"])),
     use_case: SubmitApplicationUseCase = Depends(get_submit_application_usecase),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
@@ -109,7 +128,7 @@ async def submit_application(
     application = await use_case.execute(applicant.id, vacancy_id, contents)
 
     # Fire-and-forget AI scoring in a truly independent task
-    _asyncio.create_task(process_ai_score_task(application.id))
+    _asyncio.create_task(process_ai_score_task(application.id, extracted_text=extracted_text))
 
     return {
         "id": str(application.id),

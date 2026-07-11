@@ -13,10 +13,17 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   server: {
+    watch: {
+      ignored: ["**/src-tauri/**"],
+    },
     proxy: {
       '/api': {
         target: 'http://api:8000',
         changeOrigin: true,
+      },
+      '/ws': {
+        target: 'http://api:8000',
+        ws: true,
       },
     },
   },
@@ -24,6 +31,9 @@ export default defineConfig({
     alias: {
       "@": path.resolve(dirname, "./src"),
     },
+  },
+  optimizeDeps: {
+    include: ["pdfjs-dist"],
   },
   plugins: [react(), tailwindcss()],
   test: {

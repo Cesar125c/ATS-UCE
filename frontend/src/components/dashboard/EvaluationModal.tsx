@@ -2,7 +2,8 @@ import { useState } from "react";
 import { X, AlertCircle } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
-import { submitEvaluation, validateEvaluation } from "@/services/evaluationService";
+import { validateEvaluation } from "@/services/evaluationService";
+import { useSubmitEvaluation } from "@/hooks/useAppQueries";
 import type { EvaluationRequest } from "@/services/evaluationService";
 
 interface EvaluationModalProps {
@@ -17,6 +18,7 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
   const [validationError, setValidationError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitEvaluationMutation = useSubmitEvaluation();
 
   const handleSubmit = async () => {
     const body: EvaluationRequest = { decision, observations };
@@ -30,10 +32,10 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
     setIsSubmitting(true);
 
     try {
-      await submitEvaluation(applicationId, body);
+      await submitEvaluationMutation.mutateAsync({ applicationId, body });
       onSuccess();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Error al registrar la decisión.";
+      const msg = e instanceof Error ? e.message : "Failed to register the decision.";
       setServerError(msg);
     } finally {
       setIsSubmitting(false);
@@ -51,12 +53,12 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
         </button>
 
         <Card className="p-6 border-0 shadow-none">
-          <h2 className="text-xl font-semibold mb-6">Decisión de RRHH</h2>
+          <h2 className="text-xl font-semibold mb-6">HR Decision</h2>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Decisión
+                Decision
               </label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -68,7 +70,7 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
                     onChange={() => setDecision("APPROVED")}
                     className="accent-green-600"
                   />
-                  <span className="text-sm font-medium text-green-700">APROBADO</span>
+                  <span className="text-sm font-medium text-green-700">APPROVED</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -79,21 +81,21 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
                     onChange={() => setDecision("REJECTED")}
                     className="accent-red-600"
                   />
-                  <span className="text-sm font-medium text-red-700">RECHAZADO</span>
+                  <span className="text-sm font-medium text-red-700">REJECTED</span>
                 </label>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Observaciones
+                Observations
                 {decision === "REJECTED" && (
                   <span className="text-red-500 ml-1">*</span>
                 )}
               </label>
               <textarea
                 rows={4}
-                placeholder="Justificación de la decisión..."
+                placeholder="Justification for the decision..."
                 className={`w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none ${
                   validationError ? "border-red-400" : "border-slate-300"
                 }`}
@@ -121,14 +123,14 @@ export default function EvaluationModal({ applicationId, onClose, onSuccess }: E
 
             <div className="flex gap-3 justify-end pt-2">
               <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-                Cancelar
+                Cancel
               </Button>
               <Button
                 variant="secondary"
                 onClick={handleSubmit}
                 isLoading={isSubmitting}
               >
-                Registrar Decisión
+                Register Decision
               </Button>
             </div>
           </div>

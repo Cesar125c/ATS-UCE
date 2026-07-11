@@ -14,13 +14,13 @@ describe("validateCVFile", () => {
 
   it("rejects non-PDF files", () => {
     const file = createTestFile("cv.png", "image/png", 1024);
-    expect(validateCVFile(file)).toBe("Sólo se aceptan archivos PDF.");
+    expect(validateCVFile(file)).toBe("Only PDF files are accepted.");
   });
 
   it("rejects files over 10 MB", () => {
     const overSize = 10_485_761;
     const file = createTestFile("cv.pdf", "application/pdf", overSize);
-    expect(validateCVFile(file)).toBe("El archivo PDF no debe superar los 10 MB.");
+    expect(validateCVFile(file)).toBe("The PDF file must not exceed 10 MB.");
   });
 });
 
@@ -99,7 +99,7 @@ describe("submitApplication FormData structure", () => {
 
     await expect(submitApplication(vacancyId, file, getToken)).rejects.toMatchObject({
       status: 422,
-      spanishDetail: "El archivo debe ser un PDF de máximo 10 MB.",
+      detail: "The file must be a PDF of up to 10 MB.",
     });
   });
 });

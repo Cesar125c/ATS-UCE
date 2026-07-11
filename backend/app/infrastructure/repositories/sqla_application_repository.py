@@ -2,6 +2,7 @@
 
 from uuid import UUID
 
+import sqlalchemy as sa
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -143,6 +144,20 @@ class SQLAApplicationRepository(IApplicationRepository):
             "completed": row.completed or 0,
         }
 
+    async def get_monthly_trend(self, months: int = 6) -> list[dict]:
+        result = await self._session.execute(
+            select(
+                func.to_char(ApplicationModel.created_at, "YYYY-MM").label("month"),
+                func.count().label("applications"),
+            )
+            .group_by(func.to_char(ApplicationModel.created_at, "YYYY-MM"))
+            .order_by(func.to_char(ApplicationModel.created_at, "YYYY-MM").desc())
+            .limit(months)
+        )
+        rows = [{"month": row.month, "applications": row.applications} for row in result.all()]
+        rows.reverse()
+        return rows
+
     async def save(self, application: Application) -> Application:
         model = ApplicationMapper.to_model(application)
         merged = await self._session.merge(model)
@@ -191,11 +206,13 @@ class SQLAApplicationRepository(IApplicationRepository):
         status: str | None = None,
         faculty: str | None = None,
         min_score: float | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[ApplicationModel], int]:
         """Returns ORM models with eager-loaded applicant+user+vacancy for the ranking table."""
         from app.infrastructure.database.models.applicant_model import ApplicantModel
+        from app.infrastructure.database.models.user_model import UserModel
         from app.infrastructure.database.models.vacancy_model import VacancyModel
 
         query = select(ApplicationModel).options(
@@ -217,6 +234,27 @@ class SQLAApplicationRepository(IApplicationRepository):
         if min_score is not None:
             query = query.where(ApplicationModel.score_total >= min_score)
             count_query = count_query.where(ApplicationModel.score_total >= min_score)
+
+        if search is not None and search.strip():
+            pattern = f"%{search.strip()}%"
+            search_filter = sa.or_(
+                UserModel.first_name.ilike(pattern),
+                UserModel.last_name.ilike(pattern),
+                UserModel.email.ilike(pattern),
+                VacancyModel.title.ilike(pattern),
+            )
+            query = (
+                query.join(ApplicationModel.applicant)
+                .join(ApplicantModel.user)
+                .join(ApplicationModel.vacancy)
+                .where(search_filter)
+            )
+            count_query = (
+                count_query.join(ApplicantModel, ApplicationModel.applicant_id == ApplicantModel.id)
+                .join(UserModel, ApplicantModel.user_id == UserModel.id)
+                .join(VacancyModel, ApplicationModel.vacancy_id == VacancyModel.id)
+                .where(search_filter)
+            )
 
         query = query.order_by(ApplicationModel.score_total.desc().nullslast())
         query = query.offset((page - 1) * page_size).limit(page_size)

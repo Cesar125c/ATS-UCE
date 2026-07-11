@@ -4,7 +4,6 @@ import {
   Users,
   Briefcase,
   BarChart3,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -82,16 +81,6 @@ export default function Sidebar() {
 
       {/* Bottom */}
       <div className="border-t p-3 space-y-2">
-        <button
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 ${
-            collapsed ? "justify-center" : ""
-          }`}
-          title={collapsed ? "Configuration" : undefined}
-        >
-          <Settings size={18} />
-          {!collapsed && "Configuration"}
-        </button>
-
         <button
           onClick={handleSignOut}
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 ${

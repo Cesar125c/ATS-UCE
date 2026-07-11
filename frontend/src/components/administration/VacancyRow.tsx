@@ -1,23 +1,24 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import VacancyStatus from "./VacancyStatus";
-import { deleteVacancy } from "@/services/vacancyService";
+import { useDeleteVacancy } from "@/hooks/useAppQueries";
 import type { Vacancy } from "@/types/vacancy";
 
 interface VacancyRowProps {
   vacancy: Vacancy;
-  onDeleted: () => void;
+  onDeleted?: () => void;
 }
 
 export default function VacancyRow({ vacancy, onDeleted }: VacancyRowProps) {
   const [deleting, setDeleting] = useState(false);
+  const deleteVacancyMutation = useDeleteVacancy();
 
   const handleDelete = async () => {
     if (!confirm(`Deactivate vacancy "${vacancy.title}"?`)) return;
     setDeleting(true);
     try {
-      await deleteVacancy(vacancy.id);
-      onDeleted();
+      await deleteVacancyMutation.mutateAsync(vacancy.id);
+      onDeleted?.();
     } catch {
       // silently fail
     } finally {
@@ -36,7 +37,7 @@ export default function VacancyRow({ vacancy, onDeleted }: VacancyRowProps) {
       </td>
       <td className="px-6 py-5 text-slate-700">{vacancy.faculty}</td>
       <td className="px-6 py-5">
-        <VacancyStatus status={vacancy.is_active ? "Activa" : "Cerrada"} />
+        <VacancyStatus status={vacancy.is_active ? "Active" : "Closed"} />
       </td>
       <td className="px-6 py-5 text-right">
         <button
