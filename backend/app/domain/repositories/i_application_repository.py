@@ -48,3 +48,6 @@ class IApplicationRepository(ABC):
     async def find_status_history_by_application_id(
         self, application_id: UUID
     ) -> list[StatusHistory]: ...
+
+    @abstractmethod
+    async def get_monthly_trend(self, months: int = 6) -> list[dict]: ...

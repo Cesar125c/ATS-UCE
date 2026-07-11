@@ -5,14 +5,14 @@ import type { FlowStatus } from "@/types/application";
 import type { Vacancy } from "@/types/vacancy";
 
 const STATUS_LABEL: Record<FlowStatus, string> = {
-  RECEIVED: "Recibido",
-  PROCESSING_AI: "Analizando IA",
-  HR_STAGE: "Revisión RRHH",
-  DEAN_STAGE: "Decano",
+  RECEIVED: "Received",
+  PROCESSING_AI: "AI Analysis",
+  HR_STAGE: "HR Review",
+  DEAN_STAGE: "Dean",
   RECTOR_STAGE: "Rector",
-  FINANCE_STAGE: "Financiero",
-  HIRED: "Seleccionado",
-  REJECTED: "Rechazado",
+  FINANCE_STAGE: "Finance",
+  HIRED: "Hired",
+  REJECTED: "Rejected",
 };
 
 const STATUS_VARIANT: Record<FlowStatus, "default" | "cyan" | "blue" | "green" | "red" | "yellow"> = {
@@ -28,14 +28,19 @@ const STATUS_VARIANT: Record<FlowStatus, "default" | "cyan" | "blue" | "green" |
 
 function formatDate(isoString: string): string {
   const d = new Date(isoString);
-  return d.toLocaleDateString("es-EC", {
+  return d.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-export default function ApplicationHistory() {
+interface ApplicationHistoryProps {
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}
+
+export default function ApplicationHistory({ selectedId, onSelect }: ApplicationHistoryProps) {
   const {
     data: applications = [],
     isLoading: applicationsLoading,
@@ -53,7 +58,7 @@ export default function ApplicationHistory() {
   if (loading) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        Cargando historial...
+        Loading history...
       </Card>
     );
   }
@@ -67,7 +72,7 @@ export default function ApplicationHistory() {
   if (applications.length === 0) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        No tienes postulaciones registradas. Sube tu CV para comenzar.
+        You have no registered applications. Upload your CV to get started.
       </Card>
     );
   }
@@ -75,20 +80,19 @@ export default function ApplicationHistory() {
   return (
     <Card className="p-6 mt-6">
       <div className="flex justify-between items-center mb-5">
-        <h2 className="text-xl font-semibold">Historial de Postulaciones</h2>
+        <h2 className="text-xl font-semibold">Application History</h2>
         <span className="text-sm text-slate-500">
-          {applications.length} postulación{applications.length !== 1 ? "es" : ""}
+          {applications.length} application{applications.length !== 1 ? "s" : ""}
         </span>
       </div>
 
       <table className="w-full">
         <thead className="border-b">
           <tr className="text-left text-xs uppercase text-slate-500">
-            <th className="py-3">Vacante</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Score IA</th>
-            <th></th>
+            <th className="py-3">Vacancy</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>AI Score</th>
           </tr>
         </thead>
 
@@ -96,12 +100,21 @@ export default function ApplicationHistory() {
           {applications.map((app) => {
             const vacancy = vacancyMap.get(app.vacancy_id);
             const status = app.status as FlowStatus;
+            const isSelected = app.id === selectedId;
 
             return (
-              <tr key={app.id} className="border-b hover:bg-slate-50">
-                <td className="py-4">
+              <tr
+                key={app.id}
+                className={`border-b cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-sky-50 border-l-4 border-l-sky-500"
+                    : "hover:bg-slate-50 border-l-4 border-l-transparent"
+                }`}
+                onClick={() => onSelect(app.id)}
+              >
+                <td className="py-4 pl-3">
                   <p className="font-medium">
-                    {vacancy?.title ?? "Vacante"}
+                    {vacancy?.title ?? "Vacancy"}
                   </p>
                   <p className="text-sm text-slate-500">
                     {vacancy?.faculty ?? ""}
@@ -121,12 +134,6 @@ export default function ApplicationHistory() {
 
                 <td className="font-semibold">
                   {app.ai_score ? `${Math.round(app.ai_score.total)}%` : "—"}
-                </td>
-
-                <td className="text-right">
-                  <span className="text-xs text-slate-400 font-mono">
-                    {app.id.slice(0, 8)}
-                  </span>
                 </td>
               </tr>
             );

@@ -15,51 +15,51 @@ const STEP_ORDER: FlowStatus[] = [
 ];
 
 const STEP_LABELS: Record<FlowStatus, string> = {
-  RECEIVED: "Recibido",
-  PROCESSING_AI: "Validacion IA",
-  HR_STAGE: "Revision RRHH",
-  DEAN_STAGE: "Decano",
+  RECEIVED: "Received",
+  PROCESSING_AI: "AI Validation",
+  HR_STAGE: "HR Review",
+  DEAN_STAGE: "Dean",
   RECTOR_STAGE: "Rector",
-  FINANCE_STAGE: "Financiero",
-  HIRED: "Seleccionado",
-  REJECTED: "Rechazado",
+  FINANCE_STAGE: "Finance",
+  HIRED: "Hired",
+  REJECTED: "Rejected",
 };
 
 const STATUS_MESSAGE: Record<string, { title: string; detail: string }> = {
   RECEIVED: {
-    title: "Tu postulacion ha sido recibida.",
-    detail: "Recibimos tu CV correctamente. El analisis mediante IA comenzara en breve.",
+    title: "Your application has been received.",
+    detail: "We received your CV successfully. The AI analysis will begin shortly.",
   },
   PROCESSING_AI: {
-    title: "Analizando tu CV mediante IA...",
+    title: "Analyzing your CV with AI...",
     detail:
-      "El sistema esta evaluando tu perfil automaticamente. Este proceso puede tardar unos minutos.",
+      "The system is evaluating your profile automatically. This process may take a few minutes.",
   },
   HR_STAGE: {
-    title: "Tu postulacion se encuentra en Revision RRHH.",
+    title: "Your application is under HR Review.",
     detail:
-      "Estamos verificando la validez de tus certificados. Recibiras un correo con novedades en las proximas 48 horas.",
+      "We are verifying the validity of your certificates. You will receive an email with updates within the next 48 hours.",
   },
   DEAN_STAGE: {
-    title: "Tu postulacion esta en revision del Decano.",
-    detail: "La autoridad academica esta evaluando tu perfil para la vacante.",
+    title: "Your application is under review by the Dean.",
+    detail: "The academic authority is evaluating your profile for the vacancy.",
   },
   RECTOR_STAGE: {
-    title: "Tu postulacion esta en revision del Rector.",
-    detail: "La maxima autoridad esta revisando tu postulacion.",
+    title: "Your application is under review by the Rector.",
+    detail: "The highest authority is reviewing your application.",
   },
   FINANCE_STAGE: {
-    title: "Tu postulacion esta en revision Financiera.",
-    detail: "El departamento financiero esta validando la disponibilidad presupuestaria.",
+    title: "Your application is under Finance review.",
+    detail: "The finance department is validating budget availability.",
   },
   HIRED: {
-    title: "Felicitaciones, has sido seleccionado.",
-    detail: "Tu postulacion fue aprobada. Recibiras un correo con los siguientes pasos.",
+    title: "Congratulations, you have been hired.",
+    detail: "Your application was approved. You will receive an email with the next steps.",
   },
   REJECTED: {
-    title: "Tu postulacion no ha sido seleccionada.",
+    title: "Your application has not been selected.",
     detail:
-      "Lamentablemente tu perfil no fue seleccionado en esta ocasion. Puedes postular a otras vacantes disponibles.",
+      "Unfortunately your profile was not selected this time. You can apply to other available vacancies.",
   },
 };
 
@@ -78,7 +78,7 @@ function computeStepStatus(
 
 function formatDate(isoString: string): string {
   const d = new Date(isoString);
-  return d.toLocaleDateString("es-EC", { day: "numeric", month: "short" });
+  return d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
 }
 
 function getStepDate(
@@ -89,7 +89,7 @@ function getStepDate(
   return entry ? formatDate(entry.transitioned_at) : "--";
 }
 
-export default function ApplicationStatus() {
+export default function ApplicationStatus({ applicationId }: { applicationId?: string | null }) {
   const {
     data: applications,
     isLoading,
@@ -99,7 +99,7 @@ export default function ApplicationStatus() {
   if (isLoading) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        Cargando estado de postulacion...
+        Loading application status...
       </Card>
     );
   }
@@ -107,7 +107,7 @@ export default function ApplicationStatus() {
   if (isError) {
     return (
       <Card className="p-6 mt-6 text-center text-red-600">
-        Error al cargar el estado de la postulacion.
+        Failed to load the application status.
       </Card>
     );
   }
@@ -115,17 +115,27 @@ export default function ApplicationStatus() {
   if (!applications || applications.length === 0) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        No tienes postulaciones registradas. Sube tu CV para comenzar.
+        You have no registered applications. Upload your CV to get started.
       </Card>
     );
   }
 
-  const currentApp = applications[0];
+  const currentApp = applicationId
+    ? applications.find((app) => app.id === applicationId)
+    : applications[0];
+
+  if (!currentApp) {
+    return (
+      <Card className="p-6 mt-6 text-center text-slate-500">
+        Click an application from the history below to see its status.
+      </Card>
+    );
+  }
   const history = currentApp.status_history || [];
   const historyStatuses = new Set(history.map((h) => h.status));
   const currentStatus = currentApp.status;
   const message = STATUS_MESSAGE[currentStatus] ?? {
-    title: "Estado desconocido",
+    title: "Unknown status",
     detail: "",
   };
   const isTerminal = TERMINAL_STATUSES.includes(currentStatus);
@@ -136,15 +146,15 @@ export default function ApplicationStatus() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h2 className="text-xl font-semibold">
-            Estado de Tu Postulacion
+            Your Application Status
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Seguimiento en tiempo real del proceso de seleccion.
+            Real-time tracking of the selection process.
           </p>
           {isProcessingAI && (
             <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
               <Loader2 size={12} className="animate-spin" />
-              Actualizando automaticamente
+              Updating automatically
             </p>
           )}
         </div>
@@ -202,7 +212,7 @@ export default function ApplicationStatus() {
 
               <p className="font-medium text-sm mt-3">{STEP_LABELS[step]}</p>
               <p className="text-xs text-slate-500">
-                {isCurrentProcessingAI ? "En curso..." : getStepDate(step, history)}
+                {isCurrentProcessingAI ? "In progress..." : getStepDate(step, history)}
               </p>
             </div>
           );
@@ -237,7 +247,7 @@ export default function ApplicationStatus() {
           {currentStatus === "REJECTED" && currentApp.error_reason && (
             <div className="mt-3 pt-3 border-t border-red-200">
               <p className="text-sm font-medium text-red-800">
-                Motivo: {currentApp.error_reason}
+                Reason: {currentApp.error_reason}
               </p>
             </div>
           )}
@@ -245,11 +255,11 @@ export default function ApplicationStatus() {
           {isTerminal && currentStatus === "HIRED" && (
             <div className="mt-3 pt-3 border-t border-emerald-200">
               <p className="text-sm font-medium text-emerald-800">
-                Resultado final: {currentApp.ai_score?.grade ?? "--"}
+                Final result: {currentApp.ai_score?.grade ?? "--"}
               </p>
               {currentApp.ai_score && (
                 <p className="text-xs text-emerald-700 mt-1">
-                  Puntaje total: {currentApp.ai_score.total}/100
+                  Total score: {currentApp.ai_score.total}/100
                 </p>
               )}
             </div>
@@ -258,7 +268,7 @@ export default function ApplicationStatus() {
           {isTerminal && currentStatus === "REJECTED" && (
             <div className="mt-3 pt-3 border-t border-red-200">
               <p className="text-sm font-medium text-red-800">
-                Puedes postular a otras vacantes disponibles desde la seccion de carga de CV.
+                You can apply to other available vacancies from the CV upload section.
               </p>
             </div>
           )}

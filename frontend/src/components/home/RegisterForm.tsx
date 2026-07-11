@@ -1,30 +1,51 @@
 import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth, useClerk } from "@clerk/react";
+import { z } from "zod";
 import { Input, Button, Card } from "../ui";
 import { useSignUpWithRole } from "../../hooks/useSignUpWithRole";
 
-type RegisterFormData = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: "applicant" | "human_resources" | "authorities";
-  password: string;
-  confirmPassword: string;
-};
+const registerSchema = z
+  .object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email"),
+    role: z.enum(["applicant", "human_resources", "authorities"], {
+      required_error: "Role is required",
+    }),
+    password: z.string().min(8, "Minimum 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine(
+    (data) => {
+      if (data.role === "human_resources" || data.role === "authorities") {
+        return data.email.endsWith("@uce.edu.ec");
+      }
+      return true;
+    },
+    {
+      message: "This role requires an institutional email (@uce.edu.ec)",
+      path: ["email"],
+    },
+  );
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterForm() {
   const { signUpUser, error, isLoading } = useSignUpWithRole();
   const {
     register,
     handleSubmit,
-    control,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterFormData>();
-
-  const selectedRole = useWatch({ control, name: "role" });
-  const password = useWatch({ control, name: "password" });
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  });
 
   const { isSignedIn, isLoaded } = useAuth();
   const { signOut } = useClerk();
@@ -77,14 +98,14 @@ export default function RegisterForm() {
 
       window.location.assign(rolePath);
     } catch {
-      // El error ya está siendo manejado por el hook
+      // The error is already being handled by the hook
     }
   };
 
   return (
     <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10">
       <div className="mb-8">
-        <h3 className="text-3xl font-bold text-slate-800">Creación de cuenta</h3>
+        <h3 className="text-3xl font-bold text-slate-800">Create Account</h3>
 
         <p className="text-slate-500 mt-2">
           Register to access ATS-UCE recruitment platform
@@ -104,9 +125,7 @@ export default function RegisterForm() {
           label="First Name"
           placeholder="John"
           error={errors.firstName?.message}
-          {...register("firstName", {
-            required: "First name is required",
-          })}
+          {...register("firstName")}
         />
 
         {/* Last Name */}
@@ -115,9 +134,7 @@ export default function RegisterForm() {
           label="Last Name"
           placeholder="Doe"
           error={errors.lastName?.message}
-          {...register("lastName", {
-            required: "Last name is required",
-          })}
+          {...register("lastName")}
         />
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -126,9 +143,7 @@ export default function RegisterForm() {
 
           <select
             className="w-full rounded-xl border border-slate-300 px-4 py-3"
-            {...register("role", {
-              required: "Role is required",
-            })}
+            {...register("role")}
           >
             <option value="">Select a role</option>
             <option value="applicant">Applicant</option>
@@ -147,20 +162,7 @@ export default function RegisterForm() {
           label="Email"
           placeholder="john.doe@uce.edu.ec"
           error={errors.email?.message}
-          {...register("email", {
-            required: "Email is required",
-            validate: (value) => {
-              if (
-                (selectedRole === "human_resources" ||
-                  selectedRole === "authorities") &&
-                !value.endsWith("@uce.edu.ec")
-              ) {
-                return "This role requires an institutional email (@uce.edu.ec)";
-              }
-
-              return true;
-            },
-          })}
+          {...register("email")}
         />
 
         {/* Password */}
@@ -169,13 +171,7 @@ export default function RegisterForm() {
           label="Password"
           placeholder="********"
           error={errors.password?.message}
-          {...register("password", {
-            required: "Password is required",
-            minLength: {
-              value: 8,
-              message: "Minimum 8 characters",
-            },
-          })}
+          {...register("password")}
         />
 
         {/* Confirm Password */}
@@ -184,15 +180,7 @@ export default function RegisterForm() {
           label="Confirm Password"
           placeholder="********"
           error={errors.confirmPassword?.message}
-          {...register("confirmPassword", {
-            required: "Please confirm your password",
-            validate: (value) => {
-              if (value !== password) {
-                return "Passwords do not match";
-              }
-              return true;
-            },
-          })}
+          {...register("confirmPassword")}
         />
 
         {/* Submit */}

@@ -22,11 +22,11 @@ export default function HeroSection() {
         </p>
 
         <div className="flex gap-4 mt-8">
-          <Button variant="primary" size="md">
+          <Button variant="primary" size="md" onClick={() => window.location.href = "/sign-up"}>
             Explore Platform
           </Button>
 
-          <Button variant="outline" size="md">
+          <Button variant="outline" size="md" onClick={() => window.open("https://docs.uce.edu.ec", "_blank")}>
             Documentation
           </Button>
         </div>

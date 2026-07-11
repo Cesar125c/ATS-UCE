@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApplications, useDashboardStats } from "@/hooks/useAppQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 import ApplicationsChart from "../components/dashboard/ApplicationsChart";
 import CandidateTable from "../components/dashboard/CandidateTable";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -14,11 +15,14 @@ export default function HumanResources() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [evaluatingAppId, setEvaluatingAppId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const statsQuery = useDashboardStats();
   const applicationsQuery = useApplications({
     status: status || undefined,
     page,
     pageSize,
+    search: debouncedSearch || undefined,
   });
   const applications = applicationsQuery.data;
 
@@ -37,7 +41,7 @@ export default function HumanResources() {
 
       <StatsCards stats={statsQuery.data ?? null} />
 
-      <Filters status={status} onStatusChange={handleStatusChange} />
+      <Filters status={status} onStatusChange={handleStatusChange} search={search} onSearchChange={(s) => { setSearch(s); setPage(1); }} />
 
       <CandidateTable
         items={applications?.items ?? []}
@@ -47,7 +51,7 @@ export default function HumanResources() {
 
       {applicationsQuery.isError && (
         <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-          Error al cargar los datos del dashboard.
+          Error loading dashboard data.
         </div>
       )}
 

@@ -8,3 +8,8 @@ class DashboardStatsResponse(BaseModel):
     avg_score: float
     in_progress: int
     completed: int
+
+
+class MonthlyTrendDTO(BaseModel):
+    month: str
+    applications: int

@@ -20,20 +20,23 @@ export default function HelpCards() {
             <div>
 
               <h3 className="font-semibold">
-                Centro de Ayuda
+                Help Center
               </h3>
 
               <p className="text-sm text-slate-300 mt-1">
-                Resuelve dudas sobre el proceso
-                de postulación y el análisis IA.
+                Get answers about the application
+                process and the AI analysis.
               </p>
 
             </div>
 
           </div>
 
-          <Button className="bg-red-600 hover:bg-red-700">
-            Ir Ahora
+          <Button
+            variant="danger"
+            onClick={() => window.open("https://help.uce.edu.ec", "_blank")}
+          >
+            Go Now
           </Button>
 
         </div>
@@ -54,21 +57,24 @@ export default function HelpCards() {
             <div>
 
               <h3 className="font-semibold">
-                ¿Necesitas soporte?
+                Need support?
               </h3>
 
               <p className="text-sm text-slate-600 mt-1">
-                Contacta con nuestro equipo
-                para problemas con la carga
-                de archivos.
+                Contact our team
+                for issues with file
+                uploads.
               </p>
 
             </div>
 
           </div>
 
-          <Button className="bg-red-600 hover:bg-red-700">
-            Contacto
+          <Button
+            variant="danger"
+            onClick={() => window.location.href = "mailto:support@uce.edu.ec"}
+          >
+            Contact
           </Button>
 
         </div>

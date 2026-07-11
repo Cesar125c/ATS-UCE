@@ -13,19 +13,19 @@ interface AIAnalysisSummaryProps {
 
 export default function AIAnalysisSummary({ application }: AIAnalysisSummaryProps) {
   const scores = [
-    { title: "Formación Académica", value: application.score_academic ?? 0, icon: GraduationCap },
-    { title: "Experiencia Docente", value: application.score_experience ?? 0, icon: BookOpen },
-    { title: "Producción Científica", value: application.score_production ?? 0, icon: FlaskConical },
-    { title: "Idiomas", value: application.score_languages ?? 0, icon: Languages },
+    { title: "Academic Training", value: application.score_academic ?? 0, icon: GraduationCap },
+    { title: "Teaching Experience", value: application.score_experience ?? 0, icon: BookOpen },
+    { title: "Scientific Production", value: application.score_production ?? 0, icon: FlaskConical },
+    { title: "Languages", value: application.score_languages ?? 0, icon: Languages },
   ];
 
   return (
     <Card className="p-6 h-full">
-      <h2 className="text-xl font-semibold mb-2">Resumen de Análisis IA</h2>
+      <h2 className="text-xl font-semibold mb-2">AI Analysis Summary</h2>
       <p className="italic text-sm text-slate-600 mb-8">
         {application.evaluation_summary
           ? `"${application.evaluation_summary}"`
-          : "Sin resumen de IA disponible."}
+          : "No AI summary available."}
       </p>
       <div className="space-y-6">
         {scores.map((item) => {

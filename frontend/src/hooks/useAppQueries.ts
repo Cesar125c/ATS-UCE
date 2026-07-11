@@ -8,9 +8,10 @@ import {
   submitApplication,
 } from "@/services/applicationService";
 import {
-  getAllApplications,
-  getApplicationsByStatus,
+  getApplications,
   getDashboardStats,
+  getApplicationTrend,
+  getApplicationHistory,
 } from "@/services/dashboardService";
 import {
   createVacancy,
@@ -32,7 +33,10 @@ export const queryKeys = {
     status?: string;
     page: number;
     pageSize: number;
+    search?: string;
   }) => ["applications", filters] as const,
+  applicationTrend: ["application-trend"] as const,
+  applicationHistory: (id: string) => ["application-history", id] as const,
 };
 
 function hasProcessingApplication(applications?: ApplicationResponse[]) {
@@ -87,11 +91,13 @@ export function useSubmitApplication() {
       vacancyId,
       file,
       getToken,
+      extractedText,
     }: {
       vacancyId: string;
       file: File;
       getToken: () => Promise<string | null>;
-    }) => submitApplication(vacancyId, file, getToken),
+      extractedText?: string;
+    }) => submitApplication(vacancyId, file, getToken, extractedText),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.myApplications }),
@@ -113,13 +119,11 @@ export function useApplications(filters: {
   status?: string;
   page: number;
   pageSize: number;
+  search?: string;
 }) {
   return useQuery({
     queryKey: queryKeys.applications(filters),
-    queryFn: () =>
-      filters.status
-        ? getApplicationsByStatus(filters.status, filters.page, filters.pageSize)
-        : getAllApplications(filters.page, filters.pageSize),
+    queryFn: () => getApplications(filters),
   });
 }
 
@@ -141,5 +145,20 @@ export function useSubmitEvaluation() {
         queryClient.invalidateQueries({ queryKey: queryKeys.myApplications }),
       ]);
     },
+  });
+}
+
+export function useApplicationTrend(months = 6) {
+  return useQuery({
+    queryKey: queryKeys.applicationTrend,
+    queryFn: () => getApplicationTrend(months),
+  });
+}
+
+export function useApplicationHistory(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.applicationHistory(applicationId ?? ""),
+    queryFn: () => getApplicationHistory(applicationId!),
+    enabled: !!applicationId,
   });
 }

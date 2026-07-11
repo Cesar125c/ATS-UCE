@@ -13,7 +13,7 @@ export default function CTASection() {
         </p>
 
         <div className="mt-8">
-          <Button variant="secondary" size="lg">
+          <Button variant="secondary" size="lg" onClick={() => window.location.href = "/sign-up"}>
             Access the System
           </Button>
         </div>
