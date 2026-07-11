@@ -29,9 +29,9 @@ export default function Candidates() {
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Candidatos</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Candidates</h1>
         <p className="text-slate-500 mt-2">
-          Revisa, filtra y evalua las postulaciones por estado del proceso.
+          Review, filter, and evaluate applications by process stage.
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export default function Candidates() {
 
       {applicationsQuery.isError && (
         <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-          Error al cargar los candidatos.
+          Error loading candidates.
         </div>
       )}
 

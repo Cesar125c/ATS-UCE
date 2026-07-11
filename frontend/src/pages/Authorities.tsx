@@ -63,7 +63,7 @@ export default function Authorities() {
           )}
           {!selectedApp && !applicationsQuery.isLoading && (
             <div className="text-center text-slate-500 mt-20">
-              No hay postulaciones pendientes de revision.
+              No applications pending review.
             </div>
           )}
         </div>

@@ -8,18 +8,18 @@ import Card from "../ui/Card";
 
 const history = [
   {
-    title: "Validación RR.HH.",
-    date: "Completado · 12 Oct 2024",
+    title: "HR Validation",
+    date: "Completed · Oct 12, 2024",
     status: "completed",
   },
   {
-    title: "Entrevista Técnica",
-    date: "Pendiente · 15 Oct 2024",
+    title: "Technical Interview",
+    date: "Pending · Oct 15, 2024",
     status: "pending",
   },
   {
-    title: "Decisión Autoridad",
-    date: "Pendiente de firma",
+    title: "Authority Decision",
+    date: "Awaiting signature",
     status: "current",
   },
 ];
@@ -29,7 +29,7 @@ export default function ProcessHistory() {
     <Card className="p-6 h-full">
 
       <h2 className="text-xl font-semibold mb-6">
-        Historial del Proceso
+        Process History
       </h2>
 
       <div className="space-y-6">

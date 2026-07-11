@@ -51,7 +51,7 @@ export default function HumanResources() {
 
       {applicationsQuery.isError && (
         <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-          Error al cargar los datos del dashboard.
+          Error loading dashboard data.
         </div>
       )}
 

@@ -98,14 +98,14 @@ export default function RegisterForm() {
 
       window.location.assign(rolePath);
     } catch {
-      // El error ya está siendo manejado por el hook
+      // The error is already being handled by the hook
     }
   };
 
   return (
     <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10">
       <div className="mb-8">
-        <h3 className="text-3xl font-bold text-slate-800">Creación de cuenta</h3>
+        <h3 className="text-3xl font-bold text-slate-800">Create Account</h3>
 
         <p className="text-slate-500 mt-2">
           Register to access ATS-UCE recruitment platform
