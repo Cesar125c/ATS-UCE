@@ -144,6 +144,20 @@ class SQLAApplicationRepository(IApplicationRepository):
             "completed": row.completed or 0,
         }
 
+    async def get_monthly_trend(self, months: int = 6) -> list[dict]:
+        result = await self._session.execute(
+            select(
+                func.to_char(ApplicationModel.created_at, "YYYY-MM").label("month"),
+                func.count().label("applications"),
+            )
+            .group_by(func.to_char(ApplicationModel.created_at, "YYYY-MM"))
+            .order_by(func.to_char(ApplicationModel.created_at, "YYYY-MM").desc())
+            .limit(months)
+        )
+        rows = [{"month": row.month, "applications": row.applications} for row in result.all()]
+        rows.reverse()
+        return rows
+
     async def save(self, application: Application) -> Application:
         model = ApplicationMapper.to_model(application)
         merged = await self._session.merge(model)

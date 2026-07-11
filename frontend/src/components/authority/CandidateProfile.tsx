@@ -53,7 +53,7 @@ export default function CandidateProfile({ application }: CandidateProfileProps)
         </div>
         <div className="text-center xl:text-right">
           <p className="text-xs uppercase tracking-wide text-slate-500">
-            Score Global IA
+            Global AI Score
           </p>
           <h2 className="text-6xl font-bold text-sky-500 mt-2">
             {application.score_total ?? "—"}%
@@ -63,7 +63,7 @@ export default function CandidateProfile({ application }: CandidateProfileProps)
             className="mt-5 bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
           >
             <Download size={18} />
-            Descargar CV (PDF)
+            Download CV (PDF)
           </Button>
         </div>
       </div>

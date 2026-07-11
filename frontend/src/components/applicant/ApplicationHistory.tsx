@@ -5,14 +5,14 @@ import type { FlowStatus } from "@/types/application";
 import type { Vacancy } from "@/types/vacancy";
 
 const STATUS_LABEL: Record<FlowStatus, string> = {
-  RECEIVED: "Recibido",
-  PROCESSING_AI: "Analizando IA",
-  HR_STAGE: "Revisión RRHH",
-  DEAN_STAGE: "Decano",
+  RECEIVED: "Received",
+  PROCESSING_AI: "AI Analysis",
+  HR_STAGE: "HR Review",
+  DEAN_STAGE: "Dean",
   RECTOR_STAGE: "Rector",
-  FINANCE_STAGE: "Financiero",
-  HIRED: "Seleccionado",
-  REJECTED: "Rechazado",
+  FINANCE_STAGE: "Finance",
+  HIRED: "Hired",
+  REJECTED: "Rejected",
 };
 
 const STATUS_VARIANT: Record<FlowStatus, "default" | "cyan" | "blue" | "green" | "red" | "yellow"> = {
@@ -28,7 +28,7 @@ const STATUS_VARIANT: Record<FlowStatus, "default" | "cyan" | "blue" | "green" |
 
 function formatDate(isoString: string): string {
   const d = new Date(isoString);
-  return d.toLocaleDateString("es-EC", {
+  return d.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -53,7 +53,7 @@ export default function ApplicationHistory() {
   if (loading) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        Cargando historial...
+        Loading history...
       </Card>
     );
   }
@@ -67,7 +67,7 @@ export default function ApplicationHistory() {
   if (applications.length === 0) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        No tienes postulaciones registradas. Sube tu CV para comenzar.
+        You have no registered applications. Upload your CV to get started.
       </Card>
     );
   }
@@ -75,19 +75,19 @@ export default function ApplicationHistory() {
   return (
     <Card className="p-6 mt-6">
       <div className="flex justify-between items-center mb-5">
-        <h2 className="text-xl font-semibold">Historial de Postulaciones</h2>
+        <h2 className="text-xl font-semibold">Application History</h2>
         <span className="text-sm text-slate-500">
-          {applications.length} postulación{applications.length !== 1 ? "es" : ""}
+          {applications.length} application{applications.length !== 1 ? "s" : ""}
         </span>
       </div>
 
       <table className="w-full">
         <thead className="border-b">
           <tr className="text-left text-xs uppercase text-slate-500">
-            <th className="py-3">Vacante</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Score IA</th>
+            <th className="py-3">Vacancy</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>AI Score</th>
             <th></th>
           </tr>
         </thead>
@@ -101,7 +101,7 @@ export default function ApplicationHistory() {
               <tr key={app.id} className="border-b hover:bg-slate-50">
                 <td className="py-4">
                   <p className="font-medium">
-                    {vacancy?.title ?? "Vacante"}
+                    {vacancy?.title ?? "Vacancy"}
                   </p>
                   <p className="text-sm text-slate-500">
                     {vacancy?.faculty ?? ""}

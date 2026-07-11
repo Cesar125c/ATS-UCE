@@ -3,9 +3,9 @@ import { useUser, useClerk } from "@clerk/react";
 import { Bell, Search, ChevronDown, LogOut } from "lucide-react";
 
 const ROLE_LABEL: Record<string, string> = {
-  applicant: "Postulante",
-  human_resources: "Recursos Humanos",
-  authorities: "Autoridades",
+  applicant: "Applicant",
+  human_resources: "Human Resources",
+  authorities: "Authorities",
 };
 
 export default function TopNavbar() {
@@ -13,7 +13,7 @@ export default function TopNavbar() {
   const { signOut } = useClerk();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const firstName = isLoaded ? user?.firstName || user?.fullName?.split(" ")[0] || "Usuario" : "...";
+  const firstName = isLoaded ? user?.firstName || user?.fullName?.split(" ")[0] || "User" : "...";
   const lastName = isLoaded ? user?.lastName || "" : "";
   const role = (user?.publicMetadata?.role as string) || "";
   const roleLabel = ROLE_LABEL[role] || role || "";
@@ -69,7 +69,7 @@ export default function TopNavbar() {
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
               >
                 <LogOut size={16} />
-                Cerrar Sesión
+                Sign Out
               </button>
             </div>
           )}

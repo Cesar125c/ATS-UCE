@@ -7,22 +7,22 @@ import {
 
 const tabs = [
   {
-    title: "Vacantes",
+    title: "Vacancies",
     icon: Briefcase,
     active: true,
   },
   {
-    title: "Reportes",
+    title: "Reports",
     icon: FileBarChart,
     active: false,
   },
   {
-    title: "Configuración",
+    title: "Configuration",
     icon: Settings,
     active: false,
   },
   {
-    title: "Centro de Ayuda",
+    title: "Help Center",
     icon: CircleHelp,
     active: false,
   },

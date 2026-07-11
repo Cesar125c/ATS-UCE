@@ -18,13 +18,13 @@ export default function DecisionActions({
     <div className="space-y-4">
       {result === "success" && (
         <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">
-          Decisión registrada exitosamente.
+          Decision registered successfully.
         </div>
       )}
 
       {result === "error" && (
         <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-          Error al registrar la decisión. Intenta nuevamente.
+          Error registering the decision. Please try again.
         </div>
       )}
 
@@ -34,7 +34,7 @@ export default function DecisionActions({
         disabled={submitting}
       >
         <CheckCircle2 size={18} />
-        Aprobar Selección
+        Approve Selection
       </Button>
 
       <Button
@@ -43,7 +43,7 @@ export default function DecisionActions({
         disabled={submitting}
       >
         <XCircle size={18} />
-        Rechazar Candidato
+        Reject Candidate
       </Button>
     </div>
   );

@@ -2,15 +2,15 @@ import { Search, RotateCcw } from "lucide-react";
 import Button from "../ui/Button";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "Todos los estados" },
-  { value: "RECEIVED", label: "Recibido" },
-  { value: "PROCESSING_AI", label: "Analizando IA" },
-  { value: "HR_STAGE", label: "Revisión RRHH" },
-  { value: "DEAN_STAGE", label: "Decano" },
+  { value: "", label: "All statuses" },
+  { value: "RECEIVED", label: "Received" },
+  { value: "PROCESSING_AI", label: "AI Analysis" },
+  { value: "HR_STAGE", label: "HR Review" },
+  { value: "DEAN_STAGE", label: "Dean" },
   { value: "RECTOR_STAGE", label: "Rector" },
-  { value: "FINANCE_STAGE", label: "Financiero" },
-  { value: "HIRED", label: "Seleccionado" },
-  { value: "REJECTED", label: "Rechazado" },
+  { value: "FINANCE_STAGE", label: "Finance" },
+  { value: "HIRED", label: "Hired" },
+  { value: "REJECTED", label: "Rejected" },
 ];
 
 interface FiltersProps {
@@ -31,7 +31,7 @@ export default function Filters({ status, onStatusChange, search, onSearchChange
           />
           <input
             type="text"
-            placeholder="Buscar postulante..."
+            placeholder="Search applicants..."
             className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -56,7 +56,7 @@ export default function Filters({ status, onStatusChange, search, onSearchChange
           onClick={() => onStatusChange("")}
         >
           <RotateCcw size={18} />
-          Limpiar filtros
+          Clear filters
         </Button>
       </div>
     </div>

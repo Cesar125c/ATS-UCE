@@ -28,7 +28,7 @@ export default function VacancyTable({ onRefresh, search = "" }: VacancyTablePro
   if (loading && vacancies.length === 0) {
     return (
       <Card className="overflow-hidden p-0">
-        <div className="px-6 py-12 text-center text-slate-500">Cargando vacantes...</div>
+        <div className="px-6 py-12 text-center text-slate-500">Loading vacancies...</div>
       </Card>
     );
   }
@@ -39,23 +39,23 @@ export default function VacancyTable({ onRefresh, search = "" }: VacancyTablePro
         <thead className="bg-slate-50 border-b">
           <tr className="text-left text-sm text-slate-600">
             <th className="px-6 py-4 font-semibold">ID</th>
-            <th className="px-6 py-4 font-semibold">Título del Cargo</th>
-            <th className="px-6 py-4 font-semibold">Facultad</th>
-            <th className="px-6 py-4 font-semibold">Estado</th>
-            <th className="px-6 py-4 font-semibold text-right">Acciones</th>
+            <th className="px-6 py-4 font-semibold">Position Title</th>
+            <th className="px-6 py-4 font-semibold">Faculty</th>
+            <th className="px-6 py-4 font-semibold">Status</th>
+            <th className="px-6 py-4 font-semibold text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {vacancies.length === 0 && !search ? (
             <tr>
               <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                No hay vacantes registradas. Crea la primera usando el botón "Nueva Vacante".
+                No vacancies registered. Create the first one using the "New Vacancy" button.
               </td>
             </tr>
           ) : filtered.length === 0 ? (
             <tr>
               <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                No se encontraron vacantes para "{search}".
+                No vacancies found for "{search}".
               </td>
             </tr>
           ) : (

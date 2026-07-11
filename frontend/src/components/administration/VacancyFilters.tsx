@@ -28,7 +28,7 @@ export default function VacancyFilters({ search, onSearchChange, onNew }: Vacanc
 
           <input
             type="text"
-            placeholder="Buscar vacante por título o facultad..."
+            placeholder="Search vacancy by title or faculty..."
             className="w-full rounded-lg border border-slate-300 py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-red-500"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -45,7 +45,7 @@ export default function VacancyFilters({ search, onSearchChange, onNew }: Vacanc
 
           <Filter size={18} />
 
-          Filtros
+          Filters
 
         </Button>
 
@@ -60,7 +60,7 @@ export default function VacancyFilters({ search, onSearchChange, onNew }: Vacanc
 
         <Plus size={18} />
 
-        Nueva Vacante
+        New Vacancy
 
       </Button>
 

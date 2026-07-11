@@ -37,7 +37,7 @@ export default function VacancyRow({ vacancy, onDeleted }: VacancyRowProps) {
       </td>
       <td className="px-6 py-5 text-slate-700">{vacancy.faculty}</td>
       <td className="px-6 py-5">
-        <VacancyStatus status={vacancy.is_active ? "Activa" : "Cerrada"} />
+        <VacancyStatus status={vacancy.is_active ? "Active" : "Closed"} />
       </td>
       <td className="px-6 py-5 text-right">
         <button

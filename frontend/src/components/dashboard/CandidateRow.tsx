@@ -7,14 +7,14 @@ import type { ApplicationRankingItem } from "@/services/dashboardService";
 import type { FlowStatus } from "@/types/application";
 
 const STATUS_LABEL: Record<string, string> = {
-  RECEIVED: "Recibido",
-  PROCESSING_AI: "Analizando IA",
-  HR_STAGE: "Revisión RRHH",
-  DEAN_STAGE: "Decano",
+  RECEIVED: "Received",
+  PROCESSING_AI: "AI Analysis",
+  HR_STAGE: "HR Review",
+  DEAN_STAGE: "Dean",
   RECTOR_STAGE: "Rector",
-  FINANCE_STAGE: "Financiero",
-  HIRED: "Seleccionado",
-  REJECTED: "Rechazado",
+  FINANCE_STAGE: "Finance",
+  HIRED: "Hired",
+  REJECTED: "Rejected",
 };
 
 const STATUS_VARIANT: Record<string, "blue" | "green" | "red" | "yellow" | "cyan"> = {
@@ -123,7 +123,7 @@ export default function CandidateRow({ item, onEvaluate }: CandidateRowProps) {
             size="sm"
             onClick={() => onEvaluate(item.id)}
           >
-            Evaluar
+            Evaluate
           </Button>
         </div>
       </td>
