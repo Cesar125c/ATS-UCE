@@ -8,8 +8,7 @@ import {
   submitApplication,
 } from "@/services/applicationService";
 import {
-  getAllApplications,
-  getApplicationsByStatus,
+  getApplications,
   getDashboardStats,
 } from "@/services/dashboardService";
 import {
@@ -32,6 +31,7 @@ export const queryKeys = {
     status?: string;
     page: number;
     pageSize: number;
+    search?: string;
   }) => ["applications", filters] as const,
 };
 
@@ -115,13 +115,11 @@ export function useApplications(filters: {
   status?: string;
   page: number;
   pageSize: number;
+  search?: string;
 }) {
   return useQuery({
     queryKey: queryKeys.applications(filters),
-    queryFn: () =>
-      filters.status
-        ? getApplicationsByStatus(filters.status, filters.page, filters.pageSize)
-        : getAllApplications(filters.page, filters.pageSize),
+    queryFn: () => getApplications(filters),
   });
 }
 
