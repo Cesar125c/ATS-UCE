@@ -112,7 +112,7 @@ class ProcessAIScoreUseCase:
         try:
             return await self._storage_adapter.download_file(cv_storage_key)
         except StorageError as exc:
-            logger.error("Failed to download PDF %s: %s", cv_storage_key, exc)
+            logger.error("Failed to download PDF from storage: %s", type(exc).__name__)
             return None
 
     async def _extract_text_from_pdf(self, pdf_bytes: bytes, application_id: UUID) -> str | None:
@@ -125,10 +125,8 @@ class ProcessAIScoreUseCase:
                 logger.warning("Empty text extracted from PDF for application %s", application_id)
                 return None
             return text
-        except Exception as exc:
-            logger.error(
-                "Failed to extract text from PDF for application %s: %s", application_id, exc
-            )
+        except Exception:
+            logger.exception("Failed to extract text from PDF for application %s", application_id)
             return None
 
     @staticmethod

@@ -33,6 +33,14 @@ alembic upgrade head
 uvicorn main:app --reload
 ```
 
+## Logging
+
+`LOG_LEVEL` controls the minimum backend log level emitted by the Python logging
+configuration. Valid values: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
+Recommended values: local/development `DEBUG`, QA `INFO`, production `INFO`.
+Do not include secrets, tokens, credentials, request bodies, or other sensitive
+data in logs. Logs are written to stdout/stderr and captured by Docker.
+
 ## Project Layout
 
 ```

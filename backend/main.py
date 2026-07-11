@@ -11,15 +11,18 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-import app.api.websocket  # noqa: F401 — registers connect/disconnect handlers on sio
+from app.api.middlewares.http_logging_middleware import HttpLoggingMiddleware
+from app.api.middlewares.request_id_middleware import RequestIdMiddleware
+from app.api.websocket import *  # noqa: F401
 from app.api.limiter import limiter
 from app.api.v1.router import router
 from app.domain.exceptions import DomainError
 from app.infrastructure.database.session import async_engine
+from app.infrastructure.logging import setup_logging
 from app.infrastructure.realtime.socketio_server import sio
 from config import get_settings
 
-logger = logging.getLogger("ats_uce")
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -31,12 +34,8 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    setup_logging()
     settings = get_settings()
-
-    logging.basicConfig(
-        level=getattr(logging, settings.log_level),
-        format="%(asctime)s  %(name)-16s  %(levelname)-8s  %(message)s",
-    )
     logger.info("Environment: %s", settings.app_env)
 
     app = FastAPI(
@@ -58,6 +57,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(HttpLoggingMiddleware)
+    app.add_middleware(RequestIdMiddleware)
 
     @app.exception_handler(RateLimitExceeded)
     async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:

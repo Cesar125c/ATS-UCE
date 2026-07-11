@@ -149,5 +149,5 @@ class OpenAIAnalysisAdapter:
         try:
             return await self.analyze_cv(cv_text, vacancy_title, vacancy_faculty)
         except RetryError as e:
-            logger.error(f"OpenAI unavailable after 3 attempts: {e}")
+            logger.error("OpenAI unavailable after 3 attempts", exc_info=True)
             raise OpenAIUnavailableError("OpenAI API unavailable after 3 attempts")
