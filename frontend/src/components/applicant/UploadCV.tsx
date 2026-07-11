@@ -5,6 +5,7 @@ import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { validateCVFile, ApplicationError } from "@/services/applicationService";
 import { useSubmitApplication, useVacancies } from "@/hooks/useAppQueries";
+import { extractTextFromPdf } from "@/utils/pdfExtractor";
 import type { ApplicationResponse } from "@/types/application";
 
 export default function UploadCV() {
@@ -14,6 +15,8 @@ export default function UploadCV() {
   const [selectedVacancyId, setSelectedVacancyId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ApplicationResponse | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedText, setExtractedText] = useState<string | null>(null);
   const {
     data: vacancies = [],
     isLoading: vacanciesLoading,
@@ -21,7 +24,20 @@ export default function UploadCV() {
   } = useVacancies();
   const submitApplicationMutation = useSubmitApplication();
 
-  const canSubmit = Boolean(selectedVacancyId && file);
+  const canSubmit = Boolean(selectedVacancyId && file && !isExtracting);
+
+  const startExtraction = async (pdfFile: File) => {
+    setIsExtracting(true);
+    setExtractedText(null);
+    try {
+      const text = await extractTextFromPdf(pdfFile);
+      setExtractedText(text);
+    } catch (e) {
+      console.warn("Wasm extraction failed, will fall back to server-side", e);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -35,6 +51,7 @@ export default function UploadCV() {
       }
       setError(null);
       setFile(droppedFile);
+      startExtraction(droppedFile);
     }
   }, []);
 
@@ -49,6 +66,7 @@ export default function UploadCV() {
       }
       setError(null);
       setFile(selectedFile);
+      startExtraction(selectedFile);
     }
   }, []);
 
@@ -61,6 +79,7 @@ export default function UploadCV() {
         vacancyId: selectedVacancyId,
         file,
         getToken,
+        extractedText: extractedText ?? undefined,
       });
       setResult(data);
     } catch (e) {
@@ -92,6 +111,7 @@ export default function UploadCV() {
               setResult(null);
               setFile(null);
               setSelectedVacancyId("");
+              setExtractedText(null);
             }}
           >
             Enviar otra postulación
@@ -187,6 +207,13 @@ export default function UploadCV() {
         className="hidden"
         onChange={handleFileSelect}
       />
+
+      {isExtracting && (
+        <p className="text-sm text-blue-600 mt-2 text-center flex items-center justify-center gap-1">
+          <span className="inline-block w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          Extrayendo texto con WebAssembly...
+        </p>
+      )}
 
       {error && (
         <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2">

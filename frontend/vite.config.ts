@@ -28,6 +28,9 @@ export default defineConfig({
       "@": path.resolve(dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ["pdfjs-dist"],
+  },
   plugins: [react(), tailwindcss()],
   test: {
     globals: true,

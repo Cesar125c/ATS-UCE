@@ -87,11 +87,13 @@ export function useSubmitApplication() {
       vacancyId,
       file,
       getToken,
+      extractedText,
     }: {
       vacancyId: string;
       file: File;
       getToken: () => Promise<string | null>;
-    }) => submitApplication(vacancyId, file, getToken),
+      extractedText?: string;
+    }) => submitApplication(vacancyId, file, getToken, extractedText),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.myApplications }),

@@ -42,6 +42,7 @@ export async function submitApplication(
   vacancyId: string,
   file: File,
   getToken: () => Promise<string | null>,
+  extractedText?: string,
 ): Promise<ApplicationResponse> {
   const validationError = validateCVFile(file);
   if (validationError) {
@@ -56,6 +57,9 @@ export async function submitApplication(
   const formData = new FormData();
   formData.append("vacancy_id", vacancyId);
   formData.append("cv_file", file, file.name);
+  if (extractedText) {
+    formData.append("extracted_text", extractedText);
+  }
 
   const response = await fetch(buildApiUrl("/api/v1/applications/"), {
     method: "POST",
