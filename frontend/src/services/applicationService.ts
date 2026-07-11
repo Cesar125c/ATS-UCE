@@ -1,4 +1,6 @@
+import { z } from "zod";
 import type { ApplicationResponse } from "@/types/application";
+import { ApplicationResponseSchema } from "@/schemas/api";
 import { apiFetch, buildApiUrl } from "./api";
 
 const MAX_CV_SIZE_BYTES = 10_485_760; // 10 MB
@@ -86,10 +88,15 @@ export async function submitApplication(
     throw new ApplicationError(response.status, buildSpanishMessage(response.status, detail));
   }
 
-  return response.json() as Promise<ApplicationResponse>;
+  const data = await response.json();
+  return ApplicationResponseSchema.parse(data);
 }
 
 export async function getMyApplicationStatus(): Promise<ApplicationResponse[]> {
-  const data = await apiFetch<{ applications: ApplicationResponse[] }>("/api/v1/applicants/me/status");
+  const data = await apiFetch<{ applications: ApplicationResponse[] }>(
+    "/api/v1/applicants/me/status",
+    undefined,
+    z.object({ applications: z.array(ApplicationResponseSchema) }),
+  );
   return data.applications ?? [];
 }

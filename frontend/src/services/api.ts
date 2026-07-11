@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 let _getToken: (() => Promise<string | null>) | null = null;
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -27,6 +29,7 @@ export class ApiError extends Error {
 export async function apiFetch<T>(
   input: RequestInfo | URL,
   init?: RequestInit,
+  schema?: z.ZodType<T>,
 ): Promise<T> {
   const token = _getToken ? await _getToken() : null;
 
@@ -74,5 +77,11 @@ export async function apiFetch<T>(
     throw new ApiError(res.status, detail || res.statusText);
   }
 
-  return res.json() as Promise<T>;
+  const data = await res.json();
+
+  if (schema) {
+    return schema.parse(data);
+  }
+
+  return data as T;
 }
