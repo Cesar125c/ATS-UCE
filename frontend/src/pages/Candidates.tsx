@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApplications } from "@/hooks/useAppQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 import CandidateTable from "../components/dashboard/CandidateTable";
 import EvaluationModal from "../components/dashboard/EvaluationModal";
 import Filters from "../components/dashboard/Filters";
@@ -11,10 +12,13 @@ export default function Candidates() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [evaluatingAppId, setEvaluatingAppId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const applicationsQuery = useApplications({
     status: status || undefined,
     page,
     pageSize,
+    search: debouncedSearch || undefined,
   });
   const applications = applicationsQuery.data;
 
@@ -35,6 +39,11 @@ export default function Candidates() {
         status={status}
         onStatusChange={(s) => {
           setStatus(s);
+          setPage(1);
+        }}
+        search={search}
+        onSearchChange={(s) => {
+          setSearch(s);
           setPage(1);
         }}
       />
