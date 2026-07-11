@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import logging
 
+from sqlalchemy import select
+
+from app.infrastructure.database.models.user_model import UserModel
+from app.infrastructure.database.session import AsyncSessionLocal
 from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 from app.infrastructure.realtime.socketio_server import sio
 from config import get_settings
@@ -11,6 +15,15 @@ from config import get_settings
 logger = logging.getLogger(__name__)
 
 ALLOWED_ROLES = {"human_resources", "authorities"}
+
+
+async def _resolve_role_from_local_db(user_id: str) -> str:
+    if not user_id:
+        return ""
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(UserModel.role).where(UserModel.clerk_id == user_id))
+        return result.scalar_one_or_none() or ""
 
 
 @sio.event
@@ -39,6 +52,13 @@ async def connect(sid: str, environ: dict, auth: dict | None) -> bool:
         return False
 
     role = claims.get("role", "")
+    if not role:
+        try:
+            role = await _resolve_role_from_local_db(claims.get("user_id", ""))
+        except Exception:
+            logger.warning("WebSocket connect rejected — role fallback failed (sid=%s)", sid)
+            return False
+
     if role not in ALLOWED_ROLES:
         logger.warning("WebSocket connect rejected — role '%s' not allowed (sid=%s)", role, sid)
         return False
