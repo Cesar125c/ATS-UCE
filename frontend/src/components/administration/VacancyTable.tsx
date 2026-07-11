@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Card from "../ui/Card";
 import VacancyRow from "./VacancyRow";
 import { useVacancies } from "@/hooks/useAppQueries";
@@ -5,10 +6,24 @@ import { useVacancies } from "@/hooks/useAppQueries";
 interface VacancyTableProps {
   refreshKey?: number;
   onRefresh?: () => void;
+  search?: string;
 }
 
-export default function VacancyTable({ onRefresh }: VacancyTableProps) {
+export default function VacancyTable({ onRefresh, search = "" }: VacancyTableProps) {
   const { data: vacancies = [], isLoading: loading } = useVacancies();
+
+  const filtered = useMemo(
+    () => {
+      if (!search) return vacancies;
+      const q = search.toLowerCase();
+      return vacancies.filter(
+        (v) =>
+          v.title.toLowerCase().includes(q) ||
+          v.faculty.toLowerCase().includes(q),
+      );
+    },
+    [vacancies, search],
+  );
 
   if (loading && vacancies.length === 0) {
     return (
@@ -31,14 +46,20 @@ export default function VacancyTable({ onRefresh }: VacancyTableProps) {
           </tr>
         </thead>
         <tbody>
-          {vacancies.length === 0 ? (
+          {vacancies.length === 0 && !search ? (
             <tr>
               <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                 No hay vacantes registradas. Crea la primera usando el botón "Nueva Vacante".
               </td>
             </tr>
+          ) : filtered.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                No se encontraron vacantes para "{search}".
+              </td>
+            </tr>
           ) : (
-            vacancies.map((v) => <VacancyRow key={v.id} vacancy={v} onDeleted={onRefresh} />)
+            filtered.map((v) => <VacancyRow key={v.id} vacancy={v} onDeleted={onRefresh} />)
           )}
         </tbody>
       </table>

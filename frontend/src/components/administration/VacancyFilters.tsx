@@ -6,9 +6,11 @@ import {
 
 import Button from "../ui/Button";
 interface VacancyFiltersProps {
+  search: string;
+  onSearchChange: (s: string) => void;
   onNew: () => void;
 }
-export default function VacancyFilters({ onNew }: VacancyFiltersProps) {
+export default function VacancyFilters({ search, onSearchChange, onNew }: VacancyFiltersProps) {
   
   return (
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
@@ -28,6 +30,8 @@ export default function VacancyFilters({ onNew }: VacancyFiltersProps) {
             type="text"
             placeholder="Buscar vacante por título o facultad..."
             className="w-full rounded-lg border border-slate-300 py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-red-500"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
           />
 
         </div>
