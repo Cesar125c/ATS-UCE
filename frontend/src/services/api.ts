@@ -70,7 +70,14 @@ export async function apiFetch<T>(
     let detail = "";
     try {
       const body = await res.json();
-      detail = body.detail || body.message || "";
+      const raw = body.detail || body.message || "";
+      if (Array.isArray(raw)) {
+        detail = raw.map((e: { msg: string }) => e.msg).join("; ");
+      } else if (typeof raw === "string") {
+        detail = raw;
+      } else {
+        detail = String(raw);
+      }
     } catch {
       // body may not be JSON
     }
