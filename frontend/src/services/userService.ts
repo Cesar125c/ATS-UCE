@@ -77,7 +77,7 @@ export async function createUserWithRole(
     });
     return { clerkUserId, ...roleData };
   } catch {
-    throw new Error("Error al asignar el rol del usuario");
+    throw new Error("Failed to assign the user role");
   }
 }
 
@@ -94,7 +94,7 @@ export async function assignUserRole(clerkUserId: string, role: string, email: s
       }),
     });
   } catch {
-    throw new Error("Error al asignar el rol del usuario");
+    throw new Error("Failed to assign the user role");
   }
 }
 
@@ -131,6 +131,6 @@ export async function handleOAuthUser(user: UserResource) {
     });
     return { clerkUserId, role };
   } catch {
-    throw new Error("Error al asignar el rol del usuario");
+    throw new Error("Failed to assign the user role");
   }
 }

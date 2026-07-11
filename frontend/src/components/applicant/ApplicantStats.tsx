@@ -7,23 +7,23 @@ import Card from "../ui/Card";
 
 const stats = [
   {
-    title: "Postulaciones Activas",
+    title: "Active Applications",
     value: "03",
-    subtitle: "+1 esta semana",
+    subtitle: "+1 this week",
     icon: Briefcase,
     color: "bg-blue-100 text-blue-600",
   },
   {
-    title: "Etapa Actual",
-    value: "Revisión RRHH",
+    title: "Current Stage",
+    value: "HR Review",
     subtitle: "",
     icon: ClipboardCheck,
     color: "bg-cyan-100 text-cyan-600",
   },
   {
-    title: "Score Promedio IA",
+    title: "Average AI Score",
     value: "88/100",
-    subtitle: "Top 5% de candidatos",
+    subtitle: "Top 5% of candidates",
     icon: BrainCircuit,
     color: "bg-sky-100 text-sky-600",
   },

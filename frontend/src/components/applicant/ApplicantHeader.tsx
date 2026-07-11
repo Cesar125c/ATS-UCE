@@ -8,12 +8,12 @@ export default function ApplicantHeader() {
       <div>
 
         <h1 className="text-3xl font-bold text-slate-900">
-          Portal del Postulante
+          Applicant Portal
         </h1>
 
         <p className="text-slate-500 mt-2">
-          Carga tu CV y sigue el estado de tu postulación en tiempo real mediante
-          nuestro sistema de IA.
+          Upload your CV and track your application status in real time through
+          our AI system.
         </p>
 
       </div>
@@ -24,7 +24,7 @@ export default function ApplicantHeader() {
       >
         <Download size={18} />
 
-        Descargar Guía
+        Download Guide
 
       </Button>
 

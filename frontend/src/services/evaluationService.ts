@@ -35,7 +35,7 @@ export class EvaluationError extends Error {
 
 export function validateEvaluation(data: EvaluationRequest): string | null {
   if (data.decision === "REJECTED" && !data.observations.trim()) {
-    return "Las observaciones son requeridas cuando se rechaza un candidato.";
+    return "Observations are required when rejecting a candidate.";
   }
   return null;
 }

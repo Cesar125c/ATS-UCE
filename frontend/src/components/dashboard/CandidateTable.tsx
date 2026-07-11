@@ -13,10 +13,10 @@ export default function CandidateTable({ items, loading, onEvaluate }: Candidate
     return (
       <Card className="p-0 overflow-hidden">
         <div className="px-6 py-5 border-b">
-          <h2 className="text-xl font-semibold">Ranking de Postulantes</h2>
-          <p className="text-sm text-slate-500 mt-1">Postulantes evaluados por IA, ordenados por puntaje.</p>
+          <h2 className="text-xl font-semibold">Applicant Ranking</h2>
+          <p className="text-sm text-slate-500 mt-1">Applicants evaluated by AI, ordered by score.</p>
         </div>
-        <div className="px-6 py-12 text-center text-slate-500">Cargando...</div>
+        <div className="px-6 py-12 text-center text-slate-500">Loading...</div>
       </Card>
     );
   }
@@ -24,19 +24,19 @@ export default function CandidateTable({ items, loading, onEvaluate }: Candidate
   return (
     <Card className="p-0 overflow-hidden">
       <div className="px-6 py-5 border-b">
-        <h2 className="text-xl font-semibold">Ranking de Postulantes</h2>
-        <p className="text-sm text-slate-500 mt-1">Postulantes evaluados por IA, ordenados por puntaje.</p>
+        <h2 className="text-xl font-semibold">Applicant Ranking</h2>
+        <p className="text-sm text-slate-500 mt-1">Applicants evaluated by AI, ordered by score.</p>
       </div>
 
       <table className="w-full">
         <thead className="bg-slate-50">
           <tr className="text-left text-sm text-slate-600">
-            <th className="px-6 py-3">Postulante</th>
-            <th className="px-6 py-3">Vacante</th>
-            <th className="px-6 py-3">Facultad</th>
-            <th className="px-6 py-3">Puntaje</th>
-            <th className="px-6 py-3">Estado</th>
-            <th className="px-6 py-3">Acciones</th>
+            <th className="px-6 py-3">Applicant</th>
+            <th className="px-6 py-3">Vacancy</th>
+            <th className="px-6 py-3">Faculty</th>
+            <th className="px-6 py-3">Score</th>
+            <th className="px-6 py-3">Status</th>
+            <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
 
@@ -53,7 +53,7 @@ export default function CandidateTable({ items, loading, onEvaluate }: Candidate
 
       {items.length === 0 && (
         <div className="px-6 py-12 text-center text-slate-500">
-          No hay postulaciones para este filtro.
+          No applications match this filter.
         </div>
       )}
     </Card>
