@@ -10,6 +10,8 @@ import {
 import {
   getApplications,
   getDashboardStats,
+  getApplicationTrend,
+  getApplicationHistory,
 } from "@/services/dashboardService";
 import {
   createVacancy,
@@ -33,6 +35,8 @@ export const queryKeys = {
     pageSize: number;
     search?: string;
   }) => ["applications", filters] as const,
+  applicationTrend: ["application-trend"] as const,
+  applicationHistory: (id: string) => ["application-history", id] as const,
 };
 
 function hasProcessingApplication(applications?: ApplicationResponse[]) {
@@ -141,5 +145,20 @@ export function useSubmitEvaluation() {
         queryClient.invalidateQueries({ queryKey: queryKeys.myApplications }),
       ]);
     },
+  });
+}
+
+export function useApplicationTrend(months = 6) {
+  return useQuery({
+    queryKey: queryKeys.applicationTrend,
+    queryFn: () => getApplicationTrend(months),
+  });
+}
+
+export function useApplicationHistory(applicationId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.applicationHistory(applicationId ?? ""),
+    queryFn: () => getApplicationHistory(applicationId!),
+    enabled: !!applicationId,
   });
 }

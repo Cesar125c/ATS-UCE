@@ -5,7 +5,10 @@ import {
   ApplicationListResponseSchema,
   ApplicationRankingItemSchema,
   PresignedUrlSchema,
+  StatusHistorySchema,
+  MonthlyTrendSchema,
 } from "@/schemas/api";
+import type { StatusHistoryDTO } from "@/types/application";
 
 export type DashboardStats = z.infer<typeof DashboardStatsSchema>;
 export type ApplicationRankingItem = z.infer<typeof ApplicationRankingItemSchema>;
@@ -40,4 +43,22 @@ export async function getApplicationCVUrl(storageKey: string): Promise<string> {
     PresignedUrlSchema,
   );
   return data.url;
+}
+
+export type MonthlyTrend = z.infer<typeof MonthlyTrendSchema>;
+
+export async function getApplicationTrend(months = 6): Promise<MonthlyTrend[]> {
+  return apiFetch<MonthlyTrend[]>(
+    `/api/v1/dashboard/applications-trend?months=${months}`,
+    undefined,
+    z.array(MonthlyTrendSchema),
+  );
+}
+
+export async function getApplicationHistory(applicationId: string): Promise<StatusHistoryDTO[]> {
+  return apiFetch<StatusHistoryDTO[]>(
+    `/api/v1/applications/${applicationId}/history`,
+    undefined,
+    z.array(StatusHistorySchema),
+  );
 }
