@@ -89,6 +89,7 @@ async def submit_application(
     request: Request,
     vacancy_id: UUID = Form(...),
     cv_file: UploadFile = File(...),
+    extracted_text: str | None = Form(None),
     current_user: dict = Depends(require_role(["applicant"])),
     use_case: SubmitApplicationUseCase = Depends(get_submit_application_usecase),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
@@ -109,7 +110,7 @@ async def submit_application(
     application = await use_case.execute(applicant.id, vacancy_id, contents)
 
     # Fire-and-forget AI scoring in a truly independent task
-    _asyncio.create_task(process_ai_score_task(application.id))
+    _asyncio.create_task(process_ai_score_task(application.id, extracted_text=extracted_text))
 
     return {
         "id": str(application.id),

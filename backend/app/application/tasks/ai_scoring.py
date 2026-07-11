@@ -14,7 +14,10 @@ from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyR
 logger = logging.getLogger("ats_uce")
 
 
-async def process_ai_score_task(application_id: UUID):
+async def process_ai_score_task(
+    application_id: UUID,
+    extracted_text: str | None = None,
+):
     """Background task for AI scoring of applications.
     Retries up to 3 times with increasing delay to handle the race condition
     where the submit transaction hasn't committed yet.
@@ -35,6 +38,7 @@ async def process_ai_score_task(application_id: UUID):
                 storage_adapter,
                 email_service,
                 realtime_notifier,
+                extracted_text=extracted_text,
             )
             try:
                 await use_case.execute(application_id)

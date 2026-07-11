@@ -27,6 +27,7 @@ class ProcessAIScoreUseCase:
         storage_adapter: BackblazeStorageAdapter = None,
         email_service: EmailService = None,
         realtime_notifier=None,
+        extracted_text: str | None = None,
     ) -> None:
         self._application_repo = application_repo
         self._vacancy_repo = vacancy_repo
@@ -34,6 +35,7 @@ class ProcessAIScoreUseCase:
         self._storage_adapter = storage_adapter
         self._email_service = email_service
         self._realtime_notifier = realtime_notifier
+        self._pre_extracted_text = extracted_text
 
     async def execute(self, application_id: UUID) -> None:
         # 1. Update status to PROCESSING_AI
@@ -44,11 +46,15 @@ class ProcessAIScoreUseCase:
         if pdf_bytes is None:
             return  # Storage failure already logged
 
-        # 3. Extract text from PDF
-        text = await self._extract_text_from_pdf(pdf_bytes, application.id)
-        if text is None or not text.strip():
-            await self._reject_application(application, "CV_NOT_READABLE")
-            return
+        # 3. Extract text from PDF (use Wasm pre-extracted text if available)
+        if self._pre_extracted_text:
+            text = self._pre_extracted_text
+            logger.info("Using pre-extracted text (Wasm) for application %s", application.id)
+        else:
+            text = await self._extract_text_from_pdf(pdf_bytes, application.id)
+            if text is None or not text.strip():
+                await self._reject_application(application, "CV_NOT_READABLE")
+                return
 
         # 4. Fetch vacancy for prompt context
         vacancy = await self._vacancy_repo.find_by_id(application.vacancy_id)
