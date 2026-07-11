@@ -1,4 +1,5 @@
 import * as pdfjsLib from "pdfjs-dist";
+import type { TextItem } from "pdfjs-dist";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -13,7 +14,10 @@ export async function extractTextFromPdf(file: File): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const text = content.items.map((item: any) => item.str).join(" ");
+    const text = content.items
+      .filter((item): item is TextItem => "str" in item)
+      .map((item) => item.str)
+      .join(" ");
     pages.push(text);
   }
 

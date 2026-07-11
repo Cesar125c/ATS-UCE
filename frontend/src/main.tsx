@@ -8,12 +8,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.tsx";
 import "./index.css";
 import { queryClient } from "./lib/queryClient";
-import { useSocket } from "./hooks/useSocket";
-
-function SocketInitializer() {
-  useSocket();
-  return null;
-}
+import { SocketInitializer } from "./components/SocketInitializer";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
