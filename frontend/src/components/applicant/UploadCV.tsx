@@ -6,6 +6,7 @@ import Button from "../ui/Button";
 import { validateCVFile, ApplicationError } from "@/services/applicationService";
 import { useSubmitApplication, useVacancies } from "@/hooks/useAppQueries";
 import { extractTextFromPdf } from "@/utils/pdfExtractor";
+import { logger } from "@/lib/logger";
 import type { ApplicationResponse } from "@/types/application";
 
 export default function UploadCV() {
@@ -33,7 +34,11 @@ export default function UploadCV() {
       const text = await extractTextFromPdf(pdfFile);
       setExtractedText(text);
     } catch (e) {
-      console.warn("Wasm extraction failed, will fall back to server-side", e);
+      logger.warn("PDF WebAssembly extraction fallback", {
+        component: "UploadCV",
+        operation: "pdf_wasm_fallback",
+        errorType: e instanceof Error ? e.name : typeof e,
+      });
     } finally {
       setIsExtracting(false);
     }
