@@ -19,13 +19,13 @@ export default function UploadNotice() {
         <div>
 
           <h4 className="font-semibold text-slate-800">
-            Formato requerido
+            Required format
           </h4>
 
           <p className="text-sm text-slate-600 mt-1">
-            PDF únicamente. Tamaño máximo de 10 MB.
-            Tu CV será analizado automáticamente para agilizar el
-            proceso de validación administrativa.
+            PDF only. Maximum size of 10 MB.
+            Your CV will be analyzed automatically to speed up the
+            administrative validation process.
           </p>
 
         </div>

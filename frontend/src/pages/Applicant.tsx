@@ -1,3 +1,4 @@
+import { useState } from "react";
 import PortalLayout from "../components/layout/PortalLayout";
 
 import ApplicantHeader from "../components/applicant/ApplicantHeader";
@@ -10,6 +11,8 @@ import ApplicationHistory from "../components/applicant/ApplicationHistory";
 import HelpCards from "../components/applicant/HelpCards";
 
 export default function Applicant() {
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+
   return (
     <PortalLayout>
       <ApplicantHeader />
@@ -21,8 +24,8 @@ export default function Applicant() {
         </div>
         <AIAnalysis />
       </div>
-      <ApplicationStatus />
-      <ApplicationHistory />
+      <ApplicationStatus applicationId={selectedAppId} />
+      <ApplicationHistory selectedId={selectedAppId} onSelect={setSelectedAppId} />
       <HelpCards />
     </PortalLayout>
   );

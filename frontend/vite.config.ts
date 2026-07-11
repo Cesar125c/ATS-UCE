@@ -21,12 +21,19 @@ export default defineConfig({
         target: 'http://api:8000',
         changeOrigin: true,
       },
+      '/ws': {
+        target: 'http://api:8000',
+        ws: true,
+      },
     },
   },
   resolve: {
     alias: {
       "@": path.resolve(dirname, "./src"),
     },
+  },
+  optimizeDeps: {
+    include: ["pdfjs-dist"],
   },
   plugins: [react(), tailwindcss()],
   test: {

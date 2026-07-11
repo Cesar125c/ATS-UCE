@@ -89,3 +89,10 @@ curl -f https://talentpath.uce.edu.ec/api/v1/vacancies/
 ## Red
 
 Todos los servicios comparten la red default de Docker Compose. Nginx expone el puerto 80 al host.
+
+### WebSocket Support
+
+The uvicorn CMD now serves `main:asgi_app` (a `socketio.ASGIApp` wrapper) instead of
+`main:app` directly. This enables real-time dashboard notifications via Socket.IO on
+`/ws/socket.io/`. Nginx must proxy `/ws/` with `Upgrade`/`Connection` headers
+for WebSocket to work through the reverse proxy.

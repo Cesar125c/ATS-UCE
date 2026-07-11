@@ -1,5 +1,5 @@
 interface VacancyStatusProps {
-  status: "Activa" | "Pausada" | "Cerrada";
+  status: "Active" | "Paused" | "Closed";
 }
 
 export default function VacancyStatus({
@@ -7,13 +7,13 @@ export default function VacancyStatus({
 }: VacancyStatusProps) {
 
   const styles = {
-    Activa:
+    Active:
       "bg-green-100 text-green-700 border-green-200",
 
-    Pausada:
+    Paused:
       "bg-yellow-100 text-yellow-700 border-yellow-200",
 
-    Cerrada:
+    Closed:
       "bg-slate-100 text-slate-600 border-slate-200",
   };
 
