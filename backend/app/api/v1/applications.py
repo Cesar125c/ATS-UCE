@@ -98,10 +98,7 @@ async def get_application_history(
     history = await repo.find_status_history_by_application_id(id)
     if not history:
         raise HTTPException(404, detail="Application not found")
-    return [
-        StatusHistoryDTO(status=h.status, transitioned_at=h.transitioned_at)
-        for h in history
-    ]
+    return [StatusHistoryDTO(status=h.status, transitioned_at=h.transitioned_at) for h in history]
 
 
 @router.post("/", status_code=201)
