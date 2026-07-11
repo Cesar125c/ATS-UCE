@@ -1,7 +1,7 @@
 import { Users, TrendingUp, Clock3, CheckCircle2, BarChart3, PieChart, FileText } from "lucide-react";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import Card from "../components/ui/Card";
-import { useDashboardStats } from "@/hooks/useAppQueries";
+import { useDashboardStats, useApplicationTrend } from "@/hooks/useAppQueries";
 import {
   ResponsiveContainer,
   LineChart,
@@ -19,17 +19,9 @@ import {
 
 const COLORS = ["#dc2626", "#f59e0b", "#0ea5e9", "#22c55e"];
 
-const trendData = [
-  { month: "Jan", applications: 32 },
-  { month: "Feb", applications: 48 },
-  { month: "Mar", applications: 56 },
-  { month: "Apr", applications: 44 },
-  { month: "May", applications: 63 },
-  { month: "Jun", applications: 81 },
-];
-
 export default function Reports() {
   const { data: stats } = useDashboardStats();
+  const { data: trendData = [] } = useApplicationTrend();
 
   const pieData = stats
     ? [

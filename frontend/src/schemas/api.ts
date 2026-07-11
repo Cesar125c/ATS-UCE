@@ -76,6 +76,11 @@ export const DashboardStatsSchema = z.object({
   completed: z.number(),
 });
 
+export const MonthlyTrendSchema = z.object({
+  month: z.string(),
+  applications: z.number(),
+});
+
 export const VacancySchema = z.object({
   id: z.string(),
   title: z.string(),
