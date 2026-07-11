@@ -21,6 +21,10 @@ export default defineConfig({
         target: 'http://api:8000',
         changeOrigin: true,
       },
+      '/ws': {
+        target: 'http://api:8000',
+        ws: true,
+      },
     },
   },
   resolve: {

@@ -8,6 +8,12 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.tsx";
 import "./index.css";
 import { queryClient } from "./lib/queryClient";
+import { useSocket } from "./hooks/useSocket";
+
+function SocketInitializer() {
+  useSocket();
+  return null;
+}
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -16,6 +22,7 @@ const app = (
     {PUBLISHABLE_KEY ? (
       <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
         <QueryClientProvider client={queryClient}>
+          <SocketInitializer />
           <BrowserRouter>
             <App />
           </BrowserRouter>
