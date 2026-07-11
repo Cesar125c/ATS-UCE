@@ -26,6 +26,7 @@ async def list_applications(
     status: str | None = Query(None),
     faculty: str | None = Query(None),
     min_score: float | None = Query(None, ge=0, le=100),
+    search: str | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     _user: dict = Depends(require_role(["human_resources", "authorities"])),
@@ -36,6 +37,7 @@ async def list_applications(
         status=status,
         faculty=faculty,
         min_score=min_score,
+        search=search,
         page=page,
         page_size=page_size,
     )
