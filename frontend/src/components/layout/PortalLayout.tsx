@@ -80,6 +80,14 @@ export default function PortalLayout({ children, applicant = false }: PortalLayo
           <main className="px-4 py-7 sm:px-6 lg:px-10">
             <div className="max-w-5xl mx-auto">{children}</div>
           </main>
+          {userMenuOpen && (
+            <button
+              type="button"
+              aria-label="Close user menu"
+              className="fixed inset-0 z-40 cursor-default"
+              onClick={() => setUserMenuOpen(false)}
+            />
+          )}
         </div>
       </div>
     );
