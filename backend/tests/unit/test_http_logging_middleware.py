@@ -10,6 +10,21 @@ from app.api.middlewares.request_id_middleware import RequestIdMiddleware
 LOGGER_NAME = "app.api.middlewares.http_logging_middleware"
 
 
+@pytest.fixture(autouse=True)
+def capture_http_logger(caplog: pytest.LogCaptureFixture):
+    logger = logging.getLogger(LOGGER_NAME)
+    previous_handlers = list(logger.handlers)
+    previous_propagate = logger.propagate
+
+    logger.handlers = [caplog.handler]
+    logger.propagate = False
+    try:
+        yield
+    finally:
+        logger.handlers = previous_handlers
+        logger.propagate = previous_propagate
+
+
 @pytest.fixture
 async def client() -> AsyncClient:
     app = FastAPI()
