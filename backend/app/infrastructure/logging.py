@@ -2,16 +2,19 @@ import contextvars
 import logging
 import logging.config
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from config import get_settings
 
 request_id_var = contextvars.ContextVar("request_id", default="-")
+
 
 class AppLoggingFilter(logging.Filter):
     """
     Filter to inject default fields into log records to avoid KeyError
     when using the custom structured formatting.
     """
+
     def filter(self, record):
         if not hasattr(record, "request_id"):
             record.request_id = request_id_var.get("-")
@@ -28,16 +31,19 @@ class AppLoggingFilter(logging.Filter):
                 record.duracion_ms = f"{record.duracion_ms:.1f}ms"
         return True
 
+
 class ISO8601Formatter(logging.Formatter):
     """
     Formatter to output timestamps in YYYY-MM-DDTHH:MM:SS.sssZ format (UTC).
     """
-    def __init__(self, fmt=None, datefmt=None, style='%', validate=True):
+
+    def __init__(self, fmt=None, datefmt=None, style="%", validate=True):
         super().__init__(fmt=fmt, datefmt=datefmt, style=style, validate=validate)
 
     def formatTime(self, record, datefmt=None):
-        dt = datetime.fromtimestamp(record.created, timezone.utc)
+        dt = datetime.fromtimestamp(record.created, UTC)
         return dt.strftime("%Y-%m-%dT%H:%M:%S") + f".{int(record.msecs):03d}Z"
+
 
 def setup_logging():
     """
@@ -57,7 +63,11 @@ def setup_logging():
         "formatters": {
             "standard": {
                 "()": ISO8601Formatter,
-                "format": "%(asctime)s | %(levelname)-5s | [%(request_id)s] | [%(usuario_id)s] | [%(evento)s] | [%(endpoint)s] | %(message)s | %(duracion_ms)s",
+                "format": (
+                    "%(asctime)s | %(levelname)-5s | [%(request_id)s] | "
+                    "[%(usuario_id)s] | [%(evento)s] | [%(endpoint)s] | "
+                    "%(message)s | %(duracion_ms)s"
+                ),
             }
         },
         "handlers": {
@@ -98,13 +108,13 @@ def setup_logging():
                 "handlers": ["console"],
                 "propagate": False,
             },
-            # Uvicorn access logs (muted to WARNING, to prepare for our custom HTTP logging middleware)
+            # Uvicorn access logs muted to avoid duplicating custom HTTP request logs.
             "uvicorn.access": {
                 "level": "WARNING",
                 "handlers": ["console"],
                 "propagate": False,
             },
-        }
+        },
     }
 
     logging.config.dictConfig(logging_config)

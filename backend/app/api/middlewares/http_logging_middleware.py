@@ -6,7 +6,6 @@ from starlette.requests import Request
 
 from app.infrastructure.logging import request_id_var
 
-
 logger = logging.getLogger(__name__)
 
 

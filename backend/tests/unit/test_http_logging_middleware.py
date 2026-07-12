@@ -7,7 +7,6 @@ from httpx import ASGITransport, AsyncClient
 from app.api.middlewares.http_logging_middleware import HttpLoggingMiddleware
 from app.api.middlewares.request_id_middleware import RequestIdMiddleware
 
-
 LOGGER_NAME = "app.api.middlewares.http_logging_middleware"
 
 

@@ -6,9 +6,9 @@ import logging
 
 from sqlalchemy import select
 
+from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import AsyncSessionLocal
-from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 from app.infrastructure.realtime.socketio_server import sio
 from config import get_settings
 

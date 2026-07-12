@@ -11,10 +11,10 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from app.api import websocket as websocket_handlers  # noqa: F401
+from app.api.limiter import limiter
 from app.api.middlewares.http_logging_middleware import HttpLoggingMiddleware
 from app.api.middlewares.request_id_middleware import RequestIdMiddleware
-from app.api.websocket import *  # noqa: F401
-from app.api.limiter import limiter
 from app.api.v1.router import router
 from app.domain.exceptions import DomainError
 from app.infrastructure.database.session import async_engine

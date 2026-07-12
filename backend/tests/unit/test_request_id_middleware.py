@@ -7,7 +7,6 @@ from httpx import ASGITransport, AsyncClient
 from app.api.middlewares.request_id_middleware import RequestIdMiddleware
 from app.infrastructure.logging import request_id_var
 
-
 GENERATED_REQUEST_ID_PATTERN = re.compile(r"^req_[0-9a-f]{12}$")
 
 
