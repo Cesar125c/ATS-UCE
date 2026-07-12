@@ -68,8 +68,9 @@ class ClerkAuthAdapter:
     async def set_user_role(self, clerk_user_id: str, role: str) -> None:
         """Write role to Clerk user's publicMetadata via the Backend API."""
         if self._client is None:
-            logger.info("DEV: Would set role '%s' for Clerk user '%s'", role, clerk_user_id)
-            return
+            raise RuntimeError(
+                "CLERK_SECRET_KEY is not configured; cannot set Clerk publicMetadata"
+            )
 
         await self._client.users.update_metadata_async(
             user_id=clerk_user_id,
