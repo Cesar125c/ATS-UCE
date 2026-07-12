@@ -63,7 +63,7 @@ export async function submitApplication(
     formData.append("extracted_text", extractedText);
   }
 
-  const response = await fetch(buildApiUrl("/api/v1/applications/"), {
+  const response = await fetch(buildApiUrl("/api/v1/applications"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
