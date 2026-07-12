@@ -4,12 +4,10 @@ import {
   Users,
   Briefcase,
   BarChart3,
-  LogOut,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useClerk } from "@clerk/react";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/human-resources" },
@@ -19,12 +17,7 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
-  const { signOut } = useClerk();
   const [collapsed, setCollapsed] = useState(false);
-
-  const handleSignOut = async () => {
-    await signOut({ redirectUrl: "/" });
-  };
 
   return (
     <aside
@@ -78,20 +71,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-
-      {/* Bottom */}
-      <div className="border-t p-3 space-y-2">
-        <button
-          onClick={handleSignOut}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 ${
-            collapsed ? "justify-center" : ""
-          }`}
-          title={collapsed ? "Sign Out" : undefined}
-        >
-          <LogOut size={18} />
-          {!collapsed && "Sign Out"}
-        </button>
-      </div>
     </aside>
   );
 }
