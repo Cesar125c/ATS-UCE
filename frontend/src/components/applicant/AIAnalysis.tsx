@@ -42,11 +42,11 @@ const analysis = [
 
 export default function AIAnalysis() {
   return (
-    <Card className="p-6 h-full">
+    <Card className="p-6 h-full border border-slate-200 shadow-none">
 
       <div className="mb-6">
 
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-lg font-semibold">
           What does the AI analyze?
         </h2>
 
@@ -66,14 +66,14 @@ export default function AIAnalysis() {
 
             <div
               key={item.title}
-              className="flex gap-4"
+              className="flex gap-3"
             >
 
-              <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full border border-[#2369ad] flex items-center justify-center flex-shrink-0">
 
                 <Icon
-                  size={20}
-                  className="text-sky-600"
+                  size={16}
+                  className="text-[#174f8d]"
                 />
 
               </div>

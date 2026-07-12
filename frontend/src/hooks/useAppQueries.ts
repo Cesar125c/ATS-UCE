@@ -39,8 +39,10 @@ export const queryKeys = {
   applicationHistory: (id: string) => ["application-history", id] as const,
 };
 
-function hasProcessingApplication(applications?: ApplicationResponse[]) {
-  return applications?.some((app) => app.status === "PROCESSING_AI") ?? false;
+function hasActiveApplication(applications?: ApplicationResponse[]) {
+  return applications?.some(
+    (app) => app.status !== "HIRED" && app.status !== "REJECTED",
+  ) ?? false;
 }
 
 export function useVacancies() {
@@ -72,13 +74,13 @@ export function useDeleteVacancy() {
   });
 }
 
-export function useMyApplications(pollWhileProcessing = false) {
+export function useMyApplications(pollWhileActive = false) {
   return useQuery({
     queryKey: queryKeys.myApplications,
     queryFn: getMyApplicationStatus,
     refetchInterval: (query) => {
-      if (!pollWhileProcessing) return false;
-      return hasProcessingApplication(query.state.data) ? 10_000 : false;
+      if (!pollWhileActive) return false;
+      return hasActiveApplication(query.state.data) ? 10_000 : false;
     },
   });
 }

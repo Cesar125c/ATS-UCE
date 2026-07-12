@@ -9,6 +9,14 @@ import { extractTextFromPdf } from "@/utils/pdfExtractor";
 import { logger } from "@/lib/logger";
 import type { ApplicationResponse } from "@/types/application";
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 export default function UploadCV() {
   const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,7 +106,7 @@ export default function UploadCV() {
 
   if (result) {
     return (
-      <Card className="p-6 h-full">
+      <Card className="p-6 h-full border border-slate-200 shadow-none">
         <div className="flex flex-col items-center justify-center h-full text-center py-12">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
             <CheckCircle size={32} className="text-green-600" />
@@ -127,9 +135,9 @@ export default function UploadCV() {
   }
 
   return (
-    <Card className="p-6 h-full">
+    <Card className="p-6 h-full border border-slate-200 shadow-none">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-slate-950">
           Upload Curriculum Vitae
         </h2>
         <p className="text-sm text-slate-500 mt-1">
@@ -178,21 +186,21 @@ export default function UploadCV() {
             ? "border-green-400 bg-green-50"
             : error
               ? "border-red-400 bg-red-50"
-              : "border-slate-300 hover:border-red-400 hover:bg-red-50"
+              : "border-slate-300 hover:border-[#2369ad] hover:bg-blue-50/40"
         }`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
       >
-        <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-          <UploadCloud size={26} className="text-sky-500" />
+        <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center mb-4">
+          <UploadCloud size={26} className="text-[#174f8d]" />
         </div>
 
         {file ? (
           <>
             <h3 className="font-medium text-slate-700">{file.name}</h3>
             <p className="text-sm text-slate-500 mt-1">
-              {(file.size / 1024 / 1024).toFixed(1)} MB — Click to change
+              {formatFileSize(file.size)} — Click to change
             </p>
           </>
         ) : (
@@ -228,9 +236,9 @@ export default function UploadCV() {
       )}
 
       <Button
-        variant="danger"
+        variant="primary"
         fullWidth
-        className="mt-6 disabled:opacity-50"
+        className="mt-6 rounded-lg bg-[#174f8d] hover:bg-[#103e71] disabled:opacity-50"
         disabled={!canSubmit || submitApplicationMutation.isPending}
         isLoading={submitApplicationMutation.isPending}
         onClick={handleSubmit}

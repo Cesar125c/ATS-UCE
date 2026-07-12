@@ -1,31 +1,18 @@
-import { FileText } from "lucide-react";
+import { Info } from "lucide-react";
 import Card from "../ui/Card";
 
 export default function UploadNotice() {
   return (
-    <Card className="bg-cyan-50 border-cyan-200 p-4 mb-6">
+    <Card className="bg-[#eaf2fb] border border-[#aac5e2] shadow-none p-4 mb-6">
 
       <div className="flex gap-3 items-start">
 
-        <div className="bg-cyan-100 rounded-full p-2">
-
-          <FileText
-            size={18}
-            className="text-cyan-700"
-          />
-
-        </div>
+        <Info size={17} className="text-[#124f91] mt-0.5 shrink-0" />
 
         <div>
 
-          <h4 className="font-semibold text-slate-800">
-            Required format
-          </h4>
-
-          <p className="text-sm text-slate-600 mt-1">
-            PDF only. Maximum size of 10 MB.
-            Your CV will be analyzed automatically to speed up the
-            administrative validation process.
+          <p className="text-sm text-[#174f8d]">
+            <span className="font-semibold">Required format:</span> PDF only, maximum size 10 MB. Your CV will be analyzed automatically by our AI system.
           </p>
 
         </div>

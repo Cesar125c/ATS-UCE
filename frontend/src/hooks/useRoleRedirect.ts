@@ -8,9 +8,29 @@ const ROLE_PATH_MAP: Record<string, string> = {
   authorities: '/authority',
 }
 
+const ROLE_ALLOWED_PATHS: Record<string, string[]> = {
+  applicant: ['/applicant'],
+  human_resources: [
+    '/human-resources',
+    '/administrator',
+    '/candidates',
+    '/reports',
+  ],
+  authorities: ['/authority'],
+}
+
+function normalizePath(pathname: string): string {
+  return pathname.toLowerCase().replace(/\/$/, '') || '/'
+}
+
 function redirectToRole(role: string) {
   const targetPath = ROLE_PATH_MAP[role];
-  if (targetPath && window.location.pathname !== targetPath) {
+  const currentPath = normalizePath(window.location.pathname)
+  const allowedPaths = ROLE_ALLOWED_PATHS[role] ?? []
+
+  if (allowedPaths.includes(currentPath)) return
+
+  if (targetPath && currentPath !== targetPath) {
     window.location.replace(targetPath);
   }
 }
