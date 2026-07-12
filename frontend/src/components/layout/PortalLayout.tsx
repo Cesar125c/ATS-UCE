@@ -1,7 +1,30 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useReducer, type ReactNode } from "react";
 import { Bell, ChevronDown, GraduationCap, LogOut, Upload } from "lucide-react";
 import { useClerk, useUser } from "@clerk/react";
 import TopNavbar from "./TopNavbar";
+import { subscribe, getNotifications, getUnreadCount, markAllRead } from "@/lib/notificationStore";
+
+const STATUS_LABEL: Record<string, string> = {
+  RECEIVED: "Received",
+  PROCESSING_AI: "AI Analysis",
+  HR_STAGE: "HR Review",
+  DEAN_STAGE: "Dean Review",
+  RECTOR_STAGE: "Rector Review",
+  FINANCE_STAGE: "Finance Review",
+  HIRED: "Hired",
+  REJECTED: "Rejected",
+};
+
+function timeAgo(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
 
 interface PortalLayoutProps {
   children: ReactNode;
@@ -12,6 +35,19 @@ export default function PortalLayout({ children, applicant = false }: PortalLayo
   const { user } = useUser();
   const { signOut } = useClerk();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  const unread = getUnreadCount();
+  const notifs = getNotifications().slice(0, 10);
+
+  useEffect(() => subscribe(forceUpdate), []);
+
+  const handleBellClick = () => {
+    if (!notifOpen && unread > 0) markAllRead();
+    setNotifOpen((o) => !o);
+    setUserMenuOpen(false);
+  };
 
   if (applicant) {
     return (
@@ -47,7 +83,53 @@ export default function PortalLayout({ children, applicant = false }: PortalLayo
               <p className="text-[11px] text-slate-500">Upload your CV and follow your application</p>
             </div>
             <div className="flex items-center gap-4">
-              <Bell size={18} className="text-slate-600" />
+              <div className="relative">
+                <button onClick={handleBellClick} className="relative">
+                  <Bell size={18} className="text-slate-600" />
+                  {unread > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </button>
+
+                {notifOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="flex items-center justify-between px-4 py-3 border-b">
+                      <p className="text-sm font-semibold text-slate-800">Notifications</p>
+                      {unread > 0 && (
+                        <button
+                          onClick={() => { markAllRead(); forceUpdate(); }}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifs.length === 0 ? (
+                        <p className="p-4 text-sm text-slate-400 text-center">No notifications yet</p>
+                      ) : (
+                        notifs.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`px-4 py-3 border-b last:border-b-0 ${
+                              n.read ? "" : "bg-blue-50/50"
+                            }`}
+                          >
+                            <p className="text-sm text-slate-700">
+                              Application <span className="font-mono text-xs text-slate-400">{n.application_id.slice(0, 8)}</span>{" "}
+                              advanced to{" "}
+                              <span className="font-semibold">{STATUS_LABEL[n.new_status] || n.new_status}</span>
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">{timeAgo(n.timestamp)}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="relative">
                 <button
                   type="button"
@@ -85,7 +167,15 @@ export default function PortalLayout({ children, applicant = false }: PortalLayo
               type="button"
               aria-label="Close user menu"
               className="fixed inset-0 z-40 cursor-default"
-              onClick={() => setUserMenuOpen(false)}
+              onClick={() => { setUserMenuOpen(false); setNotifOpen(false); }}
+            />
+          )}
+          {notifOpen && !userMenuOpen && (
+            <button
+              type="button"
+              aria-label="Close notifications"
+              className="fixed inset-0 z-40 cursor-default"
+              onClick={() => setNotifOpen(false)}
             />
           )}
         </div>

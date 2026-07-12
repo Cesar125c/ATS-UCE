@@ -90,3 +90,15 @@ async def test_get_stats_returns_expected_shape(
     assert stats["total_applicants"] >= 1
     assert stats["avg_score"] > 0
     assert isinstance(stats["avg_score"], float)
+
+
+@pytest.mark.integration
+async def test_get_weekly_trend_returns_last_weeks_with_zero_filled_counts(
+    app_repo: SQLAApplicationRepository, saved_application: Application
+) -> None:
+    trend = await app_repo.get_weekly_trend(weeks=8)
+
+    assert len(trend) == 8
+    assert all(set(row.keys()) == {"period", "applications"} for row in trend)
+    assert all(isinstance(row["period"], str) for row in trend)
+    assert sum(row["applications"] for row in trend) >= 1

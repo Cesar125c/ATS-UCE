@@ -52,6 +52,7 @@ async def register(
         await adapter.set_user_role(body.clerk_user_id, body.role)
     except Exception as e:
         logger.warning("Failed to set Clerk publicMetadata role: %s", e)
+        raise HTTPException(status_code=502, detail="Failed to set role in Clerk metadata.") from e
 
     # Save user to database
     user = UserModel(

@@ -14,7 +14,7 @@ from config import get_settings
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_ROLES = {"human_resources", "authorities"}
+ALLOWED_ROLES = {"human_resources", "authorities", "applicant"}
 
 
 async def _resolve_role_from_local_db(user_id: str) -> str:
@@ -33,7 +33,7 @@ async def connect(sid: str, environ: dict, auth: dict | None) -> bool:
     Returns ``False`` to reject the connection when:
     - No token is provided
     - The token is invalid or expired
-    - The user's role is not ``human_resources`` or ``authorities``
+    - The user's role is not ``human_resources``, ``authorities``, or ``applicant``
     """
     if not auth or not auth.get("token"):
         logger.warning("WebSocket connect rejected — missing auth.token (sid=%s)", sid)
@@ -63,8 +63,11 @@ async def connect(sid: str, environ: dict, auth: dict | None) -> bool:
         logger.warning("WebSocket connect rejected — role '%s' not allowed (sid=%s)", role, sid)
         return False
 
+    clerk_id = claims.get("user_id", "")
     await sio.enter_room(sid, role)
-    logger.info("WebSocket client connected — sid=%s role=%s", sid, role)
+    if clerk_id:
+        await sio.enter_room(sid, f"user:{clerk_id}")
+    logger.info("WebSocket client connected — sid=%s role=%s room=user:%s", sid, role, clerk_id)
     return True
 
 

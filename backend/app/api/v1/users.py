@@ -1,4 +1,4 @@
-"""User management endpoints — profile retrieval and role assignment."""
+"""User management endpoints - profile retrieval and role assignment."""
 
 import logging
 
@@ -40,6 +40,19 @@ class SyncRoleRequest(BaseModel):
     clerkUserId: str
 
 
+async def _set_clerk_role_or_fail(clerk_user_id: str, role: str) -> None:
+    settings = get_settings()
+    adapter = ClerkAuthAdapter(settings)
+    try:
+        await adapter.set_user_role(clerk_user_id, role)
+    except Exception as exc:
+        logger.warning("Failed to set Clerk publicMetadata role: %s", exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to set role in Clerk metadata.",
+        ) from exc
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_me(
     current_user: dict = Depends(get_current_user),
@@ -60,30 +73,35 @@ async def set_user_role(
     request: SetRoleRequest,
     session: AsyncSession = Depends(get_db_session),
 ):
-    """Assign a role to a user during OAuth or email/password registration.
-    Sets Clerk publicMetadata and persists to the database.
-    Returns 409 if the user is already registered.
-    Role validation is handled by the Pydantic model (SetRoleRequest).
-    """
+    """Assign or repair a user's role in Clerk public metadata and local DB."""
     existing = await session.execute(
         select(UserModel).where(UserModel.clerk_id == request.clerkUserId)
     )
-    if existing.scalar_one_or_none() is not None:
-        raise HTTPException(status_code=409, detail="User already registered.")
+    existing_user = existing.scalar_one_or_none()
+    if existing_user is not None:
+        await _set_clerk_role_or_fail(request.clerkUserId, existing_user.role)
+        return {
+            "success": True,
+            "message": "User already registered; Clerk role metadata repaired",
+            "user_id": str(existing_user.id),
+            "role": existing_user.role,
+        }
 
     if request.email:
         existing_email = await session.execute(
             select(UserModel).where(UserModel.email == request.email)
         )
-        if existing_email.scalar_one_or_none() is not None:
-            raise HTTPException(status_code=409, detail="Email already registered.")
+        existing_email_user = existing_email.scalar_one_or_none()
+        if existing_email_user is not None:
+            await _set_clerk_role_or_fail(existing_email_user.clerk_id, existing_email_user.role)
+            return {
+                "success": True,
+                "message": "Email already registered; Clerk role metadata repaired",
+                "user_id": str(existing_email_user.id),
+                "role": existing_email_user.role,
+            }
 
-    settings = get_settings()
-    adapter = ClerkAuthAdapter(settings)
-    try:
-        await adapter.set_user_role(request.clerkUserId, request.role)
-    except Exception as e:
-        logger.warning("Failed to set Clerk publicMetadata role: %s", e)
+    await _set_clerk_role_or_fail(request.clerkUserId, request.role)
 
     user = UserModel(
         clerk_id=request.clerkUserId,
@@ -115,12 +133,7 @@ async def sync_user_role(
     request: SyncRoleRequest,
     session: AsyncSession = Depends(get_db_session),
 ):
-    """Sync the user's role from the local database to Clerk publicMetadata.
-
-    Called when the frontend detects that publicMetadata.role is missing
-    after sign-in. Looks up the user in the local DB and writes the role
-    to Clerk, healing the mismatch.
-    """
+    """Sync the user's local DB role to Clerk public metadata."""
     logger.info("sync-role: looking up user by Clerk id")
 
     result = await session.execute(
@@ -132,14 +145,7 @@ async def sync_user_role(
         raise HTTPException(status_code=404, detail="User not found in local database.")
 
     logger.info("sync-role: found user id=%s role=%s", user.id, user.role)
-
-    settings = get_settings()
-    adapter = ClerkAuthAdapter(settings)
-    try:
-        await adapter.set_user_role(request.clerkUserId, user.role)
-    except Exception as e:
-        logger.warning("Failed to sync Clerk publicMetadata role: %s", e)
-        raise HTTPException(status_code=502, detail="Failed to sync role with Clerk.")
+    await _set_clerk_role_or_fail(request.clerkUserId, user.role)
 
     logger.info("Role synced for user %s: %s", user.id, user.role)
 

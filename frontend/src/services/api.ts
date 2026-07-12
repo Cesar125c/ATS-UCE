@@ -140,7 +140,6 @@ export async function apiFetch<T>(
 
   if (res.status === 401) {
     logApiError(input, res.status);
-    window.location.assign("/login");
     throw new ApiError(401, "Unauthorized");
   }
 
