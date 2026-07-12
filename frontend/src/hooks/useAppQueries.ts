@@ -35,7 +35,7 @@ export const queryKeys = {
     pageSize: number;
     search?: string;
   }) => ["applications", filters] as const,
-  applicationTrend: ["application-trend"] as const,
+  applicationTrend: (weeks: number) => ["application-trend", weeks] as const,
   applicationHistory: (id: string) => ["application-history", id] as const,
 };
 
@@ -150,10 +150,10 @@ export function useSubmitEvaluation() {
   });
 }
 
-export function useApplicationTrend(months = 6) {
+export function useApplicationTrend(weeks = 8) {
   return useQuery({
-    queryKey: queryKeys.applicationTrend,
-    queryFn: () => getApplicationTrend(months),
+    queryKey: queryKeys.applicationTrend(weeks),
+    queryFn: () => getApplicationTrend(weeks),
   });
 }
 

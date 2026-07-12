@@ -74,7 +74,7 @@ export default function Reports() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis dataKey="period" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="applications" fill="#174f8d" radius={[4, 4, 0, 0]} />
@@ -121,12 +121,12 @@ export default function Reports() {
       </div>
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-6">Monthly Summary</h2>
+        <h2 className="text-xl font-semibold mb-6">Last 8 Weeks Summary</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
+              <XAxis dataKey="period" />
               <YAxis />
               <Tooltip />
               <Line type="monotone" dataKey="applications" stroke="#174f8d" strokeWidth={3} dot={{ r: 5 }} />

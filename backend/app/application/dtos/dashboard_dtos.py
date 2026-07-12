@@ -10,6 +10,6 @@ class DashboardStatsResponse(BaseModel):
     completed: int
 
 
-class MonthlyTrendDTO(BaseModel):
-    month: str
+class ApplicationTrendDTO(BaseModel):
+    period: str
     applications: int
