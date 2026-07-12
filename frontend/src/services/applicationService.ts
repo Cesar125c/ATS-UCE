@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ApplicationResponse } from "@/types/application";
 import { ApplicationResponseSchema } from "@/schemas/api";
-import { apiFetch } from "./api";
+import { apiFetch, buildApiUrl } from "./api";
 
 const MAX_CV_SIZE_BYTES = 10_485_760; // 10 MB
 
@@ -63,9 +63,7 @@ export async function submitApplication(
     formData.append("extracted_text", extractedText);
   }
 
-  // Keep browser requests relative so Vite/Nginx proxies them to the API.
-  // Never expose Docker's internal `api` hostname to the browser.
-  const response = await fetch("/api/v1/applications/", {
+  const response = await fetch(buildApiUrl("/api/v1/applications/"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -83,8 +81,7 @@ export async function submitApplication(
     }
 
     if (response.status === 401) {
-      window.location.assign("/login");
-      throw new ApplicationError(401, "Not authorized. Redirecting to sign in.");
+      throw new ApplicationError(401, "Not authorized. Please sign in again.");
     }
 
     throw new ApplicationError(response.status, buildErrorMessage(response.status, detail));
