@@ -216,5 +216,5 @@ class GeminiAnalysisAdapter:
         try:
             return await self.analyze_cv(cv_text, vacancy_title, vacancy_faculty)
         except Exception as e:
-            logger.error("Gemini unavailable after retries: %s", e)
+            logger.error("Gemini unavailable after retries", exc_info=True)
             raise AIUnavailableError(f"Gemini API unavailable after 3 attempts: {e}")

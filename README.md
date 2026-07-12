@@ -88,6 +88,7 @@ Backend runs at `http://localhost:8000` · API docs at `http://localhost/api/v1/
 ```env
 # App
 APP_ENV=development
+LOG_LEVEL=DEBUG
 
 # Database
 DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/ats_uce_db
@@ -118,6 +119,12 @@ RESEND_FROM_EMAIL=talentpath@uce.edu.ec
 # CORS
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost
 ```
+
+`LOG_LEVEL` controls the minimum backend log level emitted by the Python logging
+configuration. Valid values: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
+Recommended values: local/development `DEBUG`, QA `INFO`, production `INFO`.
+Do not include secrets, tokens, credentials, request bodies, or other sensitive
+data in logs. Backend logs are emitted to stdout/stderr and captured by Docker.
 
 > **Roles (3):** `applicant` · `human_resources` · `authorities` — asignados via Clerk `publicMetadata.role`.
 > Las 3 etapas de autoridades (DEAN, RECTOR, FINANCE) comparten el rol `authorities`.

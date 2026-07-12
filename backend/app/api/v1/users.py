@@ -15,7 +15,7 @@ from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
 from config import get_settings
 
-logger = logging.getLogger("ats_uce")
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 VALID_ROLES = {"applicant", "human_resources", "authorities"}
@@ -121,19 +121,17 @@ async def sync_user_role(
     after sign-in. Looks up the user in the local DB and writes the role
     to Clerk, healing the mismatch.
     """
-    logger.info("sync-role: looking up clerkUserId=%s", request.clerkUserId)
+    logger.info("sync-role: looking up user by Clerk id")
 
     result = await session.execute(
         select(UserModel).where(UserModel.clerk_id == request.clerkUserId)
     )
     user = result.scalar_one_or_none()
     if user is None:
-        logger.warning("sync-role: user NOT found for clerkUserId=%s", request.clerkUserId)
+        logger.warning("sync-role: user NOT found for Clerk id")
         raise HTTPException(status_code=404, detail="User not found in local database.")
 
-    logger.info(
-        "sync-role: found user id=%s role=%s clerk_id=%s", user.id, user.role, user.clerk_id
-    )
+    logger.info("sync-role: found user id=%s role=%s", user.id, user.role)
 
     settings = get_settings()
     adapter = ClerkAuthAdapter(settings)

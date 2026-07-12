@@ -11,7 +11,7 @@ from app.infrastructure.realtime.socketio_notifier import SocketIONotifier
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
-logger = logging.getLogger("ats_uce")
+logger = logging.getLogger(__name__)
 
 
 async def process_ai_score_task(
