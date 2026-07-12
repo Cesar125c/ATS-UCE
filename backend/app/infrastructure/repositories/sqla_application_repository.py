@@ -163,10 +163,7 @@ class SQLAApplicationRepository(IApplicationRepository):
             .group_by(week_start)
             .order_by(week_start.asc())
         )
-        counts = {
-            row.week_start.date().isoformat(): row.applications
-            for row in result.all()
-        }
+        counts = {row.week_start.date().isoformat(): row.applications for row in result.all()}
         return [
             {
                 "period": (
