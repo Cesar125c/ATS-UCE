@@ -57,7 +57,7 @@ async def test_connect_rejects_invalid_token(mocker):
 
 
 @pytest.mark.asyncio
-async def test_connect_rejects_applicant_role(mocker):
+async def test_connect_allows_applicant_role(mocker):
     from app.api.websocket import connect
 
     mock_adapter_cls = mocker.patch("app.api.websocket.ClerkAuthAdapter")
@@ -69,14 +69,18 @@ async def test_connect_rejects_applicant_role(mocker):
             "email": "app@test.com",
         }
     )
+    mock_enter_room = mocker.patch("app.api.websocket.sio.enter_room")
 
     result = await connect(sid="test-sid", environ={}, auth={"token": "valid-token"})
 
-    assert result is False
+    assert result is True
+    assert mock_enter_room.call_count == 2
+    mock_enter_room.assert_any_call("test-sid", "applicant")
+    mock_enter_room.assert_any_call("test-sid", "user:user_001")
 
 
 @pytest.mark.asyncio
-async def test_connect_rejects_jwt_applicant_without_db_fallback(mocker):
+async def test_connect_allows_applicant_without_db_fallback(mocker):
     from app.api.websocket import connect
 
     mock_adapter_cls = mocker.patch("app.api.websocket.ClerkAuthAdapter")
@@ -89,10 +93,14 @@ async def test_connect_rejects_jwt_applicant_without_db_fallback(mocker):
         }
     )
     mock_session_factory = mocker.patch("app.api.websocket.AsyncSessionLocal")
+    mock_enter_room = mocker.patch("app.api.websocket.sio.enter_room")
 
     result = await connect(sid="test-sid", environ={}, auth={"token": "valid-token"})
 
-    assert result is False
+    assert result is True
+    assert mock_enter_room.call_count == 2
+    mock_enter_room.assert_any_call("test-sid", "applicant")
+    mock_enter_room.assert_any_call("test-sid", "user:user_001")
     mock_session_factory.assert_not_called()
 
 
@@ -115,7 +123,9 @@ async def test_connect_allows_human_resources(mocker):
     result = await connect(sid="test-sid", environ={}, auth={"token": "valid-token"})
 
     assert result is True
-    mock_enter_room.assert_called_once_with("test-sid", "human_resources")
+    assert mock_enter_room.call_count == 2
+    mock_enter_room.assert_any_call("test-sid", "human_resources")
+    mock_enter_room.assert_any_call("test-sid", "user:user_001")
     mock_session_factory.assert_not_called()
 
 
@@ -137,7 +147,9 @@ async def test_connect_allows_authorities(mocker):
     result = await connect(sid="test-sid", environ={}, auth={"token": "valid-token"})
 
     assert result is True
-    mock_enter_room.assert_called_once_with("test-sid", "authorities")
+    assert mock_enter_room.call_count == 2
+    mock_enter_room.assert_any_call("test-sid", "authorities")
+    mock_enter_room.assert_any_call("test-sid", "user:user_002")
 
 
 @pytest.mark.asyncio
@@ -162,7 +174,9 @@ async def test_connect_allows_human_resources_from_db_fallback(mocker):
     result = await connect(sid="test-sid", environ={}, auth={"token": "valid-token"})
 
     assert result is True
-    mock_enter_room.assert_called_once_with("test-sid", "human_resources")
+    assert mock_enter_room.call_count == 2
+    mock_enter_room.assert_any_call("test-sid", "human_resources")
+    mock_enter_room.assert_any_call("test-sid", "user:user_001")
 
 
 @pytest.mark.asyncio
@@ -187,7 +201,9 @@ async def test_connect_allows_authorities_from_db_fallback(mocker):
     result = await connect(sid="test-sid", environ={}, auth={"token": "valid-token"})
 
     assert result is True
-    mock_enter_room.assert_called_once_with("test-sid", "authorities")
+    assert mock_enter_room.call_count == 2
+    mock_enter_room.assert_any_call("test-sid", "authorities")
+    mock_enter_room.assert_any_call("test-sid", "user:user_002")
 
 
 @pytest.mark.asyncio
@@ -213,7 +229,7 @@ async def test_connect_rejects_missing_db_user_when_jwt_has_no_role(mocker):
 
 
 @pytest.mark.asyncio
-async def test_connect_rejects_db_applicant_role_when_jwt_has_no_role(mocker):
+async def test_connect_allows_db_applicant_role_when_jwt_has_no_role(mocker):
     from app.api.websocket import connect
 
     mock_adapter_cls = mocker.patch("app.api.websocket.ClerkAuthAdapter")
@@ -233,8 +249,10 @@ async def test_connect_rejects_db_applicant_role_when_jwt_has_no_role(mocker):
 
     result = await connect(sid="test-sid", environ={}, auth={"token": "valid-token"})
 
-    assert result is False
-    mock_enter_room.assert_not_called()
+    assert result is True
+    assert mock_enter_room.call_count == 2
+    mock_enter_room.assert_any_call("test-sid", "applicant")
+    mock_enter_room.assert_any_call("test-sid", "user:user_003")
 
 
 @pytest.mark.asyncio

@@ -65,10 +65,12 @@ class RecordAuthorityDecisionUseCase:
             FlowStatus.RECTOR_STAGE,
             FlowStatus.FINANCE_STAGE,
         ):
+            applicant_clerk_id = await self._application_repo.get_applicant_clerk_id(application.id)
             await self._realtime_notifier.notify_status_change(
                 role=application.status.required_role(),
                 application_id=str(application.id),
                 new_status=application.status.value,
+                applicant_clerk_id=applicant_clerk_id,
             )
 
         return {
