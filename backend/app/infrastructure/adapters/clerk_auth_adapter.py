@@ -10,7 +10,7 @@ import logging
 
 import jwt
 
-logger = logging.getLogger("ats_uce")
+logger = logging.getLogger(__name__)
 
 
 class ClerkAuthAdapter:

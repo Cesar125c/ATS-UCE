@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
+
 let _getToken: (() => Promise<string | null>) | null = null;
 
 function resolveApiBaseUrl(): string {
@@ -42,6 +44,55 @@ export class ApiError extends Error {
   }
 }
 
+function normalizeLogEndpoint(value: string): string {
+  if (value.startsWith("/")) {
+    return value;
+  }
+
+  try {
+    const url = new URL(value);
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return value;
+  }
+}
+
+function getLogEndpoint(input: RequestInfo | URL): string {
+  if (typeof input === "string") {
+    return normalizeLogEndpoint(input);
+  }
+
+  if (input instanceof URL) {
+    return `${input.pathname}${input.search}${input.hash}`;
+  }
+
+  if (typeof Request !== "undefined" && input instanceof Request) {
+    return normalizeLogEndpoint(input.url);
+  }
+
+  return String(input);
+}
+
+function getErrorType(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
+
+function logApiError(input: RequestInfo | URL, status: number): void {
+  const context = {
+    operation: "api_fetch",
+    endpoint: getLogEndpoint(input),
+    status,
+    errorType: "ApiError",
+  };
+
+  if (status >= 500) {
+    logger.error("API request failed", context);
+    return;
+  }
+
+  logger.warn("API request failed", context);
+}
+
 export async function apiFetch<T>(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -75,9 +126,20 @@ export async function apiFetch<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(buildApiUrl(input), { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(buildApiUrl(input), { ...init, headers });
+  } catch (error) {
+    logger.error("API request failed", {
+      operation: "api_fetch",
+      endpoint: getLogEndpoint(input),
+      errorType: getErrorType(error),
+    });
+    throw error;
+  }
 
   if (res.status === 401) {
+    logApiError(input, res.status);
     window.location.assign("/login");
     throw new ApiError(401, "Unauthorized");
   }
@@ -97,6 +159,7 @@ export async function apiFetch<T>(
     } catch {
       // body may not be JSON
     }
+    logApiError(input, res.status);
     throw new ApiError(res.status, detail || res.statusText);
   }
 

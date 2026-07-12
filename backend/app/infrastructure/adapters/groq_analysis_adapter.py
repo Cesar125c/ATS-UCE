@@ -200,5 +200,5 @@ class GroqAnalysisAdapter:
         try:
             return await self.analyze_cv(cv_text, vacancy_title, vacancy_faculty)
         except Exception as e:
-            logger.error("Groq unavailable after retries: %s", e)
+            logger.error("Groq unavailable after retries", exc_info=True)
             raise AIUnavailableError(f"Groq API unavailable after 3 attempts: {e}")

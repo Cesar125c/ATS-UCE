@@ -24,7 +24,7 @@ from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplic
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
-logger = logging.getLogger("ats_uce")
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
@@ -242,7 +242,11 @@ def rate_limit_key(request: Request) -> str:
             user_id = payload.get("sub") or payload.get("user_id", "")
             if user_id:
                 return f"user:{user_id}"
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug(
+                "Unable to extract user id from bearer token for rate limiting; "
+                "falling back to client IP: %s",
+                type(exc).__name__,
+            )
     client_ip = request.client.host if request.client else "unknown"
     return f"ip:{client_ip}"
