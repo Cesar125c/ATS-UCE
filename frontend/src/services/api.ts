@@ -2,7 +2,23 @@ import { z } from "zod";
 
 let _getToken: (() => Promise<string | null>) | null = null;
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+function resolveApiBaseUrl(): string {
+  const configuredUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+  if (!configuredUrl) return "";
+
+  try {
+    const url = new URL(configuredUrl);
+    // Docker service names are only resolvable inside the Docker network. In
+    // the browser, use the current origin so Vite/Nginx can proxy /api.
+    if (url.hostname === "api") return "";
+  } catch {
+    // Relative base URLs are valid and should be preserved.
+  }
+
+  return configuredUrl;
+}
+
+const apiBaseUrl = resolveApiBaseUrl();
 
 export function initApi(getTokenFn: () => Promise<string | null>) {
   _getToken = getTokenFn;
