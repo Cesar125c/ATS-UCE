@@ -143,7 +143,7 @@ export default function ApplicationStatus({ applicationId }: { applicationId?: s
 
   return (
     <Card className="p-6 mt-6">
-      <div className="flex items-start justify-between mb-8">
+      <div className="mb-8">
         <div>
           <h2 className="text-xl font-semibold">
             Your Application Status
@@ -158,10 +158,6 @@ export default function ApplicationStatus({ applicationId }: { applicationId?: s
             </p>
           )}
         </div>
-
-        <span className="text-xs bg-slate-100 rounded-full px-3 py-1 font-mono">
-          ID: {currentApp.id.slice(0, 8)}
-        </span>
       </div>
 
       <div className="flex justify-between items-center mb-10">
