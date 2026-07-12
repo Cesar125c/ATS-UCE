@@ -17,7 +17,7 @@ import {
   Cell,
 } from "recharts";
 
-const COLORS = ["#dc2626", "#f59e0b", "#0ea5e9", "#22c55e"];
+const COLORS = ["#174f8d", "#278fd0", "#7eb6df", "#22c55e"];
 
 export default function Reports() {
   const { data: stats } = useDashboardStats();
@@ -67,7 +67,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <BarChart3 size={20} className="text-red-600" />
+            <BarChart3 size={20} className="text-[#174f8d]" />
             <h2 className="text-xl font-semibold">Application Trend</h2>
           </div>
           <div className="h-80">
@@ -77,7 +77,7 @@ export default function Reports() {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="applications" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="applications" fill="#174f8d" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -85,7 +85,7 @@ export default function Reports() {
 
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <PieChart size={20} className="text-red-600" />
+            <PieChart size={20} className="text-[#174f8d]" />
             <h2 className="text-xl font-semibold">Status Distribution</h2>
           </div>
           <div className="h-80 flex items-center justify-center">
@@ -129,7 +129,7 @@ export default function Reports() {
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="applications" stroke="#dc2626" strokeWidth={3} dot={{ r: 5 }} />
+              <Line type="monotone" dataKey="applications" stroke="#174f8d" strokeWidth={3} dot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
