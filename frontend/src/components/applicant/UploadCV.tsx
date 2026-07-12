@@ -8,6 +8,14 @@ import { useSubmitApplication, useVacancies } from "@/hooks/useAppQueries";
 import { extractTextFromPdf } from "@/utils/pdfExtractor";
 import type { ApplicationResponse } from "@/types/application";
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 export default function UploadCV() {
   const { getToken } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -187,7 +195,7 @@ export default function UploadCV() {
           <>
             <h3 className="font-medium text-slate-700">{file.name}</h3>
             <p className="text-sm text-slate-500 mt-1">
-              {(file.size / 1024 / 1024).toFixed(1)} MB — Click to change
+              {formatFileSize(file.size)} — Click to change
             </p>
           </>
         ) : (
