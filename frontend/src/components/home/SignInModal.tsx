@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { SignIn } from '@clerk/react'
 import { useUser } from '@clerk/react'
 import { handleOAuthUser, assignUserRole } from '@/services/userService'
+import { logger } from '@/lib/logger'
 import SelectRoleModal from './SelectRoleModal'
 import type { RoleOption } from './SelectRoleModal'
 
@@ -55,7 +56,11 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
         const role = user.publicMetadata?.role as string | undefined
         redirectByRole(role)
       } catch (error) {
-        console.error('Error processing OAuth user:', error)
+        logger.error('OAuth user processing failed', {
+          component: 'SignInModal',
+          operation: 'oauth_process',
+          errorType: error instanceof Error ? error.name : typeof error,
+        })
         setIsProcessing(false)
       }
     }
@@ -72,7 +77,11 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
       await new Promise(resolve => setTimeout(resolve, 500))
       redirectByRole(selectedRole)
     } catch (error) {
-      console.error('Error assigning role:', error)
+      logger.error('Role assignment failed', {
+        component: 'SignInModal',
+        operation: 'assign_role',
+        errorType: error instanceof Error ? error.name : typeof error,
+      })
       setIsAssigningRole(false)
       setShowRoleSelection(false)
     }

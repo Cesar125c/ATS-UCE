@@ -13,7 +13,7 @@ from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
 from config import get_settings
 
-logger = logging.getLogger("ats_uce")
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 

@@ -53,12 +53,6 @@ export async function createUserWithRole(
 
   const clerkUserId =
     createResult?.createdUserId || signUp.createdUserId || signUp.id;
-  console.log("Registration clerkUserId:", {
-    signUpId: signUp.id,
-    createdUserId: createResult?.createdUserId || signUp.createdUserId,
-    used: clerkUserId,
-    createResult,
-  });
 
   if (!clerkUserId) {
     throw new Error("Unable to determine Clerk user id after signup");
