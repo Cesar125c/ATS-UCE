@@ -1,5 +1,6 @@
 """SQLAlchemy 2.0 async implementation of IApplicationRepository."""
 
+from datetime import UTC, datetime, time, timedelta
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -144,19 +145,41 @@ class SQLAApplicationRepository(IApplicationRepository):
             "completed": row.completed or 0,
         }
 
-    async def get_monthly_trend(self, months: int = 6) -> list[dict]:
+    async def get_weekly_trend(self, weeks: int = 8) -> list[dict]:
+        today = datetime.now(UTC).date()
+        current_week_start = today - timedelta(days=today.weekday())
+        start_date = current_week_start - timedelta(weeks=weeks - 1)
+        start_at = datetime.combine(start_date, time.min, tzinfo=UTC)
+        week_start = func.date_trunc(
+            sa.literal_column("'week'"),
+            ApplicationModel.created_at,
+        )
         result = await self._session.execute(
             select(
-                func.to_char(ApplicationModel.created_at, "YYYY-MM").label("month"),
+                week_start.label("week_start"),
                 func.count().label("applications"),
             )
-            .group_by(func.to_char(ApplicationModel.created_at, "YYYY-MM"))
-            .order_by(func.to_char(ApplicationModel.created_at, "YYYY-MM").desc())
-            .limit(months)
+            .where(ApplicationModel.created_at >= start_at)
+            .group_by(week_start)
+            .order_by(week_start.asc())
         )
-        rows = [{"month": row.month, "applications": row.applications} for row in result.all()]
-        rows.reverse()
-        return rows
+        counts = {
+            row.week_start.date().isoformat(): row.applications
+            for row in result.all()
+        }
+        return [
+            {
+                "period": (
+                    f"{(start_date + timedelta(weeks=offset)).isocalendar().year}"
+                    f"-W{(start_date + timedelta(weeks=offset)).isocalendar().week:02d}"
+                ),
+                "applications": counts.get(
+                    (start_date + timedelta(weeks=offset)).isoformat(),
+                    0,
+                ),
+            }
+            for offset in range(weeks)
+        ]
 
     async def save(self, application: Application) -> Application:
         model = ApplicationMapper.to_model(application)
