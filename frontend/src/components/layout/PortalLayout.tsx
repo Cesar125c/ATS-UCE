@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Bell, GraduationCap, LogOut, Upload } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Bell, ChevronDown, GraduationCap, LogOut, Upload } from "lucide-react";
 import { useClerk, useUser } from "@clerk/react";
 import TopNavbar from "./TopNavbar";
 
@@ -11,6 +11,7 @@ interface PortalLayoutProps {
 export default function PortalLayout({ children, applicant = false }: PortalLayoutProps) {
   const { user } = useUser();
   const { signOut } = useClerk();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   if (applicant) {
     return (
@@ -37,16 +38,6 @@ export default function PortalLayout({ children, applicant = false }: PortalLayo
             </div>
           </div>
 
-          <div className="mt-auto border-t border-white/10 p-3">
-            <button
-              type="button"
-              onClick={() => signOut({ redirectUrl: "/" })}
-              className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
-            >
-              <LogOut size={17} />
-              Sign out
-            </button>
-          </div>
         </aside>
 
         <div className="min-w-0 flex-1">
@@ -57,10 +48,32 @@ export default function PortalLayout({ children, applicant = false }: PortalLayo
             </div>
             <div className="flex items-center gap-4">
               <Bell size={18} className="text-slate-600" />
-              <img src={user?.imageUrl} alt="User" className="h-8 w-8 rounded-full bg-slate-200 object-cover" />
-              <div className="hidden sm:block">
-                <p className="text-xs font-semibold">{user?.fullName || "Applicant"}</p>
-                <p className="text-[10px] text-slate-500">Applicant</p>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((open) => !open)}
+                  className="flex items-center gap-3"
+                >
+                  <img src={user?.imageUrl} alt="User" className="h-8 w-8 rounded-full bg-slate-200 object-cover" />
+                  <div className="hidden sm:block text-left">
+                    <p className="text-xs font-semibold">{user?.fullName || "Applicant"}</p>
+                    <p className="text-[10px] text-slate-500">Applicant</p>
+                  </div>
+                  <ChevronDown size={16} className="text-slate-500" />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-50">
+                    <button
+                      type="button"
+                      onClick={() => signOut({ redirectUrl: "/" })}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </header>

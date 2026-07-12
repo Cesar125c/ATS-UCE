@@ -21,19 +21,19 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`bg-white border-r border-gray-200 flex flex-col h-screen transition-all duration-300 ${
+      className={`bg-[#071429] border-r border-white/10 text-white flex flex-col h-screen transition-all duration-300 ${
         collapsed ? "w-20" : "w-64"
       }`}
     >
       {/* Logo */}
-      <div className="h-16 bg-[#0B5ED7] flex items-center px-4 overflow-hidden">
-        <div className="w-9 h-9 rounded-full bg-cyan-400 flex items-center justify-center text-white font-bold shrink-0">
+      <div className="h-16 flex items-center px-4 overflow-hidden border-b border-white/10">
+        <div className="w-9 h-9 rounded-lg bg-[#2797dc] flex items-center justify-center text-white font-bold shrink-0">
           ATS
         </div>
         {!collapsed && (
           <div className="ml-3 whitespace-nowrap">
             <h1 className="text-white font-bold text-lg">ATS-UCE</h1>
-            <p className="text-xs text-blue-100">Recruitment Portal</p>
+            <p className="text-xs text-slate-400">Recruitment Portal</p>
           </div>
         )}
       </div>
@@ -41,7 +41,7 @@ export default function Sidebar() {
       {/* Toggle button */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="flex items-center justify-center h-8 border-b hover:bg-gray-50 text-gray-500"
+        className="flex items-center justify-center h-8 border-b border-white/10 hover:bg-white/5 text-slate-400"
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
@@ -59,8 +59,8 @@ export default function Sidebar() {
                   collapsed ? "justify-center" : ""
                 } ${
                   isActive
-                    ? "bg-blue-50 text-blue-600 font-semibold"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#278fd0] text-white font-semibold"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
                 }`
               }
               title={collapsed ? item.title : undefined}
