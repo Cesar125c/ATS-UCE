@@ -76,8 +76,8 @@ export const DashboardStatsSchema = z.object({
   completed: z.number(),
 });
 
-export const MonthlyTrendSchema = z.object({
-  month: z.string(),
+export const ApplicationTrendSchema = z.object({
+  period: z.string(),
   applications: z.number(),
 });
 

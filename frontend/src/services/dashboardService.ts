@@ -6,7 +6,7 @@ import {
   ApplicationRankingItemSchema,
   PresignedUrlSchema,
   StatusHistorySchema,
-  MonthlyTrendSchema,
+  ApplicationTrendSchema,
 } from "@/schemas/api";
 import type { StatusHistoryDTO } from "@/types/application";
 
@@ -45,13 +45,13 @@ export async function getApplicationCVUrl(storageKey: string): Promise<string> {
   return data.url;
 }
 
-export type MonthlyTrend = z.infer<typeof MonthlyTrendSchema>;
+export type ApplicationTrend = z.infer<typeof ApplicationTrendSchema>;
 
-export async function getApplicationTrend(months = 6): Promise<MonthlyTrend[]> {
-  return apiFetch<MonthlyTrend[]>(
-    `/api/v1/dashboard/applications-trend?months=${months}`,
+export async function getApplicationTrend(weeks = 8): Promise<ApplicationTrend[]> {
+  return apiFetch<ApplicationTrend[]>(
+    `/api/v1/dashboard/applications-trend?weeks=${weeks}`,
     undefined,
-    z.array(MonthlyTrendSchema),
+    z.array(ApplicationTrendSchema),
   );
 }
 

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_application_repository, require_role
-from app.application.dtos.dashboard_dtos import DashboardStatsResponse, MonthlyTrendDTO
+from app.application.dtos.dashboard_dtos import ApplicationTrendDTO, DashboardStatsResponse
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 
 router = APIRouter()
@@ -21,14 +21,14 @@ async def get_dashboard_stats(
     return await repo.get_stats()
 
 
-@router.get("/applications-trend", response_model=list[MonthlyTrendDTO])
+@router.get("/applications-trend", response_model=list[ApplicationTrendDTO])
 async def get_applications_trend(
-    months: int = Query(6, ge=1, le=24),
+    weeks: int = Query(8, ge=1, le=52),
     _user: dict = Depends(require_role(["human_resources", "authorities"])),
     repo: SQLAApplicationRepository = Depends(get_application_repository),
-) -> list[MonthlyTrendDTO]:
-    """Return monthly application submission counts for the last N months.
+) -> list[ApplicationTrendDTO]:
+    """Return weekly application submission counts for the last N weeks.
 
     Path: /api/v1/dashboard/applications-trend
     """
-    return await repo.get_monthly_trend(months)
+    return await repo.get_weekly_trend(weeks)
