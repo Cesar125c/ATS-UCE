@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ApplicationResponse } from "@/types/application";
 import { ApplicationResponseSchema } from "@/schemas/api";
-import { apiFetch, buildApiUrl } from "./api";
+import { apiFetch } from "./api";
 
 const MAX_CV_SIZE_BYTES = 10_485_760; // 10 MB
 
@@ -63,7 +63,9 @@ export async function submitApplication(
     formData.append("extracted_text", extractedText);
   }
 
-  const response = await fetch(buildApiUrl("/api/v1/applications"), {
+  // Keep browser requests relative so Vite/Nginx proxies them to the API.
+  // Never expose Docker's internal `api` hostname to the browser.
+  const response = await fetch("/api/v1/applications/", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
