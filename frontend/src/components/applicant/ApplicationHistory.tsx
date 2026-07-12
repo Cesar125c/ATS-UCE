@@ -78,7 +78,7 @@ export default function ApplicationHistory({ selectedId, onSelect }: Application
   }
 
   return (
-    <Card className="p-6 mt-6">
+    <Card className="p-6 mt-6 border border-slate-200 shadow-none">
       <div className="flex justify-between items-center mb-5">
         <h2 className="text-xl font-semibold">Application History</h2>
         <span className="text-sm text-slate-500">
