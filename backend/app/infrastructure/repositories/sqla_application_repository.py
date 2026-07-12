@@ -178,6 +178,19 @@ class SQLAApplicationRepository(IApplicationRepository):
             for offset in range(weeks)
         ]
 
+    async def get_applicant_clerk_id(self, application_id: UUID) -> str | None:
+        from app.infrastructure.database.models.applicant_model import ApplicantModel
+        from app.infrastructure.database.models.user_model import UserModel
+
+        result = await self._session.execute(
+            select(UserModel.clerk_id)
+            .select_from(ApplicationModel)
+            .join(ApplicantModel, ApplicationModel.applicant_id == ApplicantModel.id)
+            .join(UserModel, ApplicantModel.user_id == UserModel.id)
+            .where(ApplicationModel.id == application_id)
+        )
+        return result.scalar_one_or_none()
+
     async def save(self, application: Application) -> Application:
         model = ApplicationMapper.to_model(application)
         merged = await self._session.merge(model)

@@ -23,7 +23,14 @@ class SocketIONotifier(RealtimeNotifierPort):
     def __init__(self, sio_server: socketio.AsyncServer | None = None) -> None:
         self._sio = sio_server or sio
 
-    async def notify_status_change(self, role: str, application_id: str, new_status: str) -> None:
+    async def notify_status_change(
+        self,
+        role: str,
+        application_id: str,
+        new_status: str,
+        *,
+        applicant_clerk_id: str | None = None,
+    ) -> None:
         payload = {
             "application_id": application_id,
             "new_status": new_status,
@@ -31,9 +38,12 @@ class SocketIONotifier(RealtimeNotifierPort):
         }
         try:
             await self._sio.emit("status_change", payload, room=role)
+            if applicant_clerk_id:
+                await self._sio.emit("status_change", payload, room=f"user:{applicant_clerk_id}")
             logger.info(
-                "Realtime notification sent — room=%s application_id=%s new_status=%s",
+                "Realtime notification sent — room=%s user_room=%s application_id=%s new_status=%s",
                 role,
+                f"user:{applicant_clerk_id}" if applicant_clerk_id else None,
                 application_id,
                 new_status,
             )

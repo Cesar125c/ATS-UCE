@@ -72,10 +72,12 @@ class ProcessAIScoreUseCase:
             await self._application_repo.save(application)
 
             if application.status == FlowStatus.HR_STAGE and self._realtime_notifier is not None:
+                applicant_clerk_id = await self._application_repo.get_applicant_clerk_id(application.id)
                 await self._realtime_notifier.notify_status_change(
                     role=application.status.required_role(),
                     application_id=str(application.id),
                     new_status=FlowStatus.HR_STAGE.value,
+                    applicant_clerk_id=applicant_clerk_id,
                 )
         except AIUnavailableError as exc:
             # After all retries exhausted: persist error_reason, keep status PROCESSING_AI
