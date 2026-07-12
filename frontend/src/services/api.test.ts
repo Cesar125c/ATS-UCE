@@ -104,10 +104,8 @@ describe("apiFetch logging", () => {
     expect(loggedValue).not.toContain("token=secret");
   });
 
-  it("keeps 401 redirect behavior and ApiError message", async () => {
-    const assign = vi.fn();
+  it("keeps 401 as an ApiError without forcing page navigation", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    vi.stubGlobal("window", { location: { assign } });
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       mockResponse({
         ok: false,
@@ -123,7 +121,6 @@ describe("apiFetch logging", () => {
       message: "Unauthorized",
     });
 
-    expect(assign).toHaveBeenCalledWith("/login");
     expect(warnSpy).toHaveBeenCalledWith("[WARN] API request failed", {
       operation: "api_fetch",
       endpoint: "/api/v1/private",
