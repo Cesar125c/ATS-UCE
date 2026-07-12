@@ -105,6 +105,39 @@ async def get_current_user(
                     else:
                         raise
 
+    # A valid Clerk token may already contain a role even when the local user
+    # or applicant row is missing (for example after changing Clerk instances
+    # or restoring the database). Ensure the local records exist before any
+    # role-protected endpoint uses them.
+    clerk_id = claims.get("user_id", "")
+    if clerk_id:
+        result = await session.execute(select(UserModel).where(UserModel.clerk_id == clerk_id))
+        local_user = result.scalar_one_or_none()
+
+        if local_user is None:
+            email = claims.get("email", "") or f"{clerk_id}@unknown.uce.edu.ec"
+            local_user = UserModel(
+                clerk_id=clerk_id,
+                email=email,
+                first_name="User",
+                last_name="",
+                role=claims.get("role") or "applicant",
+            )
+            session.add(local_user)
+            await session.flush()
+            logger.info("Created missing local user for Clerk account %s", clerk_id)
+
+        if claims.get("role") == "applicant":
+            from app.infrastructure.database.models.applicant_model import ApplicantModel
+
+            applicant_result = await session.execute(
+                select(ApplicantModel).where(ApplicantModel.user_id == local_user.id)
+            )
+            if applicant_result.scalar_one_or_none() is None:
+                session.add(ApplicantModel(user_id=local_user.id))
+                await session.flush()
+                logger.info("Created missing applicant profile for Clerk account %s", clerk_id)
+
     return claims
 
 

@@ -97,4 +97,4 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="/ws")
+asgi_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="/ws/socket.io")
