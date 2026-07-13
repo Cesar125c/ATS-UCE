@@ -35,7 +35,8 @@ export default function VacancyTable({ onRefresh, search = "" }: VacancyTablePro
 
   return (
     <Card className="overflow-hidden p-0">
-      <table className="w-full">
+      <div className="overflow-x-auto overscroll-x-contain table-scroll" tabIndex={0} aria-label="Vacancies table">
+      <table className="w-full min-w-[760px]">
         <thead className="bg-slate-50 border-b">
           <tr className="text-left text-sm text-slate-600">
             <th className="px-6 py-4 font-semibold">ID</th>
@@ -63,6 +64,7 @@ export default function VacancyTable({ onRefresh, search = "" }: VacancyTablePro
           )}
         </tbody>
       </table>
+      </div>
     </Card>
   );
 }
