@@ -14,7 +14,7 @@ export default function CTASection() {
         </p>
 
         <div className="mt-8">
-          <Button variant="danger" size="lg" onClick={() => document.getElementById('registro')?.scrollIntoView({ behavior: 'smooth' })}>
+          <Button variant="danger" size="lg" onClick={() => window.location.href = "/sign-up"}>
             Access the system
           </Button>
         </div>

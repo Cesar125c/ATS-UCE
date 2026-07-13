@@ -1,6 +1,6 @@
 import { Button } from '../ui'
 import RegisterForm from './RegisterForm'
-import { ArrowRight, CheckCircle2, FileSearch, ShieldCheck, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 
 export default function HeroSection() {
   return (
@@ -21,16 +21,13 @@ export default function HeroSection() {
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
-          <Button variant="danger" size="md" className="flex items-center justify-center gap-2" onClick={() => document.getElementById('registro')?.scrollIntoView({ behavior: 'smooth' })}>
-            Start application <ArrowRight size={18} />
+          <Button variant="danger" size="md" onClick={() => window.location.href = "/sign-up"}>
+            Explore Platform
           </Button>
 
           <Button variant="outline" size="md" onClick={() => window.open("https://docs.uce.edu.ec", "_blank")}>
             View documentation
           </Button>
-        </div>
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-300">
-          {["Secure information", "Traceable process", "Centralized evaluation"].map((item) => <span key={item} className="flex items-center gap-2"><CheckCircle2 size={16} className="text-sky-400" />{item}</span>)}
         </div>
       </div>
 
@@ -38,13 +35,6 @@ export default function HeroSection() {
       <div id="registro" className="w-full min-w-0 scroll-mt-24">
         <RegisterForm />
       </div>
-      </div>
-      <div id="beneficios" className="max-w-7xl mx-auto grid sm:grid-cols-3 border-t border-white/10">
-        {[
-          { icon: FileSearch, title: "Organized applications", text: "Documents and progress in one place." },
-          { icon: Sparkles, title: "Assisted evaluation", text: "Consistent criteria supported by AI." },
-          { icon: ShieldCheck, title: "Institutional security", text: "Role-based access and traceability." },
-        ].map(({ icon: Icon, title, text }) => <div key={title} className="flex gap-4 px-5 sm:px-8 py-6 border-b sm:border-b-0 sm:border-r last:border-0 border-white/10"><Icon className="shrink-0 text-sky-400" size={23} /><div><h3 className="font-semibold">{title}</h3><p className="mt-1 text-sm text-slate-400">{text}</p></div></div>)}
       </div>
     </section>
   )

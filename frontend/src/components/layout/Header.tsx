@@ -24,12 +24,6 @@ export default function Header() {
           </p>
           </div>
         </a>
-        <nav className="hidden md:flex items-center gap-7 text-sm text-slate-300" aria-label="Main navigation">
-          <a className="hover:text-white transition" href="#inicio">Home</a>
-          <a className="hover:text-white transition" href="#registro">Registration</a>
-          <a className="hover:text-white transition" href="#beneficios">Benefits</a>
-        </nav>
-
         <div className="flex items-center gap-3">
           <Show when="signed-out">
             <Button
