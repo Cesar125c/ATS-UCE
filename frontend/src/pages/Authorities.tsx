@@ -36,8 +36,8 @@ export default function Authorities() {
   return (
     <PortalLayout>
       <AuthorityHeader />
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4">
           <PendingCandidates
             applications={applications}
             selectedId={selectedApp?.id ?? null}
@@ -45,12 +45,12 @@ export default function Authorities() {
             loading={applicationsQuery.isLoading}
           />
         </div>
-        <div className="col-span-8">
+        <div className="min-w-0 lg:col-span-8">
           {selectedApp && (
             <>
               <CandidateProfile application={selectedApp} />
-              <div className="grid grid-cols-3 gap-6 mb-6">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+                <div className="xl:col-span-2">
                   <AIAnalysisSummary application={selectedApp} />
                 </div>
                 <ProcessHistory

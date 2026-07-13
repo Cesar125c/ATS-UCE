@@ -28,7 +28,8 @@ export default function CandidateTable({ items, loading, onEvaluate }: Candidate
         <p className="text-sm text-slate-500 mt-1">Applicants evaluated by AI, ordered by score.</p>
       </div>
 
-      <table className="w-full">
+      <div className="overflow-x-auto overscroll-x-contain table-scroll" tabIndex={0} aria-label="Applicant ranking table">
+      <table className="w-full min-w-[900px]">
         <thead className="bg-slate-50">
           <tr className="text-left text-sm text-slate-600">
             <th className="px-6 py-3">Applicant</th>
@@ -50,6 +51,7 @@ export default function CandidateTable({ items, loading, onEvaluate }: Candidate
           ))}
         </tbody>
       </table>
+      </div>
 
       {items.length === 0 && (
         <div className="px-6 py-12 text-center text-slate-500">

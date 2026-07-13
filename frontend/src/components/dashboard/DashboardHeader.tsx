@@ -30,12 +30,12 @@ function exportStatsToCSV() {
 
 export default function DashboardHeader() {
   return (
-    <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
 
       {/* Left */}
       <div>
 
-        <h1 className="text-3xl font-bold text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
           Human Resources Dashboard
         </h1>
 
@@ -48,7 +48,7 @@ export default function DashboardHeader() {
       {/* Right */}
       <Button
         variant="danger"
-        className="flex items-center gap-2 px-5 py-3 rounded-lg shadow-sm"
+        className="flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 rounded-lg shadow-sm"
         onClick={exportStatsToCSV}
       >
         <Download size={18} />

@@ -64,8 +64,8 @@ export default function TopNavbar() {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-      <div className="flex items-center bg-slate-100 rounded-md px-3 py-2 w-[340px]">
+    <header className="h-16 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between gap-3 px-3 sm:px-5 lg:px-8">
+      <div className="flex min-w-0 flex-1 items-center bg-slate-100 rounded-md px-3 py-2 sm:max-w-[340px]">
         <Search size={18} className="text-gray-400" />
         <input
           type="text"
@@ -74,7 +74,7 @@ export default function TopNavbar() {
         />
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex shrink-0 items-center gap-3 sm:gap-6">
         {/* Notification Bell */}
         <div className="relative">
           <button onClick={handleBellClick} className="relative">
@@ -87,7 +87,7 @@ export default function TopNavbar() {
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+            <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:top-auto sm:right-0 sm:w-80 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
               <div className="flex items-center justify-between px-4 py-3 border-b">
                 <p className="text-sm font-semibold text-slate-800">Notifications</p>
                 {unread > 0 && (
@@ -141,7 +141,7 @@ export default function TopNavbar() {
               </p>
               <p className="text-slate-500 text-xs">{roleLabel}</p>
             </div>
-            <ChevronDown size={18} className="text-slate-500" />
+            <ChevronDown size={18} className="hidden sm:block text-slate-500" />
           </button>
 
           {menuOpen && (

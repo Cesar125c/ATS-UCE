@@ -21,8 +21,8 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`bg-[#071429] border-r border-white/10 text-white flex flex-col h-screen transition-all duration-300 ${
-        collapsed ? "w-20" : "w-64"
+      className={`bg-[#071429] border-r border-white/10 text-white flex shrink-0 flex-col h-dvh transition-all duration-300 ${
+        collapsed ? "w-16 sm:w-20" : "w-16 lg:w-64"
       }`}
     >
       {/* Logo */}
@@ -31,7 +31,7 @@ export default function Sidebar() {
           ATS
         </div>
         {!collapsed && (
-          <div className="ml-3 whitespace-nowrap">
+          <div className="ml-3 hidden lg:block whitespace-nowrap">
             <h1 className="text-white font-bold text-lg">ATS-UCE</h1>
             <p className="text-xs text-slate-400">Recruitment Portal</p>
           </div>
@@ -41,7 +41,8 @@ export default function Sidebar() {
       {/* Toggle button */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="flex items-center justify-center h-8 border-b border-white/10 hover:bg-white/5 text-slate-400"
+        className="hidden lg:flex items-center justify-center h-8 border-b border-white/10 hover:bg-white/5 text-slate-400"
+        aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
@@ -55,8 +56,8 @@ export default function Sidebar() {
               key={item.title}
               to={item.path}
               className={({ isActive }: { isActive: boolean }) =>
-                `mx-3 mb-2 flex items-center gap-3 rounded-lg px-3 py-3 transition-all ${
-                  collapsed ? "justify-center" : ""
+                `mx-2 lg:mx-3 mb-2 flex items-center gap-3 rounded-lg px-3 py-3 transition-all ${
+                  collapsed ? "justify-center" : "justify-center lg:justify-start"
                 } ${
                   isActive
                     ? "bg-[#278fd0] text-white font-semibold"
@@ -66,7 +67,7 @@ export default function Sidebar() {
               title={collapsed ? item.title : undefined}
             >
               <Icon size={18} />
-              {!collapsed && <span>{item.title}</span>}
+              {!collapsed && <span className="hidden lg:inline">{item.title}</span>}
             </NavLink>
           );
         })}
