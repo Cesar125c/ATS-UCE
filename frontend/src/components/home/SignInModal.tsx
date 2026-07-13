@@ -88,8 +88,8 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+      <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto bg-slate-950/70 p-3 sm:p-6 backdrop-blur-sm">
+        <div className="relative my-3 bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
@@ -99,7 +99,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
             </svg>
           </button>
 
-          <div className="p-6">
+          <div className="p-2 sm:p-6">
             <SignIn
               fallbackRedirectUrl="/"
               signUpUrl="/sign-up"
