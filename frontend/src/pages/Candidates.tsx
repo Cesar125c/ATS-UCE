@@ -1,72 +1,70 @@
-import { useState, useEffect, useCallback } from "react";
-import DashboardLayout from "../components/layout/DashboardLayout";
-import Filters from "../components/dashboard/Filters";
+import { useState } from "react";
+import { useApplications } from "@/hooks/useAppQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 import CandidateTable from "../components/dashboard/CandidateTable";
-import Pagination from "../components/dashboard/Pagination";
 import EvaluationModal from "../components/dashboard/EvaluationModal";
-import { getApplicationsByStatus } from "@/services/dashboardService";
-import type { ApplicationRankingItem } from "@/services/dashboardService";
+import Filters from "../components/dashboard/Filters";
+import Pagination from "../components/dashboard/Pagination";
+import DashboardLayout from "../components/layout/DashboardLayout";
 
 export default function Candidates() {
   const [status, setStatus] = useState("HR_STAGE");
   const [page, setPage] = useState(1);
-  const [items, setItems] = useState<ApplicationRankingItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [pageSize] = useState(20);
   const [evaluatingAppId, setEvaluatingAppId] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getApplicationsByStatus(status || undefined, page, pageSize);
-      setItems(result.items);
-      setTotal(result.total);
-      setPageSize(result.page_size);
-      setTotalPages(result.pages);
-    } catch {
-      setError("Error al cargar los candidatos.");
-    } finally {
-      setLoading(false);
-    }
-  }, [status, page, pageSize]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const applicationsQuery = useApplications({
+    status: status || undefined,
+    page,
+    pageSize,
+    search: debouncedSearch || undefined,
+  });
+  const applications = applicationsQuery.data;
 
   const handleEvaluationSuccess = () => {
     setEvaluatingAppId(null);
-    fetchData();
   };
 
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Candidatos</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Candidates</h1>
         <p className="text-slate-500 mt-2">
-          Revisa, filtra y evalúa las postulaciones por estado del proceso.
+          Review, filter, and evaluate applications by process stage.
         </p>
       </div>
 
-      <Filters status={status} onStatusChange={(s) => { setStatus(s); setPage(1); }} />
+      <Filters
+        status={status}
+        onStatusChange={(s) => {
+          setStatus(s);
+          setPage(1);
+        }}
+        search={search}
+        onSearchChange={(s) => {
+          setSearch(s);
+          setPage(1);
+        }}
+      />
 
-      <CandidateTable items={items} loading={loading} onEvaluate={setEvaluatingAppId} />
+      <CandidateTable
+        items={applications?.items ?? []}
+        loading={applicationsQuery.isLoading}
+        onEvaluate={setEvaluatingAppId}
+      />
 
-      {error && (
+      {applicationsQuery.isError && (
         <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-          {error}
+          Error loading candidates.
         </div>
       )}
 
       <Pagination
         currentPage={page}
-        totalPages={totalPages}
-        totalItems={total}
-        pageSize={pageSize}
+        totalPages={applications?.pages ?? 1}
+        totalItems={applications?.total ?? 0}
+        pageSize={applications?.page_size ?? pageSize}
         onPageChange={setPage}
       />
 

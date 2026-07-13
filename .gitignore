@@ -21,6 +21,13 @@ coverage/
 *.tsbuildinfo
 storybook-static/
 
+# Tauri / Rust build output
+frontend/src-tauri/target/
+frontend/src-tauri/gen/android/.gradle/
+frontend/src-tauri/gen/android/app/build/
+frontend/src-tauri/gen/android/build/
+frontend/src-tauri/gen/android/local.properties
+
 # ─── Environment files (secrets) ─────────────────────────────────────────────
 .env
 .env.local

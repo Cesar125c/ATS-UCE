@@ -48,3 +48,15 @@ class IApplicationRepository(ABC):
     async def find_status_history_by_application_id(
         self, application_id: UUID
     ) -> list[StatusHistory]: ...
+
+    @abstractmethod
+    async def get_weekly_trend(self, weeks: int = 8) -> list[dict]: ...
+
+    @abstractmethod
+    async def get_applicant_clerk_id(self, application_id: UUID) -> str | None:
+        """Resolve the Clerk user ID of the applicant who owns this application.
+
+        Joins applications → applicants → users to find the clerk_id.
+        Returns None if the application or its applicant user doesn't exist.
+        """
+        ...

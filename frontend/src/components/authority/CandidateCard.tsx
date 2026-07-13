@@ -2,9 +2,9 @@ import Badge from "../ui/Badge";
 import type { ApplicationRankingItem } from "@/services/dashboardService";
 
 const STATUS_LABEL: Record<string, string> = {
-  DEAN_STAGE: "Decano",
+  DEAN_STAGE: "Dean",
   RECTOR_STAGE: "Rector",
-  FINANCE_STAGE: "Financiero",
+  FINANCE_STAGE: "Finance",
 };
 
 interface CandidateCardProps {
@@ -42,7 +42,7 @@ export default function CandidateCard({
           </p>
         </div>
         <Badge variant="primary">
-          IA {candidate.score_total ?? "—"}
+          AI {candidate.score_total ?? "—"}
         </Badge>
       </div>
     </div>

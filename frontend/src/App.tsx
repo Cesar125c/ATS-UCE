@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useUser } from "@clerk/react";
-import { useRoleRedirect } from "./hooks/useRoleRedirect";
+import { useRoleRedirect, getRoleTargetPath, normalizeRole } from "./hooks/useRoleRedirect";
 import ApiInitializer from "./components/ApiInitializer";
 import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
@@ -12,13 +12,7 @@ import Reports from "./pages/Reports";
 import Administration from "./pages/Administrator";
 
 const normalizePath = (pathname: string) =>
-  pathname.toLowerCase().replace(/\/$/, "");
-
-const ROLE_PATH_MAP: Record<string, string> = {
-  applicant: "/applicant",
-  human_resources: "/human-resources",
-  authorities: "/authority",
-};
+  pathname.toLowerCase().replace(/\/$/, "") || "/";
 
 const PATH_ROLE_MAP: Record<string, string> = {
   "/applicant": "applicant",
@@ -36,11 +30,10 @@ function App() {
   const currentPath = normalizePath(location.pathname);
   const expectedRole = PATH_ROLE_MAP[currentPath];
 
-  // Redirect if user has a different role than the page they're trying to access.
   if (expectedRole && isLoaded && isSignedIn) {
-    const userRole = user?.publicMetadata?.role as string | undefined;
+    const userRole = normalizeRole(user?.publicMetadata?.role as string | undefined);
     if (userRole && userRole !== expectedRole) {
-      const target = ROLE_PATH_MAP[userRole] || "/";
+      const target = getRoleTargetPath(userRole) || "/";
       if (currentPath !== normalizePath(target)) {
         window.location.replace(target);
       }

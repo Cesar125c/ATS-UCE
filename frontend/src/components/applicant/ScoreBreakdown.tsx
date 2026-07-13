@@ -19,11 +19,11 @@ interface AxisDef {
 }
 
 const AXES: AxisDef[] = [
-  { key: "academic_training", label: "Formación Académica", icon: GraduationCap, color: "bg-sky-500" },
-  { key: "experience", label: "Experiencia Docente", icon: BriefcaseBusiness, color: "bg-emerald-500" },
-  { key: "publications", label: "Producción Científica", icon: BookOpenCheck, color: "bg-violet-500" },
-  { key: "profile_match", label: "Coincidencia con Vacante", icon: UserCheck, color: "bg-amber-500" },
-  { key: "languages_competencies", label: "Idiomas y Competencias", icon: BrainCircuit, color: "bg-rose-500" },
+  { key: "academic_training", label: "Academic Training", icon: GraduationCap, color: "bg-sky-500" },
+  { key: "experience", label: "Teaching Experience", icon: BriefcaseBusiness, color: "bg-emerald-500" },
+  { key: "publications", label: "Scientific Production", icon: BookOpenCheck, color: "bg-violet-500" },
+  { key: "profile_match", label: "Vacancy Match", icon: UserCheck, color: "bg-amber-500" },
+  { key: "languages_competencies", label: "Languages & Competencies", icon: BrainCircuit, color: "bg-rose-500" },
 ];
 
 const GRADE_VARIANT: Record<string, "green" | "blue" | "yellow" | "red"> = {
@@ -34,10 +34,10 @@ const GRADE_VARIANT: Record<string, "green" | "blue" | "yellow" | "red"> = {
 };
 
 const GRADE_LABEL: Record<string, string> = {
-  EXCELLENT: "Excelente",
-  GOOD: "Buena",
-  ACCEPTABLE: "Aceptable",
-  INSUFFICIENT: "Insuficiente",
+  EXCELLENT: "Excellent",
+  GOOD: "Good",
+  ACCEPTABLE: "Acceptable",
+  INSUFFICIENT: "Insufficient",
 };
 
 interface ScoreBreakdownProps {
@@ -52,9 +52,9 @@ export default function ScoreBreakdown({ score }: ScoreBreakdownProps) {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold">Resultado del Análisis IA</h2>
+          <h2 className="text-xl font-semibold">AI Analysis Result</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Evaluación automatizada de tu perfil
+            Automated evaluation of your profile
           </p>
         </div>
         <div className="text-right">

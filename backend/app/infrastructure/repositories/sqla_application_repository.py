@@ -1,7 +1,9 @@
 """SQLAlchemy 2.0 async implementation of IApplicationRepository."""
 
+from datetime import UTC, datetime, time, timedelta
 from uuid import UUID
 
+import sqlalchemy as sa
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -143,6 +145,52 @@ class SQLAApplicationRepository(IApplicationRepository):
             "completed": row.completed or 0,
         }
 
+    async def get_weekly_trend(self, weeks: int = 8) -> list[dict]:
+        today = datetime.now(UTC).date()
+        current_week_start = today - timedelta(days=today.weekday())
+        start_date = current_week_start - timedelta(weeks=weeks - 1)
+        start_at = datetime.combine(start_date, time.min, tzinfo=UTC)
+        week_start = func.date_trunc(
+            sa.literal_column("'week'"),
+            ApplicationModel.created_at,
+        )
+        result = await self._session.execute(
+            select(
+                week_start.label("week_start"),
+                func.count().label("applications"),
+            )
+            .where(ApplicationModel.created_at >= start_at)
+            .group_by(week_start)
+            .order_by(week_start.asc())
+        )
+        counts = {row.week_start.date().isoformat(): row.applications for row in result.all()}
+        return [
+            {
+                "period": (
+                    f"{(start_date + timedelta(weeks=offset)).isocalendar().year}"
+                    f"-W{(start_date + timedelta(weeks=offset)).isocalendar().week:02d}"
+                ),
+                "applications": counts.get(
+                    (start_date + timedelta(weeks=offset)).isoformat(),
+                    0,
+                ),
+            }
+            for offset in range(weeks)
+        ]
+
+    async def get_applicant_clerk_id(self, application_id: UUID) -> str | None:
+        from app.infrastructure.database.models.applicant_model import ApplicantModel
+        from app.infrastructure.database.models.user_model import UserModel
+
+        result = await self._session.execute(
+            select(UserModel.clerk_id)
+            .select_from(ApplicationModel)
+            .join(ApplicantModel, ApplicationModel.applicant_id == ApplicantModel.id)
+            .join(UserModel, ApplicantModel.user_id == UserModel.id)
+            .where(ApplicationModel.id == application_id)
+        )
+        return result.scalar_one_or_none()
+
     async def save(self, application: Application) -> Application:
         model = ApplicationMapper.to_model(application)
         merged = await self._session.merge(model)
@@ -191,11 +239,13 @@ class SQLAApplicationRepository(IApplicationRepository):
         status: str | None = None,
         faculty: str | None = None,
         min_score: float | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[ApplicationModel], int]:
         """Returns ORM models with eager-loaded applicant+user+vacancy for the ranking table."""
         from app.infrastructure.database.models.applicant_model import ApplicantModel
+        from app.infrastructure.database.models.user_model import UserModel
         from app.infrastructure.database.models.vacancy_model import VacancyModel
 
         query = select(ApplicationModel).options(
@@ -217,6 +267,27 @@ class SQLAApplicationRepository(IApplicationRepository):
         if min_score is not None:
             query = query.where(ApplicationModel.score_total >= min_score)
             count_query = count_query.where(ApplicationModel.score_total >= min_score)
+
+        if search is not None and search.strip():
+            pattern = f"%{search.strip()}%"
+            search_filter = sa.or_(
+                UserModel.first_name.ilike(pattern),
+                UserModel.last_name.ilike(pattern),
+                UserModel.email.ilike(pattern),
+                VacancyModel.title.ilike(pattern),
+            )
+            query = (
+                query.join(ApplicationModel.applicant)
+                .join(ApplicantModel.user)
+                .join(ApplicationModel.vacancy)
+                .where(search_filter)
+            )
+            count_query = (
+                count_query.join(ApplicantModel, ApplicationModel.applicant_id == ApplicantModel.id)
+                .join(UserModel, ApplicantModel.user_id == UserModel.id)
+                .join(VacancyModel, ApplicationModel.vacancy_id == VacancyModel.id)
+                .where(search_filter)
+            )
 
         query = query.order_by(ApplicationModel.score_total.desc().nullslast())
         query = query.offset((page - 1) * page_size).limit(page_size)

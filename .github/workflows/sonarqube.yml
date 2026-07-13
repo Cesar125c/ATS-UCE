@@ -1,0 +1,81 @@
+name: SonarQube Analysis - ATS-UCE
+
+on:
+  push:
+    branches: [dev, qa, main]
+  pull_request:
+    branches: [dev, qa, main]
+
+jobs:
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-caching: true
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --frozen --extra dev
+
+      - name: Run backend tests with coverage
+        working-directory: backend
+        run: |
+          uv run pytest -q --cov=app --cov-report=xml:coverage.xml
+        continue-on-error: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: SonarQube Scan
+        id: sonar_scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://98.90.146.42:9000' }}
+        with:
+          args: >
+            -Dsonar.projectKey=g1-ATS-UCE
+            -Dsonar.projectName=g1-ATS-UCE
+            -Dsonar.sources=backend/app,frontend/src
+            -Dsonar.tests=backend/tests
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/.venv/**,**/migrations/**,**/tests/**,**/*.test.*,**/*.spec.*
+            -Dsonar.python.coverage.reportPaths=backend/coverage.xml
+            -Dsonar.sourceEncoding=UTF-8
+
+      - name: SonarQube Quality Gate Check
+        if: always()
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'http://98.90.146.42:9000' }}

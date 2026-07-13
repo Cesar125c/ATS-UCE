@@ -14,6 +14,7 @@ class ReviewRankingUseCase:
         status: str | None = None,
         faculty: str | None = None,
         min_score: float | None = None,
+        search: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> dict:
@@ -23,6 +24,7 @@ class ReviewRankingUseCase:
             status=status,
             faculty=faculty,
             min_score=min_score,
+            search=search,
             page=page,
             page_size=page_size,
         )

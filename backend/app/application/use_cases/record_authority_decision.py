@@ -9,6 +9,7 @@ from app.domain.exceptions import DomainError
 from app.domain.repositories.i_application_repository import IApplicationRepository
 from app.domain.services.workflow_approval_service import WorkflowApprovalService
 from app.domain.value_objects.evaluation_decision import EvaluationDecision
+from app.domain.value_objects.flow_status import FlowStatus
 
 
 class RecordAuthorityDecisionUseCase:
@@ -18,9 +19,11 @@ class RecordAuthorityDecisionUseCase:
         self,
         application_repo: IApplicationRepository,
         workflow_service: WorkflowApprovalService,
+        realtime_notifier=None,
     ) -> None:
         self._application_repo = application_repo
         self._workflow_service = workflow_service
+        self._realtime_notifier = realtime_notifier
 
     async def execute(
         self,
@@ -56,6 +59,19 @@ class RecordAuthorityDecisionUseCase:
             status=application.status,
         )
         await self._application_repo.create_status_history(status_entry)
+
+        if self._realtime_notifier is not None and application.status in (
+            FlowStatus.DEAN_STAGE,
+            FlowStatus.RECTOR_STAGE,
+            FlowStatus.FINANCE_STAGE,
+        ):
+            applicant_clerk_id = await self._application_repo.get_applicant_clerk_id(application.id)
+            await self._realtime_notifier.notify_status_change(
+                role=application.status.required_role(),
+                application_id=str(application.id),
+                new_status=application.status.value,
+                applicant_clerk_id=applicant_clerk_id,
+            )
 
         return {
             "id": str(evaluation.id),

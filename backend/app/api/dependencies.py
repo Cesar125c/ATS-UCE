@@ -19,11 +19,12 @@ from app.infrastructure.adapters.clerk_auth_adapter import ClerkAuthAdapter
 from app.infrastructure.adapters.groq_analysis_adapter import GroqAnalysisAdapter
 from app.infrastructure.database.models.user_model import UserModel
 from app.infrastructure.database.session import get_db_session
+from app.infrastructure.realtime.socketio_notifier import SocketIONotifier
 from app.infrastructure.repositories.sqla_applicant_repository import SQLAApplicantRepository
 from app.infrastructure.repositories.sqla_application_repository import SQLAApplicationRepository
 from app.infrastructure.repositories.sqla_vacancy_repository import SQLAVacancyRepository
 
-logger = logging.getLogger("ats_uce")
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
@@ -104,6 +105,39 @@ async def get_current_user(
                     else:
                         raise
 
+    # A valid Clerk token may already contain a role even when the local user
+    # or applicant row is missing (for example after changing Clerk instances
+    # or restoring the database). Ensure the local records exist before any
+    # role-protected endpoint uses them.
+    clerk_id = claims.get("user_id", "")
+    if clerk_id:
+        result = await session.execute(select(UserModel).where(UserModel.clerk_id == clerk_id))
+        local_user = result.scalar_one_or_none()
+
+        if local_user is None:
+            email = claims.get("email", "") or f"{clerk_id}@unknown.uce.edu.ec"
+            local_user = UserModel(
+                clerk_id=clerk_id,
+                email=email,
+                first_name="User",
+                last_name="",
+                role=claims.get("role") or "applicant",
+            )
+            session.add(local_user)
+            await session.flush()
+            logger.info("Created missing local user for Clerk account %s", clerk_id)
+
+        if claims.get("role") == "applicant":
+            from app.infrastructure.database.models.applicant_model import ApplicantModel
+
+            applicant_result = await session.execute(
+                select(ApplicantModel).where(ApplicantModel.user_id == local_user.id)
+            )
+            if applicant_result.scalar_one_or_none() is None:
+                session.add(ApplicantModel(user_id=local_user.id))
+                await session.flush()
+                logger.info("Created missing applicant profile for Clerk account %s", clerk_id)
+
     return claims
 
 
@@ -147,6 +181,10 @@ async def get_analysis_adapter() -> GroqAnalysisAdapter:
     return GroqAnalysisAdapter()
 
 
+async def get_realtime_notifier() -> SocketIONotifier:
+    return SocketIONotifier()
+
+
 async def get_submit_application_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
     applicant_repo: SQLAApplicantRepository = Depends(get_applicant_repository),
@@ -160,15 +198,22 @@ async def get_process_ai_score_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
     vacancy_repo: SQLAVacancyRepository = Depends(get_vacancy_repository),
     analysis: GroqAnalysisAdapter = Depends(get_analysis_adapter),
+    realtime_notifier: SocketIONotifier = Depends(get_realtime_notifier),
 ) -> ProcessAIScoreUseCase:
-    return ProcessAIScoreUseCase(application_repo, vacancy_repo, analysis)
+    return ProcessAIScoreUseCase(
+        application_repo,
+        vacancy_repo,
+        analysis,
+        realtime_notifier=realtime_notifier,
+    )
 
 
 async def get_record_authority_decision_usecase(
     application_repo: SQLAApplicationRepository = Depends(get_application_repository),
+    realtime_notifier: SocketIONotifier = Depends(get_realtime_notifier),
 ) -> RecordAuthorityDecisionUseCase:
     workflow_service = WorkflowApprovalService()
-    return RecordAuthorityDecisionUseCase(application_repo, workflow_service)
+    return RecordAuthorityDecisionUseCase(application_repo, workflow_service, realtime_notifier)
 
 
 async def get_application_status_usecase(
@@ -197,7 +242,11 @@ def rate_limit_key(request: Request) -> str:
             user_id = payload.get("sub") or payload.get("user_id", "")
             if user_id:
                 return f"user:{user_id}"
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug(
+                "Unable to extract user id from bearer token for rate limiting; "
+                "falling back to client IP: %s",
+                type(exc).__name__,
+            )
     client_ip = request.client.host if request.client else "unknown"
     return f"ip:{client_ip}"

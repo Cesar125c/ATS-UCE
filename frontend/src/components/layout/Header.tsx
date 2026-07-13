@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Show, UserButton, useClerk } from "@clerk/react";
 import { Button } from "../ui";
 import SignInModal from "../home/SignInModal";
+import { GraduationCap } from "lucide-react";
 
 export default function Header() {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
@@ -12,23 +13,25 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-blue-950 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">ATS-UCE</h1>
-          <p className="text-sm text-slate-300">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#071429] text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
+        <a href="#inicio" className="flex min-w-0 items-center gap-3" aria-label="ATS-UCE home">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sky-500"><GraduationCap size={22} /></span>
+          <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight">ATS-UCE</h1>
+          <p className="hidden sm:block text-xs text-slate-300">
             Teacher Recruitment Management System
           </p>
-        </div>
-
+          </div>
+        </a>
         <div className="flex items-center gap-3">
           <Show when="signed-out">
             <Button
-              variant="secondary"
+              variant="danger"
               size="sm"
               onClick={() => setIsSignInOpen(true)}
             >
-              Sign In
+              Sign in
             </Button>
           </Show>
 

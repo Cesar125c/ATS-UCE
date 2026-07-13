@@ -1,20 +1,18 @@
-import { useState, useEffect } from "react";
 import Card from "../ui/Card";
 import Badge from "../ui/Badge";
-import { getMyApplicationStatus } from "@/services/applicationService";
-import { getVacancies } from "@/services/vacancyService";
-import type { ApplicationResponse, FlowStatus } from "@/types/application";
+import { useMyApplications, useVacancies } from "@/hooks/useAppQueries";
+import type { FlowStatus } from "@/types/application";
 import type { Vacancy } from "@/types/vacancy";
 
 const STATUS_LABEL: Record<FlowStatus, string> = {
-  RECEIVED: "Recibido",
-  PROCESSING_AI: "Analizando IA",
-  HR_STAGE: "Revisión RRHH",
-  DEAN_STAGE: "Decano",
+  RECEIVED: "Received",
+  PROCESSING_AI: "AI Analysis",
+  HR_STAGE: "HR Review",
+  DEAN_STAGE: "Dean",
   RECTOR_STAGE: "Rector",
-  FINANCE_STAGE: "Financiero",
-  HIRED: "Seleccionado",
-  REJECTED: "Rechazado",
+  FINANCE_STAGE: "Finance",
+  HIRED: "Hired",
+  REJECTED: "Rejected",
 };
 
 const STATUS_VARIANT: Record<FlowStatus, "default" | "cyan" | "blue" | "green" | "red" | "yellow"> = {
@@ -30,49 +28,37 @@ const STATUS_VARIANT: Record<FlowStatus, "default" | "cyan" | "blue" | "green" |
 
 function formatDate(isoString: string): string {
   const d = new Date(isoString);
-  return d.toLocaleDateString("es-EC", {
+  return d.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-export default function ApplicationHistory() {
-  const [applications, setApplications] = useState<ApplicationResponse[]>([]);
-  const [vacancyMap, setVacancyMap] = useState<Map<string, Vacancy>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface ApplicationHistoryProps {
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const [apps, vacancies] = await Promise.all([
-          getMyApplicationStatus(),
-          getVacancies(),
-        ]);
-        if (cancelled) return;
-        setApplications(apps);
-        setVacancyMap(new Map(vacancies.map((v) => [v.id, v])));
-        setError(null);
-      } catch {
-        if (!cancelled) {
-          setError("Error al cargar el historial de postulaciones.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+export default function ApplicationHistory({ selectedId, onSelect }: ApplicationHistoryProps) {
+  const {
+    data: applications = [],
+    isLoading: applicationsLoading,
+    isError: applicationsError,
+  } = useMyApplications();
+  const {
+    data: vacancies = [],
+    isLoading: vacanciesLoading,
+    isError: vacanciesError,
+  } = useVacancies();
+  const vacancyMap = new Map<string, Vacancy>(vacancies.map((v) => [v.id, v]));
+  const loading = applicationsLoading || vacanciesLoading;
+  const error = applicationsError || vacanciesError;
 
   if (loading) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        Cargando historial...
+        Loading history...
       </Card>
     );
   }
@@ -86,28 +72,28 @@ export default function ApplicationHistory() {
   if (applications.length === 0) {
     return (
       <Card className="p-6 mt-6 text-center text-slate-500">
-        No tienes postulaciones registradas. Sube tu CV para comenzar.
+        You have no registered applications. Upload your CV to get started.
       </Card>
     );
   }
 
   return (
-    <Card className="p-6 mt-6">
+    <Card className="p-6 mt-6 border border-slate-200 shadow-none">
       <div className="flex justify-between items-center mb-5">
-        <h2 className="text-xl font-semibold">Historial de Postulaciones</h2>
+        <h2 className="text-xl font-semibold">Application History</h2>
         <span className="text-sm text-slate-500">
-          {applications.length} postulación{applications.length !== 1 ? "es" : ""}
+          {applications.length} application{applications.length !== 1 ? "s" : ""}
         </span>
       </div>
 
-      <table className="w-full">
+      <div className="overflow-x-auto overscroll-x-contain table-scroll" tabIndex={0} aria-label="Application history table">
+      <table className="w-full min-w-[640px]">
         <thead className="border-b">
           <tr className="text-left text-xs uppercase text-slate-500">
-            <th className="py-3">Vacante</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Score IA</th>
-            <th></th>
+            <th className="py-3">Vacancy</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>AI Score</th>
           </tr>
         </thead>
 
@@ -115,12 +101,21 @@ export default function ApplicationHistory() {
           {applications.map((app) => {
             const vacancy = vacancyMap.get(app.vacancy_id);
             const status = app.status as FlowStatus;
+            const isSelected = app.id === selectedId;
 
             return (
-              <tr key={app.id} className="border-b hover:bg-slate-50">
-                <td className="py-4">
+              <tr
+                key={app.id}
+                className={`border-b cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-sky-50 border-l-4 border-l-sky-500"
+                    : "hover:bg-slate-50 border-l-4 border-l-transparent"
+                }`}
+                onClick={() => onSelect(app.id)}
+              >
+                <td className="py-4 pl-3">
                   <p className="font-medium">
-                    {vacancy?.title ?? "Vacante"}
+                    {vacancy?.title ?? "Vacancy"}
                   </p>
                   <p className="text-sm text-slate-500">
                     {vacancy?.faculty ?? ""}
@@ -141,17 +136,12 @@ export default function ApplicationHistory() {
                 <td className="font-semibold">
                   {app.ai_score ? `${Math.round(app.ai_score.total)}%` : "—"}
                 </td>
-
-                <td className="text-right">
-                  <span className="text-xs text-slate-400 font-mono">
-                    {app.id.slice(0, 8)}
-                  </span>
-                </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      </div>
     </Card>
   );
 }

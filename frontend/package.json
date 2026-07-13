@@ -8,17 +8,28 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:android:init": "tauri android init",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:build": "tauri android build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
   "dependencies": {
     "@clerk/react": "^6.7.0",
+    "@hookform/resolvers": "^3.10.0",
+    "@tanstack/react-query": "^5.101.2",
     "lucide-react": "^0.408.0",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-router-dom": "^6.14.2",
     "react-hook-form": "^7.76.0",
-    "recharts": "^3.9.0"
+    "react-router-dom": "^6.14.2",
+    "recharts": "^3.9.0",
+    "socket.io-client": "^4.8.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.2.1",
@@ -29,6 +40,7 @@
     "@storybook/addon-vitest": "^10.4.2",
     "@storybook/react-vite": "^10.4.2",
     "@tailwindcss/vite": "^4.3.0",
+    "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

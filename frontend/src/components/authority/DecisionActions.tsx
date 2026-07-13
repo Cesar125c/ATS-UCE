@@ -18,32 +18,34 @@ export default function DecisionActions({
     <div className="space-y-4">
       {result === "success" && (
         <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">
-          Decisión registrada exitosamente.
+          Decision registered successfully.
         </div>
       )}
 
       {result === "error" && (
         <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-          Error al registrar la decisión. Intenta nuevamente.
+          Error registering the decision. Please try again.
         </div>
       )}
 
       <Button
-        className="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
+        variant="outline"
+        className="w-full flex items-center justify-center gap-2"
         onClick={onApprove}
         disabled={submitting}
       >
         <CheckCircle2 size={18} />
-        Aprobar Selección
+        Approve Selection
       </Button>
 
       <Button
-        className="w-full bg-white border border-red-300 text-red-600 hover:bg-red-50 flex items-center justify-center gap-2"
+        variant="danger"
+        className="w-full flex items-center justify-center gap-2"
         onClick={onReject}
         disabled={submitting}
       >
         <XCircle size={18} />
-        Rechazar Candidato
+        Reject Candidate
       </Button>
     </div>
   );

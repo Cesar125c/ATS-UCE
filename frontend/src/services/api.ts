@@ -1,7 +1,37 @@
+import { z } from "zod";
+
+import { logger } from "@/lib/logger";
+
 let _getToken: (() => Promise<string | null>) | null = null;
+
+function resolveApiBaseUrl(): string {
+  const configuredUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+  if (!configuredUrl) return "";
+
+  try {
+    const url = new URL(configuredUrl);
+    // Docker service names are only resolvable inside the Docker network. In
+    // the browser, use the current origin so Vite/Nginx can proxy /api.
+    if (url.hostname === "api") return "";
+  } catch {
+    // Relative base URLs are valid and should be preserved.
+  }
+
+  return configuredUrl;
+}
+
+const apiBaseUrl = resolveApiBaseUrl();
 
 export function initApi(getTokenFn: () => Promise<string | null>) {
   _getToken = getTokenFn;
+}
+
+export function buildApiUrl(input: RequestInfo | URL): RequestInfo | URL {
+  if (!apiBaseUrl || typeof input !== "string" || !input.startsWith("/")) {
+    return input;
+  }
+
+  return `${apiBaseUrl}${input}`;
 }
 
 export class ApiError extends Error {
@@ -14,9 +44,59 @@ export class ApiError extends Error {
   }
 }
 
+function normalizeLogEndpoint(value: string): string {
+  if (value.startsWith("/")) {
+    return value;
+  }
+
+  try {
+    const url = new URL(value);
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return value;
+  }
+}
+
+function getLogEndpoint(input: RequestInfo | URL): string {
+  if (typeof input === "string") {
+    return normalizeLogEndpoint(input);
+  }
+
+  if (input instanceof URL) {
+    return `${input.pathname}${input.search}${input.hash}`;
+  }
+
+  if (typeof Request !== "undefined" && input instanceof Request) {
+    return normalizeLogEndpoint(input.url);
+  }
+
+  return String(input);
+}
+
+function getErrorType(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
+
+function logApiError(input: RequestInfo | URL, status: number): void {
+  const context = {
+    operation: "api_fetch",
+    endpoint: getLogEndpoint(input),
+    status,
+    errorType: "ApiError",
+  };
+
+  if (status >= 500) {
+    logger.error("API request failed", context);
+    return;
+  }
+
+  logger.warn("API request failed", context);
+}
+
 export async function apiFetch<T>(
   input: RequestInfo | URL,
   init?: RequestInit,
+  schema?: z.ZodType<T>,
 ): Promise<T> {
   const token = _getToken ? await _getToken() : null;
 
@@ -46,10 +126,20 @@ export async function apiFetch<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(input, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(buildApiUrl(input), { ...init, headers });
+  } catch (error) {
+    logger.error("API request failed", {
+      operation: "api_fetch",
+      endpoint: getLogEndpoint(input),
+      errorType: getErrorType(error),
+    });
+    throw error;
+  }
 
   if (res.status === 401) {
-    window.location.assign("/login");
+    logApiError(input, res.status);
     throw new ApiError(401, "Unauthorized");
   }
 
@@ -57,12 +147,26 @@ export async function apiFetch<T>(
     let detail = "";
     try {
       const body = await res.json();
-      detail = body.detail || body.message || "";
+      const raw = body.detail || body.message || "";
+      if (Array.isArray(raw)) {
+        detail = raw.map((e: { msg: string }) => e.msg).join("; ");
+      } else if (typeof raw === "string") {
+        detail = raw;
+      } else {
+        detail = String(raw);
+      }
     } catch {
       // body may not be JSON
     }
+    logApiError(input, res.status);
     throw new ApiError(res.status, detail || res.statusText);
   }
 
-  return res.json() as Promise<T>;
+  const data = await res.json();
+
+  if (schema) {
+    return schema.parse(data);
+  }
+
+  return data as T;
 }

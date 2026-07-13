@@ -91,9 +91,9 @@ class ResendEmailAdapter:
                     }
                 ),
             )
-            logger.info("Email sent to %s — subject: %s", to, subject)
-        except Exception as exc:
-            logger.error("Failed to send email to %s — subject: %s — error: %s", to, subject, exc)
+            logger.info("Email sent successfully")
+        except Exception:
+            logger.exception("Failed to send email")
 
     # ------------------------------------------------------------------
     # Email resolution helpers
@@ -116,10 +116,8 @@ class ResendEmailAdapter:
                 )
                 email = result.scalars().first()
                 return email
-        except Exception as exc:
-            logger.error(
-                "Failed to resolve applicant email for application %s: %s", application_id, exc
-            )
+        except Exception:
+            logger.exception("Failed to resolve applicant email for application %s", application_id)
             return None
 
     async def _resolve_authority_emails(self) -> list[str]:
@@ -134,9 +132,27 @@ class ResendEmailAdapter:
                 )
                 emails = result.scalars().all()
                 return list(emails)
-        except Exception as exc:
-            logger.error("Failed to resolve authority emails: %s", exc)
+        except Exception:
+            logger.exception("Failed to resolve authority emails")
             return []
+
+    async def _resolve_email_by_applicant_id(self, applicant_id: UUID) -> str | None:
+        """Look up the applicant's email from the database via applicant_id."""
+        try:
+            from app.infrastructure.database.models.applicant_model import ApplicantModel
+            from app.infrastructure.database.models.user_model import UserModel
+            from app.infrastructure.database.session import get_db_session
+
+            async with get_db_session() as session:
+                result = await session.execute(
+                    select(UserModel.email)
+                    .join(ApplicantModel, ApplicantModel.user_id == UserModel.id)
+                    .where(ApplicantModel.id == applicant_id)
+                )
+                return result.scalars().first()
+        except Exception:
+            logger.exception("Failed to resolve email for applicant %s", applicant_id)
+            return None
 
     # ------------------------------------------------------------------
     # Public notification methods — never raise
@@ -145,6 +161,11 @@ class ResendEmailAdapter:
     async def send_rejection_notification(self, applicant_id: UUID, *, reason: str = "") -> None:
         """Notify applicant that their application was rejected."""
         try:
+            email = await self._resolve_email_by_applicant_id(applicant_id)
+            if not email:
+                logger.warning("Cannot send rejection — no email for applicant %s", applicant_id)
+                return
+
             if reason == "CV is not readable" or reason == "CV_NOT_READABLE":
                 subject = "Your application CV could not be processed"
                 body = (
@@ -160,21 +181,20 @@ class ResendEmailAdapter:
                     "for preselection at this time. We encourage you to apply again in the future."
                 )
 
-            logger.info(
-                "Rejection notification queued for applicant %s — reason: %s — subject: %s — %s",
-                applicant_id,
-                reason,
-                subject,
-                body,
-            )
-        except Exception as exc:
-            logger.error(
-                "Failed to queue rejection notification for applicant %s: %s", applicant_id, exc
-            )
+            await self.dispatch(to=email, subject=subject, html=f"<p>{body}</p>")
+        except Exception:
+            logger.exception("Failed to send rejection notification for applicant %s", applicant_id)
 
     async def send_stage_notification(self, applicant_id: UUID, *, stage: str) -> None:
         """Notify applicant of a workflow stage advancement."""
         try:
+            email = await self._resolve_email_by_applicant_id(applicant_id)
+            if not email:
+                logger.warning(
+                    "Cannot send stage notification — no email for applicant %s", applicant_id
+                )
+                return
+
             subject, message = _STAGE_MESSAGES.get(
                 stage,
                 (
@@ -183,15 +203,16 @@ class ResendEmailAdapter:
                     "your current stage.",
                 ),
             )
-            logger.info(
-                "Stage notification queued for applicant %s — stage: %s", applicant_id, stage
+            await self.dispatch(
+                to=email,
+                subject=subject,
+                html=f"<p>Dear applicant,</p><p>{message}</p>",
             )
-        except Exception as exc:
-            logger.error(
-                "Failed to queue stage notification for applicant %s — stage %s: %s",
+        except Exception:
+            logger.exception(
+                "Failed to send stage notification for applicant %s — stage %s",
                 applicant_id,
                 stage,
-                exc,
             )
 
     async def send_authority_notification(self, application_id: UUID, *, stage: str) -> None:
@@ -210,12 +231,11 @@ class ResendEmailAdapter:
                     subject=subject,
                     html=f"<p>{message}</p>",
                 )
-        except Exception as exc:
-            logger.error(
-                "Failed to send authority notification for application %s — stage %s: %s",
+        except Exception:
+            logger.exception(
+                "Failed to send authority notification for application %s — stage %s",
                 application_id,
                 stage,
-                exc,
             )
 
     # ------------------------------------------------------------------

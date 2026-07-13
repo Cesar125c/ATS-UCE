@@ -10,48 +10,48 @@ import Card from "../ui/Card";
 const analysis = [
   {
     icon: GraduationCap,
-    title: "Formación Académica",
+    title: "Academic Training",
     description:
-      "Títulos, posgrados y certificaciones oficiales.",
+      "Degrees, postgraduate studies and official certifications.",
   },
   {
     icon: BriefcaseBusiness,
-    title: "Experiencia Docente",
+    title: "Teaching Experience",
     description:
-      "Años en cargos, nivel y materias dictadas.",
+      "Years in roles, level and subjects taught.",
   },
   {
     icon: BookOpenCheck,
-    title: "Producción Científica",
+    title: "Scientific Production",
     description:
-      "Publicaciones, proyectos y artículos indexados.",
+      "Publications, projects and indexed articles.",
   },
   {
     icon: BrainCircuit,
-    title: "Idiomas & Competencias",
+    title: "Languages & Competencies",
     description:
-      "Certificaciones de idiomas y habilidades digitales.",
+      "Language certifications and digital skills.",
   },
   {
     icon: UserCheck,
-    title: "Adecuación al Perfil",
+    title: "Profile Match",
     description:
-      "Coincidencia con los requisitos de la vacante.",
+      "Match with the vacancy requirements.",
   },
 ];
 
 export default function AIAnalysis() {
   return (
-    <Card className="p-6 h-full">
+    <Card className="p-6 h-full border border-slate-200 shadow-none">
 
       <div className="mb-6">
 
-        <h2 className="text-xl font-semibold">
-          ¿Qué analiza la IA?
+        <h2 className="text-lg font-semibold">
+          What does the AI analyze?
         </h2>
 
         <p className="text-sm text-slate-500 mt-1">
-          Criterios de evaluación automatizada.
+          Automated evaluation criteria.
         </p>
 
       </div>
@@ -66,14 +66,14 @@ export default function AIAnalysis() {
 
             <div
               key={item.title}
-              className="flex gap-4"
+              className="flex gap-3"
             >
 
-              <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full border border-[#2369ad] flex items-center justify-center flex-shrink-0">
 
                 <Icon
-                  size={20}
-                  className="text-sky-600"
+                  size={16}
+                  className="text-[#174f8d]"
                 />
 
               </div>

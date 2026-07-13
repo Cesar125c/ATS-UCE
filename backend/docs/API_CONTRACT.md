@@ -1,3 +1,5 @@
+---
+
 # API Contract — ATS-UCE Backend
 
 **Version:** 0.1.0  
@@ -409,6 +411,86 @@ All three authority stages (DEAN, RECTOR, FINANCE) share the single `authorities
 | `404` | Resource not found |
 | `422` | Validation error (invalid input, missing required fields) |
 | `500` | Internal server error |
+
+---
+
+*Last updated: 2026-07-10*
+
+---
+
+## 11. WebSocket Notifications (Real-Time Dashboard)
+
+**Endpoint:** `ws://host/ws/socket.io/` (via nginx)  
+**Endpoint (direct):** `ws://host:8000/ws/socket.io/`  
+**Transport:** Socket.IO v5 (WebSocket upgrade with HTTP long-polling fallback)  
+**Status:** ✅ Implemented  
+
+### Authentication
+
+The JWT is sent via the Socket.IO `auth` object on the `connect` event:
+
+```js
+const socket = io("ws://host:8000", {
+  path: "/ws/socket.io/",
+  auth: { token: "eyJhbGci..." }
+});
+```
+
+The token is validated through the same `ClerkAuthAdapter.verify_token()` used by the REST API. Connections with missing, invalid, or expired tokens are rejected.
+
+**Never pass the token as a query parameter** — query strings are logged by proxies and web servers.
+
+### Roles Allowed
+
+Only `human_resources` and `authorities` roles are permitted to connect. Users with role `applicant` are rejected (the MVP does not include applicant-notifications).
+
+### Rooms (per role)
+
+On successful connection, the client is automatically joined to a room matching its role:
+
+| Role | Room |
+|---|---|
+| `human_resources` | `"human_resources"` |
+| `authorities` | `"authorities"` |
+
+All connected clients in a room receive the same events — there is no per-user filtering.
+
+### Event: `status_change`
+
+Emitted when an application enters a stage that requires dashboard attention.
+
+**Payload:**
+
+```json
+{
+  "application_id": "550e8400-e29b-41d4-a716-446655440000",
+  "new_status": "HR_STAGE",
+  "timestamp": "2026-07-10T15:30:00Z"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `application_id` | string (UUID) | The application that changed status |
+| `new_status` | string | `FlowStatus` value (`HR_STAGE`, `DEAN_STAGE`, `RECTOR_STAGE`, `FINANCE_STAGE`) |
+| `timestamp` | string (ISO 8601) | Server time when the notification was emitted |
+
+**Who receives what:**
+
+| Status Transition | Room | Trigger |
+|---|---|---|
+| `PROCESSING_AI → HR_STAGE` | `human_resources` | AI scoring preselects the application (score ≥ 60) |
+| `HR_STAGE → DEAN_STAGE` | `authorities` | HR approves the application |
+| `DEAN_STAGE → RECTOR_STAGE` | `authorities` | Dean approves |
+| `RECTOR_STAGE → FINANCE_STAGE` | `authorities` | Rector approves |
+
+### Error Handling
+
+If the WebSocket notification fails to deliver (server disconnected, exception), the failure is **logged and silently ignored**. The underlying database transaction and email notifications are **not affected**.
+
+### Frontend Integration
+
+On receiving `status_change`, the frontend should refetch the application list via `GET /api/v1/applications` to get the complete updated data. The WebSocket event acts as a "doorbell" — it tells you **something changed**, but does not carry the full updated record.
 
 ---
 

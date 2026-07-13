@@ -14,7 +14,7 @@ services:
       - ./backend/config.py:/app/config.py
       - ./backend/migrations:/app/migrations
       - ./backend/tests:/app/tests
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:asgi_app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     volumes:
