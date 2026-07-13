@@ -8,11 +8,11 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="h-screen flex overflow-hidden bg-[#f4f7fa]">
+    <div className="h-dvh flex overflow-hidden bg-[#f4f7fa]">
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="min-w-0 flex flex-col flex-1 overflow-hidden">
         <TopNavbar />
-        <main className="flex-1 overflow-y-auto bg-[#f4f7fa] p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#f4f7fa] p-4 sm:p-6 lg:p-8">
           <div className="max-w-[1500px] mx-auto">{children}</div>
         </main>
       </div>

@@ -86,7 +86,8 @@ export default function ApplicationHistory({ selectedId, onSelect }: Application
         </span>
       </div>
 
-      <table className="w-full">
+      <div className="overflow-x-auto overscroll-x-contain table-scroll" tabIndex={0} aria-label="Application history table">
+      <table className="w-full min-w-[640px]">
         <thead className="border-b">
           <tr className="text-left text-xs uppercase text-slate-500">
             <th className="py-3">Vacancy</th>
@@ -140,6 +141,7 @@ export default function ApplicationHistory({ selectedId, onSelect }: Application
           })}
         </tbody>
       </table>
+      </div>
     </Card>
   );
 }

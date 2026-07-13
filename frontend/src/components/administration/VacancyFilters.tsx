@@ -20,7 +20,7 @@ export default function VacancyFilters({ search, onSearchChange, onNew }: Vacanc
     <div className="flex flex-col gap-4 mb-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
-        <div className="flex flex-1 gap-4">
+        <div className="flex min-w-0 flex-1 flex-col sm:flex-row gap-3 sm:gap-4">
 
           {/* Search */}
           <div className="relative flex-1">
@@ -53,7 +53,7 @@ export default function VacancyFilters({ search, onSearchChange, onNew }: Vacanc
         <Button
           variant="danger"
           onClick={onNew}
-          className="flex items-center gap-2"
+          className="flex items-center justify-center gap-2"
         >
           <Plus size={18} />
           New Vacancy
