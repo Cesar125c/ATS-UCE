@@ -60,7 +60,7 @@ export default function RegisterForm() {
 
   if (isLoaded && isSignedIn) {
     return (
-      <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10 text-center">
+      <Card className="rounded-2xl shadow-2xl w-full max-w-xl p-6 sm:p-8 text-center">
         <h3 className="text-3xl font-bold text-slate-800 mb-4">
           You are already signed in
         </h3>
@@ -103,12 +103,13 @@ export default function RegisterForm() {
   };
 
   return (
-    <Card className="rounded-3xl shadow-2xl w-full max-w-xl p-10">
-      <div className="mb-8">
-        <h3 className="text-3xl font-bold text-slate-800">Create Account</h3>
+    <Card className="rounded-2xl border-white/70 shadow-2xl shadow-slate-950/30 w-full max-w-xl p-5 sm:p-8">
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Applicant access</p>
+        <h3 className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900">Create your account</h3>
 
         <p className="text-slate-500 mt-2">
-          Register to access ATS-UCE recruitment platform
+          Complete your details to enter the ATS-UCE platform.
         </p>
       </div>
 
@@ -118,8 +119,8 @@ export default function RegisterForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* First Name */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
         <Input
           type="text"
           label="First Name"
@@ -136,13 +137,14 @@ export default function RegisterForm() {
           error={errors.lastName?.message}
           {...register("lastName")}
         />
+        </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
             Role
           </label>
 
           <select
-            className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100"
             {...register("role")}
           >
             <option value="">Select a role</option>
@@ -186,12 +188,12 @@ export default function RegisterForm() {
         {/* Submit */}
         <Button
           type="submit"
-          variant="secondary"
+          variant="danger"
           size="lg"
           fullWidth
           isLoading={isSubmitting || isLoading}
         >
-          Create Account
+          Create account
         </Button>
       </form>
     </Card>
