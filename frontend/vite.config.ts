@@ -12,6 +12,7 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
+  envDir: path.resolve(dirname, ".."),
   server: {
     watch: {
       ignored: ["**/src-tauri/**"],
@@ -62,6 +63,13 @@ export default defineConfig({
             enabled: true,
             headless: true,
             provider: playwright({}),
+            // Vitest defaults to 63315, which can belong to a Windows
+            // excluded port range and fail with EACCES.
+            api: {
+              host: "127.0.0.1",
+              port: 43115,
+              strictPort: false,
+            },
             instances: [
               {
                 browser: "chromium",

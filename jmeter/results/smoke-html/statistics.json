@@ -1,0 +1,50 @@
+{
+  "GET Health" : {
+    "transaction" : "GET Health",
+    "sampleCount" : 1,
+    "errorCount" : 0,
+    "errorPct" : 0.0,
+    "meanResTime" : 25.0,
+    "medianResTime" : 25.0,
+    "minResTime" : 25.0,
+    "maxResTime" : 25.0,
+    "pct1ResTime" : 25.0,
+    "pct2ResTime" : 25.0,
+    "pct3ResTime" : 25.0,
+    "throughput" : 40.0,
+    "receivedKBytesPerSec" : 8.3203125,
+    "sentKBytesPerSec" : 6.0546875
+  },
+  "GET Public Vacancies" : {
+    "transaction" : "GET Public Vacancies",
+    "sampleCount" : 1,
+    "errorCount" : 0,
+    "errorPct" : 0.0,
+    "meanResTime" : 6.0,
+    "medianResTime" : 6.0,
+    "minResTime" : 6.0,
+    "maxResTime" : 6.0,
+    "pct1ResTime" : 6.0,
+    "pct2ResTime" : 6.0,
+    "pct3ResTime" : 6.0,
+    "throughput" : 166.66666666666666,
+    "receivedKBytesPerSec" : 46.549479166666664,
+    "sentKBytesPerSec" : 25.87890625
+  },
+  "Total" : {
+    "transaction" : "Total",
+    "sampleCount" : 2,
+    "errorCount" : 0,
+    "errorPct" : 0.0,
+    "meanResTime" : 15.5,
+    "medianResTime" : 15.5,
+    "minResTime" : 6.0,
+    "maxResTime" : 25.0,
+    "pct1ResTime" : 25.0,
+    "pct2ResTime" : 25.0,
+    "pct3ResTime" : 25.0,
+    "throughput" : 62.5,
+    "receivedKBytesPerSec" : 15.228271484375,
+    "sentKBytesPerSec" : 9.58251953125
+  }
+}

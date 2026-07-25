@@ -16,6 +16,9 @@ node_modules/
 dist/
 build/
 coverage/
+coverage.xml
+backend/coverage.xml
+frontend/e2e/reports/
 *-debug.log*
 *-error.log*
 *.tsbuildinfo
@@ -53,5 +56,6 @@ frontend/src-tauri/gen/android/local.properties
 .DS_Store
 Thumbs.db
 *.bak
+~$*
 .atl/
 .commandcode/

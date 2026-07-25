@@ -1,0 +1,41 @@
+Status: FAILED
+Time Taken: 3
+Size: 30
+Timestamp: Sat Jul 25 13:33:10 ECT 2026
+TestStep: GET Dashboard As HR
+
+----------------- Messages ------------------------------
+[HTTP 200] Response status code:401 is not in acceptable list of status codes
+[total_applicants exists] Assertion failed for path [$.total_applicants] : PathNotFoundException:No results for path: $['total_applicants']
+[avg_score exists] Assertion failed for path [$.avg_score] : PathNotFoundException:No results for path: $['avg_score']
+
+----------------- Properties ------------------------------
+HTTP Version: HTTP/1.1
+Endpoint: http://localhost:8000
+Method: GET
+StatusCode: 401
+URL: http://localhost:8000/api/v1/dashboard/stats
+
+---------------- Request ---------------------------
+Connection: [Keep-Alive]
+User-Agent: [Apache-HttpClient/4.5.5 (Java/17.0.12)]
+Host: [localhost:8000]
+Accept-Encoding: [gzip,deflate]
+
+GET http://localhost:8000/api/v1/dashboard/stats HTTP/1.1
+Accept-Encoding: gzip,deflate
+Host: localhost:8000
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.5 (Java/17.0.12)
+
+
+---------------- Response --------------------------
+date: [Sat, 25 Jul 2026 18:33:10 GMT]
+x-request-id: [req_177b0beda50e]
+server: [uvicorn]
+content-length: [30]
+www-authenticate: [Bearer]
+content-type: [application/json]
+#status#: [HTTP/1.1 401 Unauthorized]
+
+{"detail":"Not authenticated"}
