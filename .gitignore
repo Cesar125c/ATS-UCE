@@ -40,6 +40,9 @@ frontend/src-tauri/gen/android/local.properties
 
 # ─── Docker ──────────────────────────────────────────────────────────────────
 *.log
+soapui/soapui.properties*
+soapui/reports/
+jmeter/results/
 
 # ─── IDEs / Editors ──────────────────────────────────────────────────────────
 .vscode/
@@ -56,5 +59,6 @@ frontend/src-tauri/gen/android/local.properties
 .DS_Store
 Thumbs.db
 *.bak
+~$*
 .atl/
 .commandcode/

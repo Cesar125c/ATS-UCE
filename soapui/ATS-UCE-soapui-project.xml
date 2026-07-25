@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="ats-uce-integration" activeEnvironment="Default" name="ATS-UCE Integration Tests" resourceRoot="${projectDir}" soapui-version="5.10.0" abortOnError="false" runType="SEQUENTIAL" xmlns:con="http://eviware.com/soapui/config">
+  <con:settings/>
+  <con:interface xsi:type="con:RestService" id="ats-uce-rest" wadlVersion="http://wadl.dev.java.net/2009/02" name="ATS-UCE REST API" type="rest" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <con:settings/>
+    
+    <con:definitionCache type="TEXT" rootPart=""/><con:endpoints>
+      <con:endpoint>${#Project#baseUrl}</con:endpoint>
+    </con:endpoints>
+    <con:resource name="Health" path="/api/v1/health" id="health-resource">
+      <con:settings/>
+      <con:parameters/><con:method name="GET Health" id="health-get" method="GET">
+        <con:settings/>
+        <con:parameters/><con:representation type="RESPONSE"><con:mediaType>application/json</con:mediaType><con:status>200</con:status><con:params/></con:representation>
+      </con:method>
+    </con:resource>
+    <con:resource name="Vacancies" path="/api/v1/vacancies/" id="vacancies-resource">
+      <con:settings/>
+      <con:parameters/><con:method name="GET Vacancies" id="vacancies-get" method="GET"><con:settings/><con:parameters/></con:method>
+      <con:method name="POST Vacancy" id="vacancies-post" method="POST"><con:settings/><con:parameters/></con:method>
+    </con:resource>
+    <con:resource name="Applications" path="/api/v1/applications/" id="applications-resource">
+      <con:settings/>
+      <con:parameters/><con:method name="GET Applications" id="applications-get" method="GET">
+        <con:settings/>
+        <con:parameters>
+          <con:parameter><con:name>page</con:name><con:value>1</con:value><con:style>QUERY</con:style><con:default>1</con:default></con:parameter>
+          <con:parameter><con:name>page_size</con:name><con:value>20</con:value><con:style>QUERY</con:style><con:default>20</con:default></con:parameter>
+        </con:parameters>
+      </con:method>
+    </con:resource>
+    <con:resource name="Current user" path="/api/v1/users/me" id="users-me-resource">
+      <con:settings/>
+      <con:parameters/><con:method name="GET Current User" id="users-me-get" method="GET"><con:settings/><con:parameters/></con:method>
+    </con:resource>
+    <con:resource name="Applicant status" path="/api/v1/applicants/me/status" id="applicant-status-resource">
+      <con:settings/>
+      <con:parameters/><con:method name="GET Applicant Status" id="applicant-status-get" method="GET"><con:settings/><con:parameters/></con:method>
+    </con:resource>
+    <con:resource name="Dashboard stats" path="/api/v1/dashboard/stats" id="dashboard-stats-resource">
+      <con:settings/>
+      <con:parameters/><con:method name="GET Dashboard Stats" id="dashboard-stats-get" method="GET"><con:settings/><con:parameters/></con:method>
+    </con:resource>
+    <con:resource name="Dashboard trend" path="/api/v1/dashboard/applications-trend" id="dashboard-trend-resource">
+      <con:settings/>
+      <con:parameters/><con:method name="GET Dashboard Trend" id="dashboard-trend-get" method="GET">
+        <con:settings/>
+        <con:parameters><con:parameter><con:name>weeks</con:name><con:value>8</con:value><con:style>QUERY</con:style><con:default>8</con:default></con:parameter></con:parameters>
+      </con:method>
+    </con:resource>
+  </con:interface>
+
+  <con:testSuite id="public-suite" name="01 - Public and Security">
+    <con:settings/>
+    <con:runType>SEQUENTIAL</con:runType>
+    <con:testCase id="health-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Health returns connected" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Health" id="health-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/health" methodName="GET Health" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Health" id="health-request" mediaType="application/json">
+            <con:settings/>
+            <con:endpoint>${#Project#baseUrl}</con:endpoint>
+            <con:request/>
+            <con:originalUri>http://localhost/api/v1/health</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="health-status" name="HTTP 200"><con:configuration><codes>200</codes></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Match" id="health-json-status" name="status is ok"><con:configuration><path>$.status</path><content>ok</content></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Match" id="health-json-db" name="database connected"><con:configuration><path>$.database</path><content>connected</content></con:configuration></con:assertion>
+            <con:assertion type="Response SLA" id="health-sla" name="SLA 2 seconds"><con:configuration><SLA>2000</SLA></con:configuration></con:assertion>
+            <con:credentials><con:authType>No Authorization</con:authType></con:credentials>
+            <con:parameters/>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="vacancies-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Public vacancies returns JSON array" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Public Vacancies" id="vacancies-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/vacancies/" methodName="GET Vacancies" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Public Vacancies" id="vacancies-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/vacancies/</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="vacancies-status" name="HTTP 200"><con:configuration><codes>200</codes></con:configuration></con:assertion>
+            <con:assertion type="Response SLA" id="vacancies-sla" name="SLA 3 seconds"><con:configuration><SLA>3000</SLA></con:configuration></con:assertion>
+            <con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:parameters/>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:testStep type="groovy" name="Assert JSON array" id="vacancies-json-assert">
+        <con:settings/>
+        <con:config><script>import groovy.json.JsonSlurper
+def body = context.expand('${GET Public Vacancies#Response}')
+def parsed = new JsonSlurper().parseText(body)
+assert parsed instanceof List : 'The vacancies response must be a JSON array'</script></con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="missing-token-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Applications rejects missing token" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Applications Without Token" id="missing-token-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/applications/" methodName="GET Applications" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Applications Without Token" id="missing-token-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/applications/</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="missing-token-status" name="HTTP 401 or 403"><con:configuration><codes>401, 403</codes></con:configuration></con:assertion>
+            <con:credentials><con:authType>No Authorization</con:authType></con:credentials>
+            <con:parameters><entry key="page" value="1"/><entry key="page_size" value="20"/></con:parameters>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="invalid-token-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Current user rejects invalid token" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Me Invalid Token" id="invalid-token-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/users/me" methodName="GET Current User" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Me Invalid Token" id="invalid-token-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/users/me</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="invalid-token-status" name="HTTP 401"><con:configuration><codes>401</codes></con:configuration></con:assertion>
+            <con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials>
+            <con:jmsConfig JMSDeliveryMode="PERSISTENT"/>
+            <con:parameters/>
+            <con:headers><con:entry key="Authorization" value="Bearer invalid.integration.token"/></con:headers>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="pagination-validation-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Pagination validation runs before authorization" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Invalid Pagination" id="pagination-validation-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/applications/" methodName="GET Applications" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Invalid Pagination" id="pagination-validation-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/applications/</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="pagination-validation-status" name="HTTP 401, 403 or 422"><con:configuration><codes>401, 403, 422</codes></con:configuration></con:assertion>
+            <con:credentials><con:authType>No Authorization</con:authType></con:credentials>
+            <con:parameters><entry key="page" value="0"/><entry key="page_size" value="101"/></con:parameters>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:properties/>
+  </con:testSuite>
+
+  <con:testSuite id="authenticated-suite" name="02 - Authenticated Roles">
+    <con:settings/>
+    <con:runType>SEQUENTIAL</con:runType>
+    <con:testCase id="applicant-me-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Applicant gets own profile" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Applicant Me" id="applicant-me-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/users/me" methodName="GET Current User" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Applicant Me" id="applicant-me-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/users/me</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="applicant-me-status" name="HTTP 200"><con:configuration><codes>200</codes></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Match" id="applicant-role-assert" name="Applicant role"><con:configuration><path>$.role</path><content>applicant</content></con:configuration></con:assertion>
+            <con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials><con:parameters/>
+            <con:headers><con:entry key="Authorization" value="Bearer ${#Project#applicantToken}"/></con:headers>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="applicant-status-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Applicant gets own applications" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Applicant Status" id="applicant-status-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/applicants/me/status" methodName="GET Applicant Status" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Applicant Status" id="applicant-status-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/applicants/me/status</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="applicant-status-http" name="HTTP 200"><con:configuration><codes>200</codes></con:configuration></con:assertion>
+            <con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials><con:parameters/>
+            <con:headers><con:entry key="Authorization" value="Bearer ${#Project#applicantToken}"/></con:headers>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:testStep type="groovy" name="Assert applications array" id="applicant-array-assert">
+        <con:settings/><con:config><script>import groovy.json.JsonSlurper
+def parsed = new JsonSlurper().parseText(context.expand('${GET Applicant Status#Response}'))
+assert parsed instanceof List : 'Applicant status must be a JSON array'</script></con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="applicant-forbidden-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Applicant cannot list ranking" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Ranking As Applicant" id="applicant-forbidden-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/applications/" methodName="GET Applications" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Ranking As Applicant" id="applicant-forbidden-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/applications/</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="applicant-forbidden-status" name="HTTP 403"><con:configuration><codes>403</codes></con:configuration></con:assertion>
+            <con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials>
+            <con:parameters><entry key="page" value="1"/><entry key="page_size" value="20"/></con:parameters>
+            <con:headers><con:entry key="Authorization" value="Bearer ${#Project#applicantToken}"/></con:headers>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="hr-ranking-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="HR lists application ranking" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Ranking As HR" id="hr-ranking-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/applications/" methodName="GET Applications" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Ranking As HR" id="hr-ranking-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/applications/</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="hr-ranking-status" name="HTTP 200"><con:configuration><codes>200</codes></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="hr-items-assert" name="items exists"><con:configuration><path>$.items</path><content>true</content></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Match" id="hr-page-assert" name="page is 1"><con:configuration><path>$.page</path><content>1</content></con:configuration></con:assertion>
+            <con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials>
+            <con:parameters><entry key="page" value="1"/><entry key="page_size" value="20"/></con:parameters>
+            <con:headers><con:entry key="Authorization" value="Bearer ${#Project#hrToken}"/></con:headers>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="hr-dashboard-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="HR gets dashboard statistics" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Dashboard As HR" id="hr-dashboard-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/dashboard/stats" methodName="GET Dashboard Stats" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Dashboard As HR" id="hr-dashboard-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/dashboard/stats</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="hr-dashboard-status" name="HTTP 200"><con:configuration><codes>200</codes></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="total-applicants-assert" name="total_applicants exists"><con:configuration><path>$.total_applicants</path><content>true</content></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Existence Match" id="avg-score-assert" name="avg_score exists"><con:configuration><path>$.avg_score</path><content>true</content></con:configuration></con:assertion>
+            <con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials><con:parameters/>
+            <con:headers><con:entry key="Authorization" value="Bearer ${#Project#hrToken}"/></con:headers>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:testCase id="authority-me-case" discardOkResults="false" failOnError="true" failTestCaseOnErrors="true" keepSession="false" name="Authority gets own profile" searchProperties="true" maxResults="0">
+      <con:settings/>
+      <con:testStep type="restrequest" name="GET Authority Me" id="authority-me-step">
+        <con:settings/>
+        <con:config service="ATS-UCE REST API" resourcePath="/api/v1/users/me" methodName="GET Current User" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="GET Authority Me" id="authority-me-request" mediaType="application/json">
+            <con:settings/><con:endpoint>${#Project#baseUrl}</con:endpoint><con:request/>
+            <con:originalUri>http://localhost/api/v1/users/me</con:originalUri><con:assertion type="Valid HTTP Status Codes" id="authority-me-status" name="HTTP 200"><con:configuration><codes>200</codes></con:configuration></con:assertion>
+            <con:assertion type="JsonPath Match" id="authority-role-assert" name="Authorities role"><con:configuration><path>$.role</path><content>authorities</content></con:configuration></con:assertion>
+            <con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials><con:parameters/>
+            <con:headers><con:entry key="Authorization" value="Bearer ${#Project#authorityToken}"/></con:headers>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+      <con:properties/>
+    </con:testCase>
+    <con:properties><con:property><con:name>baseUrl</con:name><con:value>http://localhost:8000</con:value></con:property><con:property><con:name>applicantToken</con:name><con:value/></con:property><con:property><con:name>hrToken</con:name><con:value/></con:property><con:property><con:name>authorityToken</con:name><con:value/></con:property></con:properties>
+  </con:testSuite>
+  <con:properties>
+    <con:property><con:name>baseUrl</con:name><con:value>http://localhost:8000</con:value></con:property>
+    <con:property><con:name>applicantToken</con:name><con:value/></con:property>
+    <con:property><con:name>hrToken</con:name><con:value/></con:property>
+    <con:property><con:name>authorityToken</con:name><con:value/></con:property>
+  </con:properties>
+  <con:wssContainer/>
+  <con:oAuth2ProfileContainer/>
+  <con:oAuth1ProfileContainer/>
+  <con:sensitiveInformation/>
+</con:soapui-project>
