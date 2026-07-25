@@ -40,8 +40,6 @@ frontend/src-tauri/gen/android/local.properties
 
 # ─── Docker ──────────────────────────────────────────────────────────────────
 *.log
-soapui/soapui.properties*
-soapui/reports/
 
 # ─── IDEs / Editors ──────────────────────────────────────────────────────────
 .vscode/
