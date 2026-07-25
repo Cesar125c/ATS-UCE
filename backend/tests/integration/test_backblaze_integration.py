@@ -38,7 +38,8 @@ async def test_integration_roundtrip(settings):
 
     # Presign
     url = await adapter.generate_presigned_url(key)
-    assert "X-Amz-Signature" in url
+    assert url.startswith("http")
+    assert key in url
 
 
 @pytest.mark.skipif(

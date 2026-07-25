@@ -16,6 +16,9 @@ node_modules/
 dist/
 build/
 coverage/
+coverage.xml
+backend/coverage.xml
+frontend/e2e/reports/
 *-debug.log*
 *-error.log*
 *.tsbuildinfo

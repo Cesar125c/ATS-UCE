@@ -3,6 +3,18 @@
 # Without this, entrypoint.sh would fail inside the Linux container.
 
 entrypoint.sh     text eol=lf
+.gitattributes    text eol=lf
+.gitignore        text eol=lf
 *.sh              text eol=lf
 Dockerfile        text eol=lf
 *.dockerfile      text eol=lf
+*.css             text eol=lf
+*.feature         text eol=lf
+*.js              text eol=lf
+*.json            text eol=lf
+*.md              text eol=lf
+*.mjs             text eol=lf
+*.ts              text eol=lf
+*.tsx             text eol=lf
+*.yml             text eol=lf
+*.yaml            text eol=lf

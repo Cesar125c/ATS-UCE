@@ -5,6 +5,12 @@ html, body, #root {
   min-height: 100%;
 }
 
+input,
+textarea,
+select {
+  color: #000;
+}
+
 .table-scroll {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
