@@ -1,0 +1,3 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1785008468108,25,GET Health,200,OK,Read-only API Load 1-1,text,true,,213,155,1,1,http://localhost:8000/api/v1/health,22,0,14
+1785008468134,6,GET Public Vacancies,200,OK,Read-only API Load 1-1,text,true,,286,159,1,1,http://localhost:8000/api/v1/vacancies/,6,0,0
